@@ -1,4 +1,4 @@
-// MainActivity.kt: Einstieg der App. Verbindet Onboarding, Home-Screen und Einstellungen
+// MainActivity.kt: Einstieg der App. Verbindet Vorspann-Film, Onboarding, Home-Screen und Einstellungen
 // und reicht Tipps auf Meldungen an PushDelivery weiter.
 
 package com.example.osmon
@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.example.osmon.ui.HomeScreen
+import com.example.osmon.ui.IntroScreen
 import com.example.osmon.ui.OnboardingScreen
 import com.example.osmon.ui.SettingsScreen
 
@@ -52,12 +53,18 @@ private fun Root() {
     val ctx = LocalContext.current.applicationContext
     val prefs = remember { PetSync.prefs(ctx) }
     var done by remember { mutableStateOf(prefs.getBoolean("onboarding.done", false)) }
+    var introSeen by remember { mutableStateOf(prefs.getBoolean("intro.seen", false)) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var replayIntro by rememberSaveable { mutableStateOf(false) }
 
     when {
+        // Vorspann einmal vor dem Onboarding
+        !done && !introSeen -> IntroScreen(onFinished = { prefs.edit().putBoolean("intro.seen", true).apply(); introSeen = true })
         !done -> OnboardingScreen(onFinished = { done = true })
+        replayIntro -> IntroScreen(onFinished = { replayIntro = false })
         showSettings -> SettingsScreen(
             onBack = { showSettings = false },
+            onShowIntro = { replayIntro = true },
             onDataDeleted = { showSettings = false; done = false }
         )
         else -> HomeScreen(onOpenSettings = { showSettings = true })

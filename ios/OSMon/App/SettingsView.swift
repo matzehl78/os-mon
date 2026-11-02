@@ -87,6 +87,7 @@ enum PetData {
 struct SettingsView: View {
     @StateObject private var screen = ScreenTimeManager()
     @Environment(\.dismiss) private var dismiss
+    @State private var showIntro = false
     @Environment(\.scenePhase) private var phase
     var onDataDeleted: () -> Void = {}
 
@@ -111,6 +112,7 @@ struct SettingsView: View {
             Form {
                 figureSection
                 sceneSection
+                introSection
                 sensorSection
                 screenTimeSection
                 stepsSection
@@ -143,6 +145,13 @@ struct SettingsView: View {
         } footer: {
             Text("Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit.")
         }
+    }
+
+    private var introSection: some View {
+        Section {
+            Button { showIntro = true } label: { Label("Einführungsfilm ansehen", systemImage: "play.rectangle") }
+        }
+        .fullScreenCover(isPresented: $showIntro) { IntroVideoView { showIntro = false } }
     }
 
     private var sceneSection: some View {

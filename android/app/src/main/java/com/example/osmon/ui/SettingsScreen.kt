@@ -170,7 +170,7 @@ private fun thousands(n: Int) = n.toString().reversed().chunked(3).joinToString(
 // ---------- Screen ----------
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: () -> Unit = {}) {
     val ctx = LocalContext.current.applicationContext
     val scope = rememberCoroutineScope()
     val sp = remember { PetSync.prefs(ctx) }
@@ -253,6 +253,10 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit) {
         Card("Hintergrund", "Weitere Hintergründe schaltest du mit gesunden Gewohnheiten frei: Bewegung, Fokus-Pausen, weniger Bildschirm. Freigeschaltet bleibt freigeschaltet.") {
             val sceneStatus = remember { ProgressData.refresh(ctx).status }
             ScenePicker(sceneStatus, onSelect = { SceneStore.select(ctx, it, sceneStatus) })
+        }
+
+        Card(null, null) {
+            TextButton(onClick = onShowIntro) { Text("▶  Einführungsfilm ansehen") }
         }
 
         Card("Was OS-Mon liest", "Alles wird auf diesem Gerät berechnet. Es gibt kein Konto und keinen Upload.") {

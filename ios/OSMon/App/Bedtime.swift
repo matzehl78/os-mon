@@ -199,7 +199,6 @@ struct BedtimeView: View {
 
     var body: some View {
         ZStack {
-            background
             VStack(spacing: 18) {
                 HStack {
                     Button(action: close) { Image(systemName: "xmark").font(.headline).padding(10).background(.ultraThinMaterial, in: Circle()) }
@@ -209,7 +208,7 @@ struct BedtimeView: View {
                 Spacer(minLength: 0)
                 Text(asleep ? "Schlaf gut!" : "Gute Nacht, \(figure.name)").font(.largeTitle.bold())
                 Text(asleep ? (content.pick(content.sleep, day: day, salt: 4) ?? "") : (content.pick(content.goodnight, day: day, salt: 5) ?? ""))
-                    .font(.title3).multilineTextAlignment(.center).opacity(0.9)
+                    .font(.title3).multilineTextAlignment(.center).opacity(0.9).fixedSize(horizontal: false, vertical: true)
                 PetFigureView(pose: PetPose(mood: asleep ? .hibernation : .tired, overlays: asleep ? [] : [.yawning], energy: 70, rest: asleep ? 100 : 40))
                     .frame(width: 250, height: 250)
                     .accessibilityLabel(asleep ? "\(figure.name) schläft" : "\(figure.name) ist müde")
@@ -221,7 +220,10 @@ struct BedtimeView: View {
                 }
             }
             .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(.white)
+            // Hintergrund als .background: ein randlos skaliertes Bild darf die Breite des Inhalts nicht vergrößern
+            .background { background }
             if dimmed {
                 Color.black.opacity(0.9).ignoresSafeArea()
                     .onTapGesture { dimmed = false }
@@ -244,7 +246,10 @@ struct BedtimeView: View {
         ZStack {
             LinearGradient(colors: [Color(red: 0.04, green: 0.05, blue: 0.16), Color(red: 0.10, green: 0.10, blue: 0.30)], startPoint: .top, endPoint: .bottom)
             if let asset = PetScene.byID(sceneID).asset {
-                Image(asset).resizable().scaledToFill().brightness(-0.35).saturation(0.7).opacity(0.75)
+                GeometryReader { g in
+                    Image(asset).resizable().scaledToFill().brightness(-0.35).saturation(0.7).opacity(0.75)
+                        .frame(width: g.size.width, height: g.size.height).clipped()
+                }
             }
             LinearGradient(colors: [.black.opacity(0.5), .clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom)
         }

@@ -88,7 +88,7 @@ struct WallpaperPreview: View {
                 .foregroundStyle(.white.opacity(0.9))
                 .shadow(radius: 6)
                 .frame(maxHeight: .infinity, alignment: .top)
-                .padding(.top, geo.safeAreaInsets.top + 24)
+                .padding(.top, max(geo.safeAreaInsets.top, 54) + 14)
                 .accessibilityHidden(true)
 
                 VStack(spacing: 10) {
@@ -97,18 +97,21 @@ struct WallpaperPreview: View {
                     HStack(spacing: 12) {
                         Button("Fertig", action: onClose)
                             .buttonStyle(.bordered)
+                            .tint(.white)
+                            .foregroundStyle(.white)
                         if let image {
                             ShareLink(item: Image(uiImage: image), preview: SharePreview("OS-Mon Hintergrund", image: Image(uiImage: image))) {
                                 Label("Bild sichern", systemImage: "square.and.arrow.down")
                             }
                             .buttonStyle(.borderedProminent)
+                            .tint(.white)
+                            .foregroundStyle(.black)
                             .simultaneousGesture(TapGesture().onEnded { showHelp = true })
                         } else {
                             ProgressView()
                         }
                     }
-                    .tint(.white)
-                    .foregroundStyle(.white)
+                    .controlSize(.large)
                     Button(showHelp ? "Anleitung ausblenden" : "So wird es dein Hintergrund") { showHelp.toggle() }
                         .font(.footnote).foregroundStyle(.white.opacity(0.85))
                 }

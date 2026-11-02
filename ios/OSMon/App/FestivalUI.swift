@@ -204,93 +204,151 @@ struct SceneThemeLayer: View {
     let garlandY: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static func col(_ argb: UInt32) -> Color {
-        Color(red: Double((argb >> 16) & 0xFF) / 255, green: Double((argb >> 8) & 0xFF) / 255, blue: Double(argb & 0xFF) / 255,
-              opacity: Double((argb >> 24) & 0xFF) / 255)
-    }
-    private static let flagColors: [Color] = [.pink, .yellow, .cyan, .orange, .green, .purple]
-
-    /// Durchhängende Kette über die ganze Breite.
-    private func chain(_ w: CGFloat, _ y0: CGFloat) -> (Path, (CGFloat) -> CGPoint) {
-        let sag: CGFloat = 26
-        let pt: (CGFloat) -> CGPoint = { u in CGPoint(x: u * w, y: y0 + sag * 4 * u * (1 - u)) }
-        var p = Path(); p.move(to: pt(0))
-        for k in 1...40 { p.addLine(to: pt(CGFloat(k) / 40)) }
-        return (p, pt)
-    }
-
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 20, paused: reduceMotion)) { tl in
+            let t: Double = reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate
             Canvas { ctx, size in
-                let t = reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate
-                let w = size.width
-                if let tint { ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Self.col(tint))) }
-                for p in props {
-                    switch p.kind {
-                    case .emoji:
-                        let bob = p.dy > 0 ? 5 * sin(t * 1.3 + p.x * 9) : 0
-                        ctx.draw(Text(p.text).font(.system(size: p.size)), at: CGPoint(x: p.x * w, y: feetY + 6 - p.dy + bob), anchor: .bottom)
-                    case .bunting, .lightChain, .lanterns, .heartGarland:
-                        let (line, pt) = chain(w, garlandY)
-                        ctx.stroke(line, with: .color(.white.opacity(0.75)), lineWidth: 1.5)
-                        let n = p.kind == .lanterns ? 6 : p.kind == .bunting ? 12 : 16
-                        for i in 0..<n {
-                            let u = (CGFloat(i) + 0.5) / CGFloat(n), c = pt(u)
-                            switch p.kind {
-                            case .bunting:
-                                var f = Path(); f.move(to: CGPoint(x: c.x - 11, y: c.y)); f.addLine(to: CGPoint(x: c.x + 11, y: c.y)); f.addLine(to: CGPoint(x: c.x, y: c.y + 22)); f.closeSubpath()
-                                ctx.fill(f, with: .color(Self.flagColors[i % 6]))
-                            case .lightChain:
-                                let on = 0.55 + 0.45 * sin(t * 2.4 + Double(i) * 1.7)
-                                let bc = [Color.yellow, .red, .green, .cyan][i % 4]
-                                ctx.fill(Path(ellipseIn: CGRect(x: c.x - 9, y: c.y - 3, width: 18, height: 18)), with: .color(bc.opacity(0.25 * on)))
-                                ctx.fill(Path(ellipseIn: CGRect(x: c.x - 3.5, y: c.y + 2.5, width: 7, height: 9)), with: .color(bc.opacity(0.5 + 0.5 * on)))
-                            case .lanterns:
-                                let sway = 3 * sin(t * 1.5 + Double(i))
-                                ctx.fill(Path(ellipseIn: CGRect(x: c.x - 22 + sway, y: c.y + 2, width: 44, height: 44)), with: .color(.orange.opacity(0.22)))
-                                ctx.fill(Path(roundedRect: CGRect(x: c.x - 11 + sway, y: c.y + 8, width: 22, height: 28), cornerRadius: 9),
-                                         with: .color([Color.orange, .yellow, .red][i % 3]))
-                                ctx.fill(Path(ellipseIn: CGRect(x: c.x - 4 + sway, y: c.y + 17, width: 8, height: 9)), with: .color(Color(red: 1, green: 0.95, blue: 0.6)))
-                            default:
-                                ctx.draw(Text(i % 2 == 0 ? "💗" : "💕").font(.system(size: 16)), at: CGPoint(x: c.x, y: c.y + 10))
-                            }
-                        }
-                    case .fireworks:
-                        for b in 0..<3 {
-                            let period = 2.2, ph = (t / period + Double(b) * 0.37).truncatingRemainder(dividingBy: 1)
-                            let cx = w * [0.22, 0.78, 0.5][b], cy = garlandY + 40 + [30.0, 70, 10][b]
-                            let r = 18 + 70 * ph, a = max(0, 1 - ph * 1.2)
-                            let bc = [Color.yellow, .pink, .cyan][b]
-                            for k in 0..<14 {
-                                let ang = Double(k) / 14 * 2 * .pi
-                                ctx.fill(Path(ellipseIn: CGRect(x: cx + r * cos(ang) - 2.5, y: cy + r * sin(ang) - 2.5, width: 5, height: 5)), with: .color(bc.opacity(a)))
-                            }
-                        }
-                    case .snowGround:
-                        for (x, rw, rh) in [(0.0, 0.34, 34.0), (0.18, 0.26, 26.0), (0.82, 0.26, 26.0), (1.0, 0.34, 34.0)] {
-                            ctx.fill(Path(ellipseIn: CGRect(x: (x - rw / 2) * w, y: feetY - rh * 0.35, width: rw * w, height: rh * 2)), with: .color(.white.opacity(0.85)))
-                        }
-                    case .sunGlow:
-                        let c = CGPoint(x: w * 0.86, y: garlandY + 10)
-                        ctx.fill(Path(ellipseIn: CGRect(x: c.x - 170, y: c.y - 170, width: 340, height: 340)),
-                                 with: .radialGradient(Gradient(colors: [Color(red: 1, green: 0.85, blue: 0.4).opacity(0.45), .clear]), center: c, startRadius: 0, endRadius: 170))
-                    case .candles:
-                        let lit = Int(p.text) ?? 1, cx = p.x * w, base = feetY + 4
-                        ctx.fill(Path(ellipseIn: CGRect(x: cx - 44, y: base - 14, width: 88, height: 22)), with: .color(Color(red: 0.13, green: 0.45, blue: 0.2)))
-                        for k in 0..<4 {
-                            let x = cx - 30 + CGFloat(k) * 20, h: CGFloat = 26 + (k % 2 == 0 ? 0 : 6)
-                            ctx.fill(Path(roundedRect: CGRect(x: x - 5, y: base - 10 - h, width: 10, height: h), cornerRadius: 2), with: .color(Color(red: 0.85, green: 0.15, blue: 0.2)))
-                            if k < lit {
-                                let fl = 1 + 0.15 * sin(t * 9 + Double(k))
-                                ctx.fill(Path(ellipseIn: CGRect(x: x - 7, y: base - 10 - h - 22, width: 14, height: 22)), with: .color(.orange.opacity(0.25)))
-                                ctx.fill(Path(ellipseIn: CGRect(x: x - 3, y: base - 10 - h - 12 * fl, width: 6, height: 12 * fl)), with: .color(.yellow))
-                            }
-                        }
-                    }
-                }
+                SceneThemePainter(t: t, w: size.width, feetY: feetY, garlandY: garlandY).paint(ctx, size: size, props: props, tint: tint)
             }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+/// Zeichnet die Requisiten; in kleine Funktionen mit festen Typen aufgeteilt (schneller Swift-Typprüfer).
+private struct SceneThemePainter {
+    let t: Double
+    let w: CGFloat
+    let feetY: CGFloat
+    let garlandY: CGFloat
+
+    static func col(_ argb: UInt32) -> Color {
+        let a = Double((argb >> 24) & 0xFF) / 255
+        let r = Double((argb >> 16) & 0xFF) / 255
+        let g = Double((argb >> 8) & 0xFF) / 255
+        let b = Double(argb & 0xFF) / 255
+        return Color(red: r, green: g, blue: b, opacity: a)
+    }
+    static let flagColors: [Color] = [.pink, .yellow, .cyan, .orange, .green, .purple]
+
+    /// Punkt auf der durchhängenden Kette (u = 0…1).
+    func chainPoint(_ u: CGFloat) -> CGPoint {
+        let sag: CGFloat = 26
+        let y: CGFloat = garlandY + sag * 4 * u * (1 - u)
+        return CGPoint(x: u * w, y: y)
+    }
+
+    func paint(_ ctx: GraphicsContext, size: CGSize, props: [Prop], tint: UInt32?) {
+        if let tint { ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Self.col(tint))) }
+        for p in props {
+            switch p.kind {
+            case .emoji: emoji(ctx, p)
+            case .bunting, .lightChain, .lanterns, .heartGarland: garland(ctx, p.kind)
+            case .fireworks: fireworks(ctx)
+            case .snowGround: snowGround(ctx)
+            case .sunGlow: sunGlow(ctx)
+            case .candles: candles(ctx, p)
+            }
+        }
+    }
+
+    func emoji(_ ctx: GraphicsContext, _ p: Prop) {
+        let bob: Double = p.dy > 0 ? 5 * sin(t * 1.3 + p.x * 9) : 0
+        let y: CGFloat = feetY + 6 - CGFloat(p.dy) + CGFloat(bob)
+        ctx.draw(Text(p.text).font(.system(size: CGFloat(p.size))), at: CGPoint(x: CGFloat(p.x) * w, y: y), anchor: .bottom)
+    }
+
+    func garland(_ ctx: GraphicsContext, _ kind: PropKind) {
+        var line = Path()
+        line.move(to: chainPoint(0))
+        for k in 1...40 { line.addLine(to: chainPoint(CGFloat(k) / 40)) }
+        ctx.stroke(line, with: .color(.white.opacity(0.75)), lineWidth: 1.5)
+        let n: Int = kind == .lanterns ? 6 : (kind == .bunting ? 12 : 16)
+        for i in 0..<n {
+            let c = chainPoint((CGFloat(i) + 0.5) / CGFloat(n))
+            switch kind {
+            case .bunting: flag(ctx, c, i)
+            case .lightChain: bulb(ctx, c, i)
+            case .lanterns: lantern(ctx, c, i)
+            default: ctx.draw(Text(i % 2 == 0 ? "💗" : "💕").font(.system(size: 16)), at: CGPoint(x: c.x, y: c.y + 10))
+            }
+        }
+    }
+
+    func flag(_ ctx: GraphicsContext, _ c: CGPoint, _ i: Int) {
+        var f = Path()
+        f.move(to: CGPoint(x: c.x - 11, y: c.y))
+        f.addLine(to: CGPoint(x: c.x + 11, y: c.y))
+        f.addLine(to: CGPoint(x: c.x, y: c.y + 22))
+        f.closeSubpath()
+        ctx.fill(f, with: .color(Self.flagColors[i % 6]))
+    }
+
+    func bulb(_ ctx: GraphicsContext, _ c: CGPoint, _ i: Int) {
+        let on: Double = 0.55 + 0.45 * sin(t * 2.4 + Double(i) * 1.7)
+        let colors: [Color] = [.yellow, .red, .green, .cyan]
+        let bc = colors[i % 4]
+        ctx.fill(Path(ellipseIn: CGRect(x: c.x - 9, y: c.y - 3, width: 18, height: 18)), with: .color(bc.opacity(0.25 * on)))
+        ctx.fill(Path(ellipseIn: CGRect(x: c.x - 3.5, y: c.y + 2.5, width: 7, height: 9)), with: .color(bc.opacity(0.5 + 0.5 * on)))
+    }
+
+    func lantern(_ ctx: GraphicsContext, _ c: CGPoint, _ i: Int) {
+        let sway = CGFloat(3 * sin(t * 1.5 + Double(i)))
+        let colors: [Color] = [.orange, .yellow, .red]
+        ctx.fill(Path(ellipseIn: CGRect(x: c.x - 22 + sway, y: c.y + 2, width: 44, height: 44)), with: .color(.orange.opacity(0.22)))
+        ctx.fill(Path(roundedRect: CGRect(x: c.x - 11 + sway, y: c.y + 8, width: 22, height: 28), cornerRadius: 9), with: .color(colors[i % 3]))
+        ctx.fill(Path(ellipseIn: CGRect(x: c.x - 4 + sway, y: c.y + 17, width: 8, height: 9)), with: .color(Color(red: 1, green: 0.95, blue: 0.6)))
+    }
+
+    func fireworks(_ ctx: GraphicsContext) {
+        let xs: [CGFloat] = [0.22, 0.78, 0.5]
+        let ys: [CGFloat] = [30, 70, 10]
+        let colors: [Color] = [.yellow, .pink, .cyan]
+        for b in 0..<3 {
+            let ph: Double = (t / 2.2 + Double(b) * 0.37).truncatingRemainder(dividingBy: 1)
+            let cx: CGFloat = w * xs[b]
+            let cy: CGFloat = garlandY + 40 + ys[b]
+            let r: CGFloat = CGFloat(18 + 70 * ph)
+            let a: Double = max(0, 1 - ph * 1.2)
+            for k in 0..<14 {
+                let ang: Double = Double(k) / 14 * 2 * .pi
+                let x: CGFloat = cx + r * CGFloat(cos(ang)) - 2.5
+                let y: CGFloat = cy + r * CGFloat(sin(ang)) - 2.5
+                ctx.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 5, height: 5)), with: .color(colors[b].opacity(a)))
+            }
+        }
+    }
+
+    func snowGround(_ ctx: GraphicsContext) {
+        let mounds: [(CGFloat, CGFloat, CGFloat)] = [(0, 0.34, 34), (0.18, 0.26, 26), (0.82, 0.26, 26), (1, 0.34, 34)]
+        for (x, rw, rh) in mounds {
+            let rect = CGRect(x: (x - rw / 2) * w, y: feetY - rh * 0.35, width: rw * w, height: rh * 2)
+            ctx.fill(Path(ellipseIn: rect), with: .color(.white.opacity(0.85)))
+        }
+    }
+
+    func sunGlow(_ ctx: GraphicsContext) {
+        let c = CGPoint(x: w * 0.86, y: garlandY + 10)
+        let g = Gradient(colors: [Color(red: 1, green: 0.85, blue: 0.4).opacity(0.45), .clear])
+        ctx.fill(Path(ellipseIn: CGRect(x: c.x - 170, y: c.y - 170, width: 340, height: 340)),
+                 with: .radialGradient(g, center: c, startRadius: 0, endRadius: 170))
+    }
+
+    func candles(_ ctx: GraphicsContext, _ p: Prop) {
+        let lit = Int(p.text) ?? 1
+        let cx: CGFloat = CGFloat(p.x) * w
+        let base: CGFloat = feetY + 4
+        ctx.fill(Path(ellipseIn: CGRect(x: cx - 44, y: base - 14, width: 88, height: 22)), with: .color(Color(red: 0.13, green: 0.45, blue: 0.2)))
+        for k in 0..<4 {
+            let x: CGFloat = cx - 30 + CGFloat(k) * 20
+            let h: CGFloat = k % 2 == 0 ? 26 : 32
+            ctx.fill(Path(roundedRect: CGRect(x: x - 5, y: base - 10 - h, width: 10, height: h), cornerRadius: 2),
+                     with: .color(Color(red: 0.85, green: 0.15, blue: 0.2)))
+            guard k < lit else { continue }
+            let fl: CGFloat = CGFloat(1 + 0.15 * sin(t * 9 + Double(k)))
+            ctx.fill(Path(ellipseIn: CGRect(x: x - 7, y: base - 10 - h - 22, width: 14, height: 22)), with: .color(.orange.opacity(0.25)))
+            ctx.fill(Path(ellipseIn: CGRect(x: x - 3, y: base - 10 - h - 12 * fl, width: 6, height: 12 * fl)), with: .color(.yellow))
+        }
     }
 }

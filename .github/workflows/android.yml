@@ -24,6 +24,19 @@ jobs:
         run: gradle --no-daemon --stacktrace :app:assembleDebug
       - name: Unit-Tests
         run: gradle --no-daemon :app:testDebugUnitTest
+      - name: Testübersicht
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          t = f = e = s = 0
+          for p in glob.glob("app/build/test-results/testDebugUnitTest/*.xml"):
+              r = ET.parse(p).getroot()
+              n, fl, er, sk = (int(r.get(k, 0)) for k in ("tests", "failures", "errors", "skipped"))
+              t += n; f += fl; e += er; s += sk
+              print(f"{r.get('name')}: {n} Tests, {fl + er} Fehler")
+          print(f"GESAMT: {t} Tests, {f + e} Fehler, {s} übersprungen")
+          PY
       - name: Testberichte
         if: always()
         uses: actions/upload-artifact@v4

@@ -56,6 +56,8 @@ struct HomeState {
     var newScenes: [PetScene] = []             // neu freigeschaltete Hintergründe, bis bestätigt
     var sleepPhase: DayPhase = .day            // Abend/Nacht: Einladung zur Gute-Nacht-Routine
     var morning: MorningInfo? = nil            // Guten-Morgen-Karte, bis weggeklickt
+    var festival: Festival? = nil              // Fest heute (Zubehör, Deko, Gruß)
+    var festivalCard = false                   // Karte „Feiern“ sichtbar
 
     static let empty = HomeState(
         snapshot: PetSnapshot(stats: PetStats(e: 100, r: 100, f: 100, v: 100, a: 70),
@@ -99,7 +101,14 @@ final class HomeViewModel: ObservableObject {
             sceneStatus: prog.status,
             newScenes: newScenes,
             sleepPhase: SleepStore.phase(now),
-            morning: SleepStore.morning(now: now, screenTimeOn: defaults.bool(forKey: "feature.screentime")))
+            morning: SleepStore.morning(now: now, screenTimeOn: defaults.bool(forKey: "feature.screentime")),
+            festival: FestivalStore.today(now),
+            festivalCard: FestivalStore.today(now) != nil && !FestivalStore.cardHidden(EpochDay.of(now)))
+    }
+
+    func hideFestivalCard() {
+        FestivalStore.hideCard(EpochDay.of(.now))
+        state.festivalCard = false
     }
 
     func dismissMorning() {
@@ -191,7 +200,8 @@ struct HomeScreen: View {
             onUseScene: { model.useScene($0) },
             onAckScenes: { model.ackScenes() },
             onOpenBedtime: { showBedtime = true },
-            onDismissMorning: { model.dismissMorning() })
+            onDismissMorning: { model.dismissMorning() },
+            onHideFestival: { model.hideFestivalCard() })
             .fullScreenCover(isPresented: $showBedtime, onDismiss: { model.refresh() }) { BedtimeView { showBedtime = false } }
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
@@ -217,6 +227,7 @@ struct HomeContent: View {
     var onAckScenes: () -> Void = {}
     var onOpenBedtime: () -> Void = {}
     var onDismissMorning: () -> Void = {}
+    var onHideFestival: () -> Void = {}
     var demoScrollTo: String? = nil               // nur Screenshots: z. B. "review"
 
     private var snap: PetSnapshot { state.snapshot }
@@ -232,6 +243,7 @@ struct HomeContent: View {
     // Antippen
     @State private var picker = ReactionPicker()
     @State private var reaction: ActiveReaction? = nil
+    @State private var celebrateAt: Date? = nil        // „Feiern“: Konfetti-Schub
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -245,6 +257,9 @@ struct HomeContent: View {
                 glass(rings)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { ringsFrame = $0 }
                 actions
+                if let f = state.festival, state.festivalCard {
+                    FestivalCard(festival: f, onCelebrate: celebrate, onHide: onHideFestival).id("festival")
+                }
                 if let m = state.morning { MorningCard(info: m, onDismiss: onDismissMorning).id("morning") }
                 if state.sleepPhase == .windDown || state.sleepPhase == .night {
                     BedtimePromptCard(phase: state.sleepPhase, onStart: onOpenBedtime).id("bedtime")
@@ -264,6 +279,15 @@ struct HomeContent: View {
                                     feetY: topInset + stageFrame.minY + stageFrame.height * 0.92,
                                     fade: ringsFrame.height * 0.75 + 14)
                         .frame(height: layerH)
+                        .frame(maxWidth: .infinity)
+                        .offset(y: -topInset)
+                }
+            }
+            .background(alignment: .top) {
+                // Fest-Deko schwebt über dem Bild (mit und ohne Hintergrund), bis knapp unter die Ringe
+                if let f = state.festival, ringsFrame.height > 0 {
+                    FestivalDecor(decor: f.decor, burst: celebrateAt)
+                        .frame(height: max(200, ringsFrame.maxY) + topInset)
                         .frame(maxWidth: .infinity)
                         .offset(y: -topInset)
                 }
@@ -313,7 +337,7 @@ struct HomeContent: View {
     private var speechBubble: some View {
         TimelineView(.periodic(from: .now, by: 0.25)) { tl in
             let say = reaction.flatMap { $0.saying(tl.date) ? $0.say : nil }
-            Text(say ?? PetCopy.line(for: snap))
+            Text(say ?? state.festival?.greeting ?? PetCopy.line(for: snap))
                 .font(say == nil ? .callout : .callout.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16).padding(.vertical, 10)
@@ -328,13 +352,19 @@ struct HomeContent: View {
         PetAvatarView(mood: snap.mood, overlays: snap.overlays,
                       form: state.evolution?.form, branch: state.evolution?.branch,
                       energy: snap.stats.e, rest: snap.stats.r,
-                      size: hasScene ? 260 : 220, reaction: reaction)
+                      size: hasScene ? 260 : 220, reaction: reaction, accessory: state.festival?.accessory)
             .overlay { if let r = reaction { ReactionParticles(reaction: r) } }
             .contentShape(Rectangle())
             .onTapGesture { tapPet() }
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Antippen für eine Reaktion")
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
+    }
+
+    private func celebrate() {
+        reaction = picker.start(.spin)
+        celebrateAt = .now
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
     private func tapPet() {
@@ -541,10 +571,11 @@ struct PetAvatarView: View {
     var petted = false
     var size: CGFloat = 220
     var reaction: ActiveReaction? = nil
+    var accessory: Accessory? = nil
 
     var body: some View {
         PetFigureView(pose: PetPose(mood: mood, overlays: overlays, form: form, branch: branch,
-                                    energy: energy, rest: rest, charging: charging, petted: petted),
+                                    energy: energy, rest: rest, charging: charging, petted: petted, accessory: accessory),
                       reaction: reaction)
             .frame(width: size, height: size)
             .accessibilityElement(children: .ignore)

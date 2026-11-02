@@ -45,6 +45,10 @@ enum DemoMode {
             s.morning = MorningInfo(day: EpochDay.of(.now), greeting: BedtimeContent.shared.morningLine(r.rating, day: EpochDay.of(.now)),
                                     report: r, tip: BedtimeContent.shared.tipOfTheDay(EpochDay.of(.now)))
         }
+        if let f = args.string(forKey: "OSMonFestival"), let id = FestivalID(rawValue: f) {
+            s.festival = Festivals.sample(id, pet: PetFigure.byID(args.string(forKey: "OSMonFigure")).name)
+            s.festivalCard = true
+        }
         if flag("OSMonEvent") { s.evolutionEvent = PetEvoEvent(kind: .evolved, from: nil, to: .chatterling, epochDay: 0) }
         return s
     }

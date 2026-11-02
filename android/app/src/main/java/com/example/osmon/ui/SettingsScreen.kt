@@ -263,6 +263,10 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             SleepSettings()
         }
 
+        Card("Feste und Geburtstag", "Weihnachten, Ostern, Halloween und mehr: Dein Wesen trägt dann passendes Zubehör. Der Geburtstag wird nur mit Tag und Monat auf diesem Gerät gespeichert.") {
+            FestivalSettings()
+        }
+
         Card("Was OS-Mon liest", "Alles wird auf diesem Gerät berechnet. Es gibt kein Konto und keinen Upload.") {
             Info("🔋 Akku", "Ladestand und Laden. Keine Erlaubnis nötig.")
             Info("💾 Speicher", "Nur der Anteil freien Speichers. Keine Inhalte.")

@@ -136,6 +136,8 @@ import com.example.osmon.figure.ReactionKind
 import com.example.osmon.figure.ReactionPicker
 import com.example.osmon.engine.SceneUnlock
 import com.example.osmon.engine.DayPhase
+import com.example.osmon.engine.Accessory
+import com.example.osmon.engine.Festival
 import com.example.osmon.engine.WeeklyReview
 import com.example.osmon.figure.PetPose
 import com.example.osmon.figure.rememberCurrentFigure
@@ -193,7 +195,9 @@ data class HomeState(
     val sceneStatus: List<SceneUnlock> = emptyList(),
     val newScenes: List<Scene> = emptyList(), // neu freigeschaltete Hintergründe, bis bestätigt
     val sleepPhase: DayPhase = DayPhase.DAY,  // Abend/Nacht: Einladung zur Gute-Nacht-Routine
-    val morning: MorningInfo? = null          // Guten-Morgen-Karte, bis weggeklickt
+    val morning: MorningInfo? = null,         // Guten-Morgen-Karte, bis weggeklickt
+    val festival: Festival? = null,           // Fest heute (Zubehör, Deko, Gruß)
+    val festivalCard: Boolean = false         // Karte „Feiern“ sichtbar
 ) {
     companion object {
         val Empty = HomeState(
@@ -261,6 +265,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         ackScenes()
     }
 
+    fun hideFestivalCard() {
+        FestivalStore.hideCard(ctx)
+        _state.value = _state.value.copy(festivalCard = false)
+    }
+
     fun dismissMorning() {
         val m = _state.value.morning ?: return
         SleepStore.markMorningSeen(ctx, m.day)
@@ -295,7 +304,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             sceneStatus = prog.status,
             newScenes = (prev.newScenes + prog.newlyUnlocked).distinctBy { it.id },
             sleepPhase = SleepStore.phase(ctx),
-            morning = SleepStore.morning(ctx, t.inputs.nightMinutes)
+            morning = SleepStore.morning(ctx, t.inputs.nightMinutes),
+            festival = FestivalStore.today(ctx),
+            festivalCard = FestivalStore.today(ctx) != null && !FestivalStore.cardHidden(ctx)
         )
         PetSync.updateWidgetIfNeeded(ctx, t.snapshot, force = forceWidget)
     }
@@ -350,7 +361,8 @@ fun HomeScreen(
         onUseScene = vm::useScene,
         onAckScenes = vm::ackScenes,
         onOpenBedtime = onOpenBedtime,
-        onDismissMorning = vm::dismissMorning
+        onDismissMorning = vm::dismissMorning,
+        onHideFestival = vm::hideFestivalCard
     )
 }
 
@@ -370,6 +382,7 @@ fun HomeContent(
     onAckScenes: () -> Unit = {},
     onOpenBedtime: () -> Unit = {},
     onDismissMorning: () -> Unit = {},
+    onHideFestival: () -> Unit = {},
     scene: Scene = rememberCurrentScene()
 ) {
     val snap = state.snapshot
@@ -388,6 +401,14 @@ fun HomeContent(
     val picker = remember { ReactionPicker() }
     var reaction by remember { mutableStateOf<ActiveReaction?>(null) }
     val view = LocalView.current
+    var celebrateAt by remember { mutableStateOf<Long?>(null) }
+    val onCelebrate = {
+        val now = SystemClock.uptimeMillis()
+        reaction = picker.start(ReactionKind.SPIN, now)
+        celebrateAt = System.currentTimeMillis()
+        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        Unit
+    }
     val onTapPet = {
         val now = SystemClock.uptimeMillis()
         val t = LocalTime.now()
@@ -422,6 +443,11 @@ fun HomeContent(
                 fadePx = ringsH * 0.75f + with(density) { 14.dp.toPx() },
                 modifier = Modifier.fillMaxWidth().height(with(density) { layerH.toDp() })
             )
+        }
+        // Fest-Deko schwebt über dem Bild (mit und ohne Hintergrund), bis knapp unter die Ringe
+        state.festival?.let { f ->
+            if (ringsBottom > 0f) FestivalDecor(f.decor, celebrateAt,
+                Modifier.fillMaxWidth().height(with(density) { max(200.dp.toPx(), ringsBottom).toDp() }))
         }
         Column(
             modifier = Modifier
@@ -466,7 +492,7 @@ fun HomeContent(
             val say = reaction?.takeIf { it.saying(now) }?.say
             Surface(shape = RoundedCornerShape(16.dp), tonalElevation = 2.dp, shadowElevation = if (hasScene) 4.dp else 0.dp) {
                 Text(
-                    say ?: PetCopy.line(snap),
+                    say ?: state.festival?.greeting ?: PetCopy.line(snap),
                     Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (say != null) FontWeight.SemiBold else FontWeight.Normal,
@@ -487,6 +513,7 @@ fun HomeContent(
                     energy = snap.stats.e, rest = snap.stats.r,
                     size = if (hasScene) 260.dp else 220.dp,
                     reaction = reaction,
+                    accessory = state.festival?.accessory,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() }, indication = null,
                         onClickLabel = "Wesen antippen", onClick = onTapPet
@@ -518,6 +545,7 @@ fun HomeContent(
 
             Actions(state, onPat, onStartFocus, onCancelFocus)
 
+            state.festival?.takeIf { state.festivalCard }?.let { FestivalCard(it, onCelebrate, onHideFestival) }
             state.morning?.let { MorningCard(it, onDismissMorning) }
             if (state.sleepPhase == DayPhase.WIND_DOWN || state.sleepPhase == DayPhase.NIGHT) BedtimePromptCard(state.sleepPhase, onOpenBedtime)
             state.review?.let { WeeklyReviewCard(it, onDismissReview) }
@@ -748,10 +776,11 @@ fun PetAvatar(
     charging: Boolean = false,
     petted: Boolean = false,
     size: Dp = 220.dp,
-    reaction: ActiveReaction? = null
+    reaction: ActiveReaction? = null,
+    accessory: Accessory? = null
 ) {
     PetFigureCanvas(
-        PetPose(mood, overlays, form, branch, energy, rest, charging, petted),
+        PetPose(mood, overlays, form, branch, energy, rest, charging, petted, accessory = accessory),
         modifier.size(size).semantics { contentDescription = "Dein Wesen: ${moodTitle(mood)}. Antippen für eine Reaktion." },
         reaction = reaction
     )

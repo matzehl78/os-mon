@@ -114,6 +114,7 @@ struct SettingsView: View {
                 sceneSection
                 introSection
                 SleepSettingsSection()
+                FestivalSettingsSection()
                 sensorSection
                 screenTimeSection
                 stepsSection

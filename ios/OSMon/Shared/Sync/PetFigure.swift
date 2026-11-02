@@ -85,13 +85,14 @@ struct PetPose {
     var petted = false                // Wangen leuchten
     var reaction: ReactionKind? = nil  // Antippen: Gesicht, Arme/Beine, Körperbewegung
     var reactU: Double = -1            // Fortschritt 0..1 (außerhalb = keine Reaktion)
+    var accessory: Accessory? = nil    // Fest-Zubehör, PetAccessory.swift
 
     init(mood: PetMood, overlays: Set<PetOverlay> = [], form: PetForm? = nil, branch: PetBranch? = nil,
          energy: Float? = 100, rest: Float? = 100, charging: Bool = false, petted: Bool = false,
-         reaction: ReactionKind? = nil, reactU: Double = -1) {
+         reaction: ReactionKind? = nil, reactU: Double = -1, accessory: Accessory? = nil) {
         self.mood = mood; self.overlays = overlays; self.form = form; self.branch = branch
         self.energy = energy; self.rest = rest; self.charging = charging; self.petted = petted
-        self.reaction = reaction; self.reactU = reactU
+        self.reaction = reaction; self.reactU = reactU; self.accessory = accessory
     }
 
     init(snapshot s: PetSnapshot, evolution: PetEvolution? = nil, charging: Bool = false, petted: Bool = false) {
@@ -464,6 +465,7 @@ enum PetFigureRenderer {
             bodyParts(pet); head(pet); glint(pet); heart(pet)
             face(tilted)
         }
+        if let a = p.accessory { PetAccessory.draw(tilted, a, top: S.ant.y, line: line) }
 
         // Außerhalb des atmenden Körpers
         if stress {

@@ -66,6 +66,13 @@ jobs:
           shot 15_geschichte            light -OSMonDemo story -OSMonFigure lumo
           shot 16_schlaflieder          light -OSMonDemo songs
           shot 17_guten_morgen_minto    light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure minto    -OSMonMood radiant -OSMonMorning YES -OSMonScroll morning
+          shot 18_geburtstag_lumo       light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure lumo     -OSMonMood radiant -OSMonFestival birthday
+          shot 19_weihnachten_lila      light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila     -OSMonMood radiant -OSMonFestival christmas
+          shot 20_ostern_minto          light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure minto    -OSMonMood radiant -OSMonFestival easter
+          shot 21_halloween_glut        dark  -OSMonDemo home -OSMonScene mondbasis   -OSMonFigure glut     -OSMonMood content -OSMonFestival halloween
+          shot 22_fasching_sunni        light -OSMonDemo home -OSMonScene suess       -OSMonFigure sunni    -OSMonMood radiant -OSMonFestival carnival
+          shot 23_st_martin_kasto       dark  -OSMonDemo home -OSMonScene zen         -OSMonFigure kasto    -OSMonMood content -OSMonFestival stMartin
+          shot 24_schluepftag_orbo      light -OSMonDemo home -OSMonScene studio      -OSMonFigure orbo     -OSMonMood radiant -OSMonFestival hatchday -OSMonScroll festival
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

@@ -60,6 +60,7 @@ import androidx.core.graphics.PathParser
 import androidx.glance.appwidget.updateAll
 import com.example.osmon.PetSync
 import com.example.osmon.PetWidget
+import com.example.osmon.engine.Accessory
 import com.example.osmon.engine.Branch
 import com.example.osmon.engine.Form
 import com.example.osmon.engine.Mood
@@ -118,7 +119,8 @@ data class PetPose(
     val charging: Boolean = false,
     val petted: Boolean = false,
     val reaction: ReactionKind? = null,      // Antippen: Gesicht, Arme/Beine, Körperbewegung
-    val reactU: Float = -1f                  // Fortschritt 0..1 (außerhalb = keine Reaktion)
+    val reactU: Float = -1f,                 // Fortschritt 0..1 (außerhalb = keine Reaktion)
+    val accessory: Accessory? = null         // Fest-Zubehör (Partyhut, Weihnachtsmütze …), PetAccessory.kt
 ) {
     companion object {
         fun of(s: Snapshot, form: Form? = null, branch: Branch? = null, charging: Boolean = false, petted: Boolean = false) =
@@ -423,6 +425,7 @@ object PetFigureRenderer {
             bodyParts(); head(); glint(); heart()
             c.save(); tilt(); face(); c.restore()
         }
+        p.accessory?.let { c.save(); tilt(); PetAccessory.draw(c, it, S.ant.y, line); c.restore() }
         c.restore()
 
         // Außerhalb des atmenden Körpers

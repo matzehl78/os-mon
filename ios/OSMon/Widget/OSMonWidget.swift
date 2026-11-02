@@ -241,9 +241,20 @@ struct PetWidgetView: View {
     /// Die gewählte Figur als Standbild (Widgets animieren nicht). Sperrbildschirm bleibt beim Emoji,
     /// weil er einfarbig dargestellt wird.
     private var figure: some View {
-        PetFigureView(figure: PetFigureStore.current,
-                      pose: PetPose(snapshot: snap, charging: entry.charging), animated: false)
+        PetFigureView(figure: PetFigureStore.current, pose: widgetPose, animated: false)
             .accessibilityLabel("Dein Wesen: \(snap.mood.title)")
+    }
+
+    /// Pose mit Fest-Zubehör (Geburtstag aus den Einstellungen; Schlüpftag nur in der App).
+    private var widgetPose: PetPose {
+        var p = PetPose(snapshot: snap, charging: entry.charging)
+        let d = STShared.defaults
+        if d.object(forKey: "festivals.enabled") as? Bool ?? true {
+            let m = d.integer(forKey: "user.birthday.m"), dd = d.integer(forKey: "user.birthday.d")
+            p.accessory = Festivals.today(EpochDay.of(entry.date), birthday: m > 0 && dd > 0 ? (m, dd) : nil,
+                                          hatchDay: nil, pet: PetFigureStore.current.name)?.accessory
+        }
+        return p
     }
 
     /// PRD 4.3, Lockscreen rechteckig: "Ruhe 72 · Fit 55" (fehlende Werte werden ausgelassen).

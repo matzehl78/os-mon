@@ -61,6 +61,11 @@ jobs:
           shot 08_ohne_minto            light -OSMonDemo home -OSMonScene none        -OSMonFigure minto    -OSMonMood content
           shot 11_wochenrueckblick      light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure glut     -OSMonMood radiant -OSMonReview YES -OSMonScroll review
           shot 12_entwicklung_rauti     light -OSMonDemo home -OSMonScene studio      -OSMonFigure rauti    -OSMonMood radiant -OSMonEvent YES
+          shot 13_abendkarte_lumo       dark  -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure lumo     -OSMonMood content -OSMonBedtimeCard YES -OSMonScroll bedtime
+          shot 14_gute_nacht_lumo       dark  -OSMonDemo bedtime -OSMonScene neonstadt -OSMonFigure lumo
+          shot 15_geschichte            light -OSMonDemo story -OSMonFigure lumo
+          shot 16_schlaflieder          light -OSMonDemo songs
+          shot 17_guten_morgen_minto    light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure minto    -OSMonMood radiant -OSMonMorning YES -OSMonScroll morning
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

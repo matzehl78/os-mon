@@ -259,6 +259,10 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             TextButton(onClick = onShowIntro) { Text("▶  Einführungsfilm ansehen") }
         }
 
+        Card("Abend und Morgen", "30 Minuten vor der Schlafenszeit wird dein Wesen müde und lädt zur Gute-Nacht-Routine ein. Morgens gibt es einen kurzen Bericht über die Nacht und einen Tipp für den Tag.") {
+            SleepSettings()
+        }
+
         Card("Was OS-Mon liest", "Alles wird auf diesem Gerät berechnet. Es gibt kein Konto und keinen Upload.") {
             Info("🔋 Akku", "Ladestand und Laden. Keine Erlaubnis nötig.")
             Info("💾 Speicher", "Nur der Anteil freien Speichers. Keine Inhalte.")

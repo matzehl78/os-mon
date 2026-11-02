@@ -135,6 +135,7 @@ import com.example.osmon.figure.PetFigureCanvas
 import com.example.osmon.figure.ReactionKind
 import com.example.osmon.figure.ReactionPicker
 import com.example.osmon.engine.SceneUnlock
+import com.example.osmon.engine.DayPhase
 import com.example.osmon.engine.WeeklyReview
 import com.example.osmon.figure.PetPose
 import com.example.osmon.figure.rememberCurrentFigure
@@ -190,7 +191,9 @@ data class HomeState(
     val evolutionEvent: EvoEvent? = null,    // Entwicklung/Metamorphose, bis der Nutzer sie bestätigt
     val review: WeeklyReview? = null,        // Wochenrückblick, bis weggeklickt
     val sceneStatus: List<SceneUnlock> = emptyList(),
-    val newScenes: List<Scene> = emptyList() // neu freigeschaltete Hintergründe, bis bestätigt
+    val newScenes: List<Scene> = emptyList(), // neu freigeschaltete Hintergründe, bis bestätigt
+    val sleepPhase: DayPhase = DayPhase.DAY,  // Abend/Nacht: Einladung zur Gute-Nacht-Routine
+    val morning: MorningInfo? = null          // Guten-Morgen-Karte, bis weggeklickt
 ) {
     companion object {
         val Empty = HomeState(
@@ -258,6 +261,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         ackScenes()
     }
 
+    fun dismissMorning() {
+        val m = _state.value.morning ?: return
+        SleepStore.markMorningSeen(ctx, m.day)
+        _state.value = _state.value.copy(morning = null)
+    }
+
     fun ackScenes() { _state.value = _state.value.copy(newScenes = emptyList()) }
 
     private fun launchPublish() {
@@ -284,7 +293,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             evolutionEvent = evo.pendingEvent,
             review = prog.review,
             sceneStatus = prog.status,
-            newScenes = (prev.newScenes + prog.newlyUnlocked).distinctBy { it.id }
+            newScenes = (prev.newScenes + prog.newlyUnlocked).distinctBy { it.id },
+            sleepPhase = SleepStore.phase(ctx),
+            morning = SleepStore.morning(ctx, t.inputs.nightMinutes)
         )
         PetSync.updateWidgetIfNeeded(ctx, t.snapshot, force = forceWidget)
     }
@@ -309,15 +320,18 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 @Composable
 fun HomeScreen(
     onOpenSettings: () -> Unit = {},
+    onOpenBedtime: () -> Unit = {},
     /** Ohne eigene Behandlung öffnet ein Tipp auf einen leeren Ring die Einstellungen. */
     onMissingPermission: (Sensor) -> Unit = { onOpenSettings() },
     vm: HomeViewModel = viewModel()
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val owner = LocalLifecycleOwner.current
+    val ctxHome = LocalContext.current.applicationContext
     // Beim Sichtbarwerden und danach jede Minute aktualisieren, nur solange der Screen im Vordergrund ist.
     LaunchedEffect(owner) {
         owner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            SleepStore.noteOpen(ctxHome)                 // nachts nach dem Gute-Nacht-Sagen: Öffnen zählen
             while (true) {
                 vm.refresh()
                 delay(60_000)
@@ -334,7 +348,9 @@ fun HomeScreen(
         onOpenSettings = onOpenSettings,
         onDismissReview = vm::dismissReview,
         onUseScene = vm::useScene,
-        onAckScenes = vm::ackScenes
+        onAckScenes = vm::ackScenes,
+        onOpenBedtime = onOpenBedtime,
+        onDismissMorning = vm::dismissMorning
     )
 }
 
@@ -352,6 +368,8 @@ fun HomeContent(
     onDismissReview: () -> Unit = {},
     onUseScene: (Scene) -> Unit = {},
     onAckScenes: () -> Unit = {},
+    onOpenBedtime: () -> Unit = {},
+    onDismissMorning: () -> Unit = {},
     scene: Scene = rememberCurrentScene()
 ) {
     val snap = state.snapshot
@@ -500,6 +518,8 @@ fun HomeContent(
 
             Actions(state, onPat, onStartFocus, onCancelFocus)
 
+            state.morning?.let { MorningCard(it, onDismissMorning) }
+            if (state.sleepPhase == DayPhase.WIND_DOWN || state.sleepPhase == DayPhase.NIGHT) BedtimePromptCard(state.sleepPhase, onOpenBedtime)
             state.review?.let { WeeklyReviewCard(it, onDismissReview) }
 
             if (state.quests.isNotEmpty()) {

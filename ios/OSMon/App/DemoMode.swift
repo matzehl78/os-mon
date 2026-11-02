@@ -39,6 +39,12 @@ enum DemoMode {
                                             "3 Fokus-Sessions geschafft"])
         }
         if flag("OSMonUnlock") { s.newScenes = [PetScene.byID("zauberwald")] }
+        if flag("OSMonBedtimeCard") { s.sleepPhase = .windDown }
+        if flag("OSMonMorning") {
+            let r = NightRoutine.morningReport(nightMinutes: 0, saidGoodnight: true, nightOpens: 0)
+            s.morning = MorningInfo(day: EpochDay.of(.now), greeting: BedtimeContent.shared.morningLine(r.rating, day: EpochDay.of(.now)),
+                                    report: r, tip: BedtimeContent.shared.tipOfTheDay(EpochDay.of(.now)))
+        }
         if flag("OSMonEvent") { s.evolutionEvent = PetEvoEvent(kind: .evolved, from: nil, to: .chatterling, epochDay: 0) }
         return s
     }
@@ -50,6 +56,9 @@ struct DemoRoot: View {
         switch DemoMode.screen {
         case "settings": SettingsView()
         case "onboarding": OnboardingView {}
+        case "bedtime": BedtimeView {}
+        case "story": if let st = BedtimeContent.shared.stories.first { StoryView(story: st, reader: StoryReader()) }
+        case "songs": SongListView(songs: BedtimeContent.shared.songs, player: SongPlayer())
         default: HomeContent(state: DemoMode.state(), onOpenSettings: {},
                              demoScrollTo: UserDefaults.standard.string(forKey: "OSMonScroll"))
         }

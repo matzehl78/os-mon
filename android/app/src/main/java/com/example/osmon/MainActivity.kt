@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.example.osmon.ui.BedtimeScreen
 import com.example.osmon.ui.HomeScreen
 import com.example.osmon.ui.IntroScreen
 import com.example.osmon.ui.OnboardingScreen
@@ -56,18 +57,22 @@ private fun Root() {
     var introSeen by remember { mutableStateOf(prefs.getBoolean("intro.seen", false)) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var replayIntro by rememberSaveable { mutableStateOf(false) }
+    // Tipp auf die Schlafenszeit-Erinnerung öffnet direkt die Gute-Nacht-Routine
+    val activity = LocalContext.current as? ComponentActivity
+    var showBedtime by rememberSaveable { mutableStateOf(activity?.intent?.getStringExtra("open") == "bedtime") }
 
     when {
         // Vorspann einmal vor dem Onboarding
         !done && !introSeen -> IntroScreen(onFinished = { prefs.edit().putBoolean("intro.seen", true).apply(); introSeen = true })
         !done -> OnboardingScreen(onFinished = { done = true })
         replayIntro -> IntroScreen(onFinished = { replayIntro = false })
+        showBedtime -> BedtimeScreen(onClose = { showBedtime = false; activity?.intent?.removeExtra("open") })
         showSettings -> SettingsScreen(
             onBack = { showSettings = false },
             onShowIntro = { replayIntro = true },
             onDataDeleted = { showSettings = false; done = false }
         )
-        else -> HomeScreen(onOpenSettings = { showSettings = true })
+        else -> HomeScreen(onOpenSettings = { showSettings = true }, onOpenBedtime = { showBedtime = true })
     }
 }
 

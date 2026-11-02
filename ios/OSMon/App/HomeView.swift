@@ -54,6 +54,8 @@ struct HomeState {
     var review: WeeklyReview? = nil            // Wochenrückblick, bis weggeklickt
     var sceneStatus: [SceneUnlock] = []
     var newScenes: [PetScene] = []             // neu freigeschaltete Hintergründe, bis bestätigt
+    var sleepPhase: DayPhase = .day            // Abend/Nacht: Einladung zur Gute-Nacht-Routine
+    var morning: MorningInfo? = nil            // Guten-Morgen-Karte, bis weggeklickt
 
     static let empty = HomeState(
         snapshot: PetSnapshot(stats: PetStats(e: 100, r: 100, f: 100, v: 100, a: 70),
@@ -95,7 +97,15 @@ final class HomeViewModel: ObservableObject {
             evolutionEvent: evo.pendingEvent,
             review: prog.review,
             sceneStatus: prog.status,
-            newScenes: newScenes)
+            newScenes: newScenes,
+            sleepPhase: SleepStore.phase(now),
+            morning: SleepStore.morning(now: now, screenTimeOn: defaults.bool(forKey: "feature.screentime")))
+    }
+
+    func dismissMorning() {
+        guard let m = state.morning else { return }
+        SleepStore.markMorningSeen(m.day)
+        state.morning = nil
     }
 
     func dismissReview() {
@@ -162,6 +172,7 @@ struct HomeScreen: View {
     @StateObject private var model = HomeViewModel()
     @Environment(\.scenePhase) private var phase
     @State private var showSettings = false
+    @State private var showBedtime = false
     /// Ohne eigene Behandlung öffnet ein Tipp auf einen leeren Ring die Einstellungen.
     var onMissingPermission: ((PetSensor) -> Void)? = nil
 
@@ -178,12 +189,15 @@ struct HomeScreen: View {
             onOpenSettings: { showSettings = true },
             onDismissReview: { model.dismissReview() },
             onUseScene: { model.useScene($0) },
-            onAckScenes: { model.ackScenes() })
+            onAckScenes: { model.ackScenes() },
+            onOpenBedtime: { showBedtime = true },
+            onDismissMorning: { model.dismissMorning() })
+            .fullScreenCover(isPresented: $showBedtime, onDismiss: { model.refresh() }) { BedtimeView { showBedtime = false } }
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
             }
-            .onAppear { model.refresh() }
-            .onChange(of: phase) { _, new in if new == .active { model.refresh() } }
+            .onAppear { SleepStore.noteOpen(); model.refresh() }
+            .onChange(of: phase) { _, new in if new == .active { SleepStore.noteOpen(); model.refresh() } }
             .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in model.refresh() }
     }
 }
@@ -201,6 +215,8 @@ struct HomeContent: View {
     var onDismissReview: () -> Void = {}
     var onUseScene: (PetScene) -> Void = { _ in }
     var onAckScenes: () -> Void = {}
+    var onOpenBedtime: () -> Void = {}
+    var onDismissMorning: () -> Void = {}
     var demoScrollTo: String? = nil               // nur Screenshots: z. B. "review"
 
     private var snap: PetSnapshot { state.snapshot }
@@ -229,6 +245,10 @@ struct HomeContent: View {
                 glass(rings)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { ringsFrame = $0 }
                 actions
+                if let m = state.morning { MorningCard(info: m, onDismiss: onDismissMorning).id("morning") }
+                if state.sleepPhase == .windDown || state.sleepPhase == .night {
+                    BedtimePromptCard(phase: state.sleepPhase, onStart: onOpenBedtime).id("bedtime")
+                }
                 if let r = state.review { WeeklyReviewCard(review: r, onDismiss: onDismissReview).id("review") }
                 if !state.quests.isEmpty { questList }
                 Text("Zuletzt aktualisiert: \(state.updatedAt.formatted(.relative(presentation: .named)))")

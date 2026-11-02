@@ -113,6 +113,7 @@ struct SettingsView: View {
                 figureSection
                 sceneSection
                 introSection
+                SleepSettingsSection()
                 sensorSection
                 screenTimeSection
                 stepsSection

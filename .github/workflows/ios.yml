@@ -24,11 +24,12 @@ jobs:
           echo "SIM=$SIM" >> "$GITHUB_ENV"
       - name: Bauen und testen
         run: |
-          set -o pipefail
+          set +e
           xcodebuild test -project OSMon.xcodeproj -scheme OSMon \
-            -destination "id=$SIM" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
-            | tee xcodebuild.log | grep -E "error:|warning: unre|Test Case .* (passed|failed)|\*\* (BUILD|TEST)" || true
-          test "${PIPESTATUS[0]}" -eq 0
+            -destination "id=$SIM" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO > xcodebuild.log 2>&1
+          rc=$?
+          grep -E "error:|Test Case .* failed|Executed [0-9]+ test|\*\* (BUILD|TEST)" xcodebuild.log | sort -u | head -200
+          exit $rc
       - name: Log
         if: always()
         uses: actions/upload-artifact@v4

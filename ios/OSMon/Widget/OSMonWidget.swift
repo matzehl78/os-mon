@@ -280,7 +280,7 @@ struct OSMonWidget: Widget {
                 .containerBackground(for: .widget) {
                     // mit Szene zeichnet der Inhalt das Bild selbst (randlos); dunkler Grund für die Ränder
                     if entry.scene.asset != nil { Color(red: 14 / 255, green: 18 / 255, blue: 48 / 255) }
-                    else { entry.snapshot.mood.color.gradient }
+                    else { Rectangle().fill(entry.snapshot.mood.color.gradient) }
                 }
         }
         .contentMarginsDisabled()           // Szene randlos; ohne Szene setzen die Layouts ihren Rand selbst

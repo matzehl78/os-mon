@@ -63,6 +63,7 @@ struct DemoRoot: View {
         case "settings": SettingsView()
         case "onboarding": OnboardingView {}
         case "logo": LogoSplashView {}
+        case "wallpaper": WallpaperPreview {}
         case "bedtime": BedtimeView {}
         case "story": if let st = BedtimeContent.shared.stories.first { StoryView(story: st, reader: StoryReader()) }
         case "songs": SongListView(songs: BedtimeContent.shared.songs, player: SongPlayer())

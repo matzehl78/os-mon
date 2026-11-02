@@ -89,5 +89,19 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <!-- Lebendes Hintergrundbild: das Wesen auf Sperr- und Startbildschirm (PetWallpaper.kt) -->
+        <service
+            android:name=".PetWallpaperService"
+            android:exported="true"
+            android:label="@string/wallpaper_label"
+            android:permission="android.permission.BIND_WALLPAPER">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/pet_wallpaper" />
+        </service>
     </application>
 </manifest>

@@ -255,6 +255,20 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             ScenePicker(sceneStatus, onSelect = { SceneStore.select(ctx, it, sceneStatus) })
         }
 
+        Card("Auf dem Sperrbildschirm", "Dein Wesen als lebendes Hintergrundbild für Sperr- und Startbildschirm: gewählte Figur und Hintergrund, aktuelle Stimmung, Fest-Zubehör. Es bewegt sich nur, solange der Bildschirm an ist.") {
+            var active by remember { mutableStateOf(com.example.osmon.PetWallpaper.isActive(ctx)) }
+            val owner = LocalLifecycleOwner.current
+            DisposableEffect(owner) {
+                val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) active = com.example.osmon.PetWallpaper.isActive(ctx) }
+                owner.lifecycle.addObserver(obs); onDispose { owner.lifecycle.removeObserver(obs) }
+            }
+            if (active) Status(true, "Ist als Hintergrundbild aktiv")
+            OutlinedButton(onClick = {
+                runCatching { ctx.startActivity(com.example.osmon.PetWallpaper.intent(ctx)) }
+                    .onFailure { runCatching { ctx.startActivity(Intent(android.app.WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)) } }
+            }) { Text(if (active) "Hintergrundbild erneut festlegen" else "Als Hintergrundbild festlegen") }
+        }
+
         Card(null, null) {
             TextButton(onClick = onShowIntro) { Text("▶  Einführungsfilm ansehen") }
         }

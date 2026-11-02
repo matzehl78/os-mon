@@ -88,6 +88,7 @@ struct SettingsView: View {
     @StateObject private var screen = ScreenTimeManager()
     @Environment(\.dismiss) private var dismiss
     @State private var showIntro = false
+    @State private var showWallpaper = false
     @Environment(\.scenePhase) private var phase
     var onDataDeleted: () -> Void = {}
 
@@ -113,6 +114,7 @@ struct SettingsView: View {
                 figureSection
                 sceneSection
                 introSection
+                lockScreenSection
                 SleepSettingsSection()
                 FestivalSettingsSection()
                 sensorSection
@@ -154,6 +156,17 @@ struct SettingsView: View {
             Button { showIntro = true } label: { Label("Einführungsfilm ansehen", systemImage: "play.rectangle") }
         }
         .fullScreenCover(isPresented: $showIntro) { IntroVideoView { showIntro = false } }
+    }
+
+    private var lockScreenSection: some View {
+        Section {
+            Button { showWallpaper = true } label: { Label("Hintergrundbild mit deinem Wesen", systemImage: "iphone") }
+        } header: {
+            Text("Sperrbildschirm")
+        } footer: {
+            Text("Erstellt ein Bild mit deiner Figur, ihrem Hintergrund und ihrer aktuellen Stimmung. iOS lässt Apps das Hintergrundbild nicht selbst setzen: Bild sichern und in Fotos als Hintergrund wählen. Live auf dem Sperrbildschirm: Sperrbildschirm lange drücken → Anpassen → Widgets → OS-Mon.")
+        }
+        .fullScreenCover(isPresented: $showWallpaper) { WallpaperPreview { showWallpaper = false } }
     }
 
     private var sceneSection: some View {

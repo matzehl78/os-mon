@@ -4,4 +4,6 @@
     <string name="widget_label">OS-Mon</string>
     <string name="widget_description">Dein Handy-Wesen: Akku, Speicher, Bildschirmzeit und Schritte auf einen Blick.</string>
     <string name="privacy_title">Datenschutz</string>
+    <string name="wallpaper_label">OS-Mon Wesen</string>
+    <string name="wallpaper_desc">Dein OS-Mon lebt auf dem Sperr- und Startbildschirm und zeigt seine Stimmung.</string>
 </resources>

@@ -188,21 +188,27 @@ struct PetWidgetView: View {
     private var plainLayout: some View {
         switch family {
         case .accessoryCircular:
-            Gauge(value: Double(snap.wellbeing), in: 0...100) {
-                Text("OS-Mon")
-            } currentValueLabel: {
-                Text(snap.mood.emoji)
+            // Ring = Wohlbefinden, in der Mitte das Wesen (Sperrbildschirm färbt es einfarbig ein)
+            ZStack {
+                Circle().stroke(.white.opacity(0.25), lineWidth: 4)
+                Circle().trim(from: 0, to: CGFloat(min(max(snap.wellbeing, 0), 100)) / 100)
+                    .stroke(.white, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .widgetAccentable()
+                figure.padding(6)
             }
-            .gaugeStyle(.accessoryCircular)
-            .widgetAccentable()
+            .padding(1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("OS-Mon: \(snap.mood.title), Wohlbefinden \(h)")
 
         case .accessoryRectangular:
             HStack(spacing: 6) {
-                Text(snap.mood.emoji).font(.title2)
+                figure.frame(width: 46, height: 46)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(snap.mood.title).font(.headline).widgetAccentable()
                     Text(compactStats).font(.caption).monospacedDigit()
                 }
+                Spacer(minLength: 0)
             }
 
         case .systemMedium:
@@ -238,8 +244,7 @@ struct PetWidgetView: View {
         }
     }
 
-    /// Die gewählte Figur als Standbild (Widgets animieren nicht). Sperrbildschirm bleibt beim Emoji,
-    /// weil er einfarbig dargestellt wird.
+    /// Die gewählte Figur als Standbild (Widgets animieren nicht). Auf dem Sperrbildschirm färbt iOS sie einfarbig ein.
     private var figure: some View {
         PetFigureView(figure: PetFigureStore.current, pose: widgetPose, animated: false)
             .accessibilityLabel("Dein Wesen: \(snap.mood.title)")

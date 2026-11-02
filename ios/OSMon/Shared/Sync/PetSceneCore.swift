@@ -82,15 +82,46 @@ enum SceneMood {
     static func matrix3(_ mood: PetMood, hour: Double) -> [Float] {
         let m = of(mood), n = night(hour)
         let b = m.b * n, s = m.s * (n < 1 ? 0.85 : 1), q = 1 - m.sep
-        let sat: [Float] = [0.213 + 0.787 * s, 0.715 - 0.715 * s, 0.072 - 0.072 * s,
-                            0.213 - 0.213 * s, 0.715 + 0.285 * s, 0.072 - 0.072 * s,
-                            0.213 - 0.213 * s, 0.715 - 0.715 * s, 0.072 + 0.928 * s]
-        let sep: [Float] = [0.393 + 0.607 * q, 0.769 - 0.769 * q, 0.189 - 0.189 * q,
-                            0.349 - 0.349 * q, 0.686 + 0.314 * q, 0.168 - 0.168 * q,
-                            0.272 - 0.272 * q, 0.534 - 0.534 * q, 0.131 + 0.869 * q]
+        // Einzelterme mit festem Typ: lange Float-Literal-Ausdrücke bringen den Swift-Typprüfer an seine Grenze
+        let sat: [Float] = Self.satMatrix(s)
+        let sep: [Float] = Self.sepiaMatrix(q)
         var r = [Float](repeating: 0, count: 9)
-        for i in 0..<3 { for j in 0..<3 { r[i * 3 + j] = (0..<3).reduce(Float(0)) { $0 + sep[i * 3 + $1] * sat[$1 * 3 + j] } * b } }
+        for i in 0..<3 {
+            for j in 0..<3 {
+                var acc: Float = 0
+                for k in 0..<3 { acc += sep[i * 3 + k] * sat[k * 3 + j] }
+                r[i * 3 + j] = acc * b
+            }
+        }
         return r
+    }
+
+    /// CSS saturate(s): Zeilen R, G, B
+    private static func satMatrix(_ s: Float) -> [Float] {
+        let lr: Float = 0.213, lg: Float = 0.715, lb: Float = 0.072
+        var m = [Float](repeating: 0, count: 9)
+        let base: [Float] = [lr, lg, lb]
+        for i in 0..<3 {
+            for j in 0..<3 {
+                let id: Float = i == j ? 1 : 0
+                m[i * 3 + j] = base[j] + (id - base[j]) * s
+            }
+        }
+        return m
+    }
+
+    /// CSS sepia(1 - q): q = 1 bedeutet unverändert
+    private static func sepiaMatrix(_ q: Float) -> [Float] {
+        let full: [Float] = [0.393, 0.769, 0.189, 0.349, 0.686, 0.168, 0.272, 0.534, 0.131]
+        var m = [Float](repeating: 0, count: 9)
+        for i in 0..<3 {
+            for j in 0..<3 {
+                let id: Float = i == j ? 1 : 0
+                let f: Float = full[i * 3 + j]
+                m[i * 3 + j] = f + (id - f) * q
+            }
+        }
+        return m
     }
 
     static func filter(_ mood: PetMood, hour: Double) -> GraphicsContext.Filter {

@@ -58,6 +58,8 @@ struct HomeState {
     var morning: MorningInfo? = nil            // Guten-Morgen-Karte, bis weggeklickt
     var festival: Festival? = nil              // Fest heute (Zubehör, Deko, Gruß)
     var festivalCard = false                   // Karte „Feiern“ sichtbar
+    var season: Season = .autumn               // Jahreszeit (Tönung, Deko, Teilchen)
+    var seasonsOn = true
 
     static let empty = HomeState(
         snapshot: PetSnapshot(stats: PetStats(e: 100, r: 100, f: 100, v: 100, a: 70),
@@ -103,7 +105,9 @@ final class HomeViewModel: ObservableObject {
             sleepPhase: SleepStore.phase(now),
             morning: SleepStore.morning(now: now, screenTimeOn: defaults.bool(forKey: "feature.screentime")),
             festival: FestivalStore.today(now),
-            festivalCard: FestivalStore.today(now) != nil && !FestivalStore.cardHidden(EpochDay.of(now)))
+            festivalCard: FestivalStore.today(now) != nil && !FestivalStore.cardHidden(EpochDay.of(now)),
+            season: SceneTheme.season(day: EpochDay.of(now)),
+            seasonsOn: FestivalStore.seasons)
     }
 
     func hideFestivalCard() {
@@ -238,6 +242,7 @@ struct HomeContent: View {
 
     // Lage von Figur und Ringen im Inhalt (für die Bildlage)
     @State private var stageFrame: CGRect = .zero
+    @State private var headerFrame: CGRect = .zero
     @State private var topInset: CGFloat = 0
     @State private var ringsFrame: CGRect = .zero
     // Antippen
@@ -250,6 +255,7 @@ struct HomeContent: View {
         ScrollView {
             VStack(spacing: hasScene ? 14 : 20) {
                 glass(header)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { headerFrame = $0 }
                 VStack(spacing: 8) {
                     speechBubble
                     pet
@@ -284,12 +290,24 @@ struct HomeContent: View {
                 }
             }
             .background(alignment: .top) {
-                // Fest-Deko schwebt über dem Bild (mit und ohne Hintergrund), bis knapp unter die Ringe
-                if let f = state.festival, ringsFrame.height > 0 {
-                    FestivalDecor(decor: f.decor, burst: celebrateAt)
-                        .frame(height: max(200, ringsFrame.maxY) + topInset)
-                        .frame(maxWidth: .infinity)
-                        .offset(y: -topInset)
+                // Jahreszeit + Fest: Tönung, Requisiten (Tannenbaum, Ballons …) und schwebende Teilchen über dem Bild,
+                // mit und ohne Hintergrund, bis knapp unter die Ringe
+                if ringsFrame.height > 0 && stageFrame.height > 0 {
+                    let layerH = max(200, ringsFrame.maxY) + topInset
+                    let day = EpochDay.of(.now)
+                    let props = SceneTheme.props(festival: state.festival, season: state.season, seasons: state.seasonsOn,
+                                                 adventCandles: Festivals.adventNumber(day, Festivals.firstAdvent(Festivals.ymd(day).y)))
+                    ZStack(alignment: .top) {
+                        SceneThemeLayer(props: props, tint: state.seasonsOn && hasScene ? SceneTheme.tint(state.season) : nil,
+                                        feetY: topInset + stageFrame.minY + stageFrame.height * 0.92,
+                                        garlandY: topInset + headerFrame.maxY + 6)
+                        if let decor = SceneTheme.particles(festival: state.festival, season: state.season, seasons: state.seasonsOn) {
+                            FestivalDecor(decor: decor, burst: celebrateAt)
+                        }
+                    }
+                    .frame(height: layerH)
+                    .frame(maxWidth: .infinity)
+                    .offset(y: -topInset)
                 }
             }
             .coordinateSpace(.named("home"))

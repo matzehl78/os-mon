@@ -66,14 +66,20 @@ jobs:
           shot 15_geschichte            light -OSMonDemo story -OSMonFigure lumo
           shot 16_schlaflieder          light -OSMonDemo songs
           shot 17_guten_morgen_minto    light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure minto    -OSMonMood radiant -OSMonMorning YES -OSMonScroll morning
-          shot 18_geburtstag_lumo       light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure lumo     -OSMonMood radiant -OSMonFestival birthday
-          shot 19_weihnachten_lila      light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila     -OSMonMood radiant -OSMonFestival christmas
-          shot 20_ostern_minto          light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure minto    -OSMonMood radiant -OSMonFestival easter
-          shot 21_halloween_glut        dark  -OSMonDemo home -OSMonScene mondbasis   -OSMonFigure glut     -OSMonMood content -OSMonFestival halloween
-          shot 22_fasching_sunni        light -OSMonDemo home -OSMonScene suess       -OSMonFigure sunni    -OSMonMood radiant -OSMonFestival carnival
-          shot 23_st_martin_kasto       dark  -OSMonDemo home -OSMonScene zen         -OSMonFigure kasto    -OSMonMood content -OSMonFestival stMartin
-          shot 24_schluepftag_orbo      light -OSMonDemo home -OSMonScene studio      -OSMonFigure orbo     -OSMonMood radiant -OSMonFestival hatchday -OSMonScroll festival
+          shot 18_geburtstag_lumo       light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure lumo     -OSMonMood radiant -OSMonFestival birthday -OSMonSeason summer
+          shot 19_weihnachten_lila      light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila     -OSMonMood radiant -OSMonFestival christmas -OSMonSeason winter
+          shot 20_ostern_minto          light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure minto    -OSMonMood radiant -OSMonFestival easter -OSMonSeason spring
+          shot 21_halloween_glut        dark  -OSMonDemo home -OSMonScene mondbasis   -OSMonFigure glut     -OSMonMood content -OSMonFestival halloween -OSMonSeason autumn
+          shot 22_fasching_sunni        light -OSMonDemo home -OSMonScene suess       -OSMonFigure sunni    -OSMonMood radiant -OSMonFestival carnival -OSMonSeason winter
+          shot 23_st_martin_kasto       dark  -OSMonDemo home -OSMonScene zen         -OSMonFigure kasto    -OSMonMood content -OSMonFestival stMartin -OSMonSeason autumn
+          shot 24_schluepftag_orbo      light -OSMonDemo home -OSMonScene studio      -OSMonFigure orbo     -OSMonMood radiant -OSMonFestival hatchday -OSMonSeason spring -OSMonScroll festival
           shot 00_logo                  light -OSMonDemo logo
+          shot 25_fruehling_lila        light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lila     -OSMonMood radiant -OSMonSeason spring
+          shot 26_sommer_sunni          light -OSMonDemo home -OSMonScene zen         -OSMonFigure sunni    -OSMonMood radiant -OSMonSeason summer
+          shot 27_herbst_kasto          light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure kasto    -OSMonMood content -OSMonSeason autumn
+          shot 28_winter_wolki          light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure wolki    -OSMonMood content -OSMonSeason winter
+          shot 29_advent_minto          dark  -OSMonDemo home -OSMonScene zimmer      -OSMonFigure minto    -OSMonMood content -OSMonFestival advent -OSMonSeason winter
+          shot 30_silvester_rauti       dark  -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure rauti    -OSMonMood radiant -OSMonFestival silvester -OSMonSeason winter
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

@@ -138,6 +138,9 @@ import com.example.osmon.engine.SceneUnlock
 import com.example.osmon.engine.DayPhase
 import com.example.osmon.engine.Accessory
 import com.example.osmon.engine.Festival
+import com.example.osmon.engine.Festivals
+import com.example.osmon.engine.SceneTheme
+import com.example.osmon.engine.Season
 import com.example.osmon.engine.WeeklyReview
 import com.example.osmon.figure.PetPose
 import com.example.osmon.figure.rememberCurrentFigure
@@ -197,7 +200,9 @@ data class HomeState(
     val sleepPhase: DayPhase = DayPhase.DAY,  // Abend/Nacht: Einladung zur Gute-Nacht-Routine
     val morning: MorningInfo? = null,         // Guten-Morgen-Karte, bis weggeklickt
     val festival: Festival? = null,           // Fest heute (Zubehör, Deko, Gruß)
-    val festivalCard: Boolean = false         // Karte „Feiern“ sichtbar
+    val festivalCard: Boolean = false,        // Karte „Feiern“ sichtbar
+    val season: Season = Season.AUTUMN,       // Jahreszeit (Tönung, Deko, Teilchen)
+    val seasonsOn: Boolean = true
 ) {
     companion object {
         val Empty = HomeState(
@@ -306,7 +311,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             sleepPhase = SleepStore.phase(ctx),
             morning = SleepStore.morning(ctx, t.inputs.nightMinutes),
             festival = FestivalStore.today(ctx),
-            festivalCard = FestivalStore.today(ctx) != null && !FestivalStore.cardHidden(ctx)
+            festivalCard = FestivalStore.today(ctx) != null && !FestivalStore.cardHidden(ctx),
+            season = SceneTheme.season(LocalDate.now().toEpochDay()),
+            seasonsOn = FestivalStore.seasons(ctx)
         )
         PetSync.updateWidgetIfNeeded(ctx, t.snapshot, force = forceWidget)
     }
@@ -396,6 +403,7 @@ fun HomeContent(
     var stageH by remember { mutableFloatStateOf(0f) }
     var ringsBottom by remember { mutableFloatStateOf(0f) }
     var ringsH by remember { mutableFloatStateOf(0f) }
+    var headerBottom by remember { mutableFloatStateOf(0f) }
 
     // Antippen
     val picker = remember { ReactionPicker() }
@@ -444,10 +452,16 @@ fun HomeContent(
                 modifier = Modifier.fillMaxWidth().height(with(density) { layerH.toDp() })
             )
         }
-        // Fest-Deko schwebt über dem Bild (mit und ohne Hintergrund), bis knapp unter die Ringe
-        state.festival?.let { f ->
-            if (ringsBottom > 0f) FestivalDecor(f.decor, celebrateAt,
-                Modifier.fillMaxWidth().height(with(density) { max(200.dp.toPx(), ringsBottom).toDp() }))
+        // Jahreszeit + Fest: Tönung, Requisiten (Tannenbaum, Ballons …) und schwebende Teilchen über dem Bild,
+        // mit und ohne Hintergrund, bis knapp unter die Ringe
+        if (ringsBottom > 0f && stageH > 0f) {
+            val layerMod = Modifier.fillMaxWidth().height(with(density) { max(200.dp.toPx(), ringsBottom).toDp() })
+            val day = LocalDate.now().toEpochDay()
+            val props = SceneTheme.props(state.festival, state.season, state.seasonsOn,
+                Festivals.adventNumber(day, Festivals.firstAdvent(Festivals.ymd(day).y)))
+            SceneThemeLayer(props, if (state.seasonsOn && hasScene) SceneTheme.tint(state.season).argb else null,
+                feetY = stageY + stageH * 0.92f, garlandY = headerBottom + with(density) { 6.dp.toPx() }, modifier = layerMod)
+            SceneTheme.particles(state.festival, state.season, state.seasonsOn)?.let { FestivalDecor(it, celebrateAt, layerMod) }
         }
         Column(
             modifier = Modifier
@@ -461,6 +475,7 @@ fun HomeContent(
             val figure = rememberCurrentFigure()
 
             // Kopf: Wohlbefinden-Ring + Stimmung (mit Szene auf Glas-Karte)
+            Box(Modifier.onGloballyPositioned { headerBottom = it.positionInRoot().y - rootY + it.size.height }) {
             Glass(hasScene) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     StatusRing("Wohlbefinden", "❤️", snap.wellbeing, tint, diameter = 72.dp, onScene = hasScene)
@@ -482,6 +497,7 @@ fun HomeContent(
                         }
                     }
                 }
+            }
             }
 
             // Sprechblase über der Figur: Reaktionstext 2,6 s, sonst Stimmungssatz

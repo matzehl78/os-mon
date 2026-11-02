@@ -263,7 +263,7 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             SleepSettings()
         }
 
-        Card("Feste und Geburtstag", "Weihnachten, Ostern, Halloween und mehr: Dein Wesen trägt dann passendes Zubehör. Der Geburtstag wird nur mit Tag und Monat auf diesem Gerät gespeichert.") {
+        Card("Feste, Jahreszeiten und Geburtstag", "Weihnachten, Ostern, Halloween und mehr: Dein Wesen trägt passendes Zubehör, der Hintergrund bekommt Deko (z. B. Tannenbaum, Ballons). Jahreszeiten färben das Bild leicht und bringen Blüten, Blätter oder Schnee. Der Geburtstag wird nur mit Tag und Monat auf diesem Gerät gespeichert.") {
             FestivalSettings()
         }
 

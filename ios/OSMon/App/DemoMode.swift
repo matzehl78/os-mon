@@ -49,6 +49,8 @@ enum DemoMode {
             s.festival = Festivals.sample(id, pet: PetFigure.byID(args.string(forKey: "OSMonFigure")).name)
             s.festivalCard = true
         }
+        if let se = args.string(forKey: "OSMonSeason"), let v = Season(rawValue: se) { s.season = v }
+        if let f = args.string(forKey: "OSMonFestival"), f == "none" { s.festival = nil }
         if flag("OSMonEvent") { s.evolutionEvent = PetEvoEvent(kind: .evolved, from: nil, to: .chatterling, epochDay: 0) }
         return s
     }

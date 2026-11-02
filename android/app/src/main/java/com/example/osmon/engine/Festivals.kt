@@ -17,7 +17,7 @@ enum class FestivalId { BIRTHDAY, HATCHDAY, MILESTONE, CHRISTMAS, SILVESTER, NEW
 enum class Accessory { PARTY_HAT, SANTA_HAT, BUNNY_EARS, WITCH_HAT, CROWN, FLOWERS, LANTERN, JESTER }
 
 /** Was über dem Hintergrund schwebt. */
-enum class Decor { CONFETTI, SNOW, HEARTS, EGGS, PUMPKINS, STARS, LIGHTS }
+enum class Decor { CONFETTI, SNOW, HEARTS, EGGS, PUMPKINS, STARS, LIGHTS, PETALS, LEAVES, BUTTERFLIES }
 
 data class Festival(
     val id: FestivalId,

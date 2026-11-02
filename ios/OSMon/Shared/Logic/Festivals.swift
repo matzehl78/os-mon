@@ -10,7 +10,7 @@ enum FestivalID: String { case birthday, hatchday, milestone, christmas, silvest
 enum Accessory: String { case partyHat, santaHat, bunnyEars, witchHat, crown, flowers, lantern, jester }
 
 /// Was über dem Hintergrund schwebt.
-enum Decor: String { case confetti, snow, hearts, eggs, pumpkins, stars, lights }
+enum Decor: String { case confetti, snow, hearts, eggs, pumpkins, stars, lights, petals, leaves, butterflies }
 
 struct Festival: Equatable {
     let id: FestivalID

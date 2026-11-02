@@ -3,11 +3,12 @@ name: iOS
 
 on:
   push:
+    paths-ignore: ["android/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15-intel   # arm64-Runner hatten Kapazitätsengpässe
     defaults:
       run:
         working-directory: ios

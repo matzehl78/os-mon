@@ -276,19 +276,8 @@ struct HomeContent: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
             .padding()
-            .background(alignment: .top) {
-                if hasScene && stageFrame.height > 0 && ringsFrame.height > 0 {
-                    // Ebene reicht nach oben unter die Statusleiste (topInset) und endet knapp unter den Ringen.
-                    // Die ScrollView reicht selbst bis an den Bildschirmrand, darum ist der Teil oberhalb sichtbar.
-                    let layerH = max(200, ringsFrame.maxY + 14) + topInset
-                    SceneBackground(scene: scene, mood: snap.mood,
-                                    feetY: topInset + stageFrame.minY + stageFrame.height * 0.92,
-                                    fade: ringsFrame.height * 0.75 + 14)
-                        .frame(height: layerH)
-                        .frame(maxWidth: .infinity)
-                        .offset(y: -topInset)
-                }
-            }
+            // Reihenfolge: das zuerst angehängte .background liegt OBEN. Deko also vor dem Szenenbild anhängen,
+            // sonst verdeckt das (deckende) Bild sie.
             .background(alignment: .top) {
                 // Jahreszeit + Fest: Tönung, Requisiten (Tannenbaum, Ballons …) und schwebende Teilchen über dem Bild,
                 // mit und ohne Hintergrund, bis knapp unter die Ringe
@@ -308,6 +297,19 @@ struct HomeContent: View {
                     .frame(height: layerH)
                     .frame(maxWidth: .infinity)
                     .offset(y: -topInset)
+                }
+            }
+            .background(alignment: .top) {
+                if hasScene && stageFrame.height > 0 && ringsFrame.height > 0 {
+                    // Ebene reicht nach oben unter die Statusleiste (topInset) und endet knapp unter den Ringen.
+                    // Die ScrollView reicht selbst bis an den Bildschirmrand, darum ist der Teil oberhalb sichtbar.
+                    let layerH = max(200, ringsFrame.maxY + 14) + topInset
+                    SceneBackground(scene: scene, mood: snap.mood,
+                                    feetY: topInset + stageFrame.minY + stageFrame.height * 0.92,
+                                    fade: ringsFrame.height * 0.75 + 14)
+                        .frame(height: layerH)
+                        .frame(maxWidth: .infinity)
+                        .offset(y: -topInset)
                 }
             }
             .coordinateSpace(.named("home"))

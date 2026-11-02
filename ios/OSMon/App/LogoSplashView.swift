@@ -1,12 +1,15 @@
 // LogoSplashView.swift: Logo-Film „Ulmatti Studios“ bei jedem App-Start (Kaltstart), vor Vorspann/Onboarding/Home.
 //
-// Video: App-Bundle "logo.mp4" (1440×810, 8,5 s, weißer Grund). Wird mittig eingepasst auf weißem Hintergrund.
+// Videos (weißer Grund, mittig eingepasst auf Weiß):
+//   logo.mp4        ganze Fassung, 8,5 s, mit Ton – erster Start, vor dem Vorspann
+//   logo_short.mp4  kurze Fassung, ca. 3,3 s (3× schneller), ohne Ton – jeder weitere Start
 // Antippen überspringt. Ton folgt dem Lautlos-Schalter (.ambient). Ohne Video endet die Ansicht sofort.
 
 import SwiftUI
 import AVFoundation
 
 struct LogoSplashView: View {
+    var full = true
     var onFinish: () -> Void
     @State private var player: AVPlayer?
     @State private var ended = false
@@ -32,9 +35,10 @@ struct LogoSplashView: View {
 
     private func start() {
         guard player == nil else { return }
-        guard let url = Bundle.main.url(forResource: "logo", withExtension: "mp4") else { finish(); return }
-        try? AVAudioSession.sharedInstance().setCategory(.ambient)
+        guard let url = Bundle.main.url(forResource: full ? "logo" : "logo_short", withExtension: "mp4") else { finish(); return }
+        if full { try? AVAudioSession.sharedInstance().setCategory(.ambient) }
         let p = AVPlayer(url: url)
+        p.isMuted = !full
         player = p
         p.play()
     }

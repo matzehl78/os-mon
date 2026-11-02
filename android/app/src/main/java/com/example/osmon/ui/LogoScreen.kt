@@ -1,5 +1,7 @@
 // LogoScreen.kt: Logo-Film „Ulmatti Studios“ bei jedem App-Start (Kaltstart), vor Vorspann/Onboarding/Home.
-// Gegenstück zu LogoSplashView.swift. Video: res/raw/logo.mp4 (1440×810, 8,5 s, weißer Grund), mittig auf Weiß.
+// Gegenstück zu LogoSplashView.swift. Videos (weißer Grund, mittig auf Weiß):
+//   res/raw/logo.mp4        ganze Fassung, 8,5 s, mit Ton – erster Start, vor dem Vorspann
+//   res/raw/logo_short.mp4  kurze Fassung, ca. 3,3 s (3× schneller), ohne Ton – jeder weitere Start
 // Antippen überspringt; am Ende geht es automatisch weiter.
 
 package com.example.osmon.ui
@@ -28,21 +30,21 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.example.osmon.R
 
 @Composable
-fun LogoScreen(onFinished: () -> Unit) {
+fun LogoScreen(full: Boolean = true, onFinished: () -> Unit) {
     val ctx = LocalContext.current
     val done = remember { booleanArrayOf(false) }
     val finish = { if (!done[0]) { done[0] = true; onFinished() } }
     BackHandler(onBack = finish)
     val view = remember {
         VideoView(ctx).apply {
-            setVideoURI(Uri.parse("android.resource://${ctx.packageName}/${R.raw.logo}"))
+            setVideoURI(Uri.parse("android.resource://${ctx.packageName}/${if (full) R.raw.logo else R.raw.logo_short}"))
             setAudioFocusRequest(android.media.AudioManager.AUDIOFOCUS_NONE)   // laufende Musik nicht unterbrechen
             setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE).build())
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
             setOnCompletionListener { finish() }
             setOnErrorListener { _, _, _ -> finish(); true }
-            setOnPreparedListener { it.isLooping = false; start() }
+            setOnPreparedListener { it.isLooping = false; if (!full) it.setVolume(0f, 0f); start() }
         }
     }
     DisposableEffect(view) { onDispose { view.stopPlayback() } }

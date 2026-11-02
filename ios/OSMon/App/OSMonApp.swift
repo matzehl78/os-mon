@@ -8,6 +8,7 @@ struct OSMonApp: App {
     @AppStorage("onboarding.done", store: STShared.defaults) private var done = false
     @AppStorage("intro.seen", store: STShared.defaults) private var introSeen = false
     @State private var logoDone = false                     // Logo-Film bei jedem Kaltstart
+    @State private var logoFull = !STShared.defaults.bool(forKey: "onboarding.done") && !STShared.defaults.bool(forKey: "intro.seen")
     @Environment(\.scenePhase) private var phase
 
     init() {
@@ -31,7 +32,8 @@ struct OSMonApp: App {
     }
 
     @ViewBuilder private var startRoot: some View {
-        if logoDone { root.transition(.opacity) } else { LogoSplashView { logoDone = true } }
+        // Erster Start: ganze Fassung mit Ton vor dem Vorspann; danach kurz (ca. 3 s) und stumm
+        if logoDone { root.transition(.opacity) } else { LogoSplashView(full: logoFull) { logoDone = true } }
     }
 
     @ViewBuilder private var root: some View {

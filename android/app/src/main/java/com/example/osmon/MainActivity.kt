@@ -63,9 +63,11 @@ private fun Root() {
     var showBedtime by rememberSaveable { mutableStateOf(activity?.intent?.getStringExtra("open") == "bedtime") }
 
     var logoDone by rememberSaveable { mutableStateOf(false) }   // Logo-Film bei jedem Kaltstart
+    // Erster Start: ganze Fassung mit Ton vor dem Vorspann; danach kurz (ca. 3 s) und stumm
+    val logoFull = remember { !done && !introSeen }
 
     when {
-        !logoDone -> LogoScreen(onFinished = { logoDone = true })
+        !logoDone -> LogoScreen(full = logoFull, onFinished = { logoDone = true })
         // Vorspann einmal vor dem Onboarding
         !done && !introSeen -> IntroScreen(onFinished = { prefs.edit().putBoolean("intro.seen", true).apply(); introSeen = true })
         !done -> OnboardingScreen(onFinished = { done = true })

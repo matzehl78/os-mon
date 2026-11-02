@@ -1,0 +1,71 @@
+# Baut die iOS-App, startet sie im Simulator mit Beispiel-Zuständen (DemoMode.swift)
+# und legt die Bildschirmfotos im Branch "screenshots" ab (Ordner ios/).
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/screenshots.yml", "ios/OSMon/App/DemoMode.swift"]
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: macos-15-intel
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode wählen
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | tail -1)"
+      - name: XcodeGen
+        run: brew install xcodegen && xcodegen
+      - name: Simulator wählen und starten
+        run: |
+          SIM=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          c=[x for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone')]
+          pref=[x for x in c if x['name'] in ('iPhone 16 Pro','iPhone 16','iPhone 15 Pro')]
+          print((pref or c)[0]['udid'])")
+          echo "SIM=$SIM" >> "$GITHUB_ENV"
+          xcrun simctl boot "$SIM"
+          xcrun simctl bootstatus "$SIM" -b
+          xcrun simctl status_bar "$SIM" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+      - name: Bauen
+        run: |
+          xcodebuild build -project OSMon.xcodeproj -scheme OSMon -configuration Debug \
+            -destination "id=$SIM" -derivedDataPath DD CODE_SIGNING_ALLOWED=NO > build.log 2>&1 || { grep -E "error:" build.log | head -50; exit 1; }
+          xcrun simctl install "$SIM" DD/Build/Products/Debug-iphonesimulator/OSMon.app
+      - name: Fotos
+        run: |
+          mkdir -p shots
+          shot() {   # name, Aussehen, Argumente …
+            name=$1; look=$2; shift 2
+            xcrun simctl ui "$SIM" appearance "$look"
+            xcrun simctl terminate "$SIM" com.example.osmon 2>/dev/null || true
+            xcrun simctl launch "$SIM" com.example.osmon "$@" > /dev/null
+            sleep 7
+            xcrun simctl io "$SIM" screenshot "shots/$name.png"
+            echo "✓ $name"
+          }
+          shot 01_neonstadt_lumo        light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure lumo     -OSMonMood radiant -OSMonUnlock YES
+          shot 02_zauberwald_lila       light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila     -OSMonMood content
+          shot 03_raumstation_kasto     light -OSMonDemo home -OSMonScene raumstation -OSMonFigure kasto    -OSMonMood tired
+          shot 04_unterwasser_tropfi    light -OSMonDemo home -OSMonScene unterwasser -OSMonFigure tropfi   -OSMonMood radiant
+          shot 05_mondbasis_orbo        dark  -OSMonDemo home -OSMonScene mondbasis   -OSMonFigure orbo     -OSMonMood sick
+          shot 06_suess_sunni           light -OSMonDemo home -OSMonScene suess       -OSMonFigure sunni    -OSMonMood content
+          shot 07_zen_wolki             light -OSMonDemo home -OSMonScene zen         -OSMonFigure wolki    -OSMonMood radiant
+          shot 08_ohne_minto            light -OSMonDemo home -OSMonScene none        -OSMonFigure minto    -OSMonMood content
+          shot 09_einstellungen         light -OSMonDemo settings
+          shot 10_onboarding            light -OSMonDemo onboarding
+      - name: In Branch "screenshots" ablegen
+        run: |
+          cd shots
+          git init -q -b screenshots
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          mkdir ios && mv *.png ios/
+          git add -A && git commit -qm "iOS-Screenshots ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" screenshots

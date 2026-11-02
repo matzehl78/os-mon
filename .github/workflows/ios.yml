@@ -1,0 +1,36 @@
+# Erzeugt das Xcode-Projekt (XcodeGen), baut für den Simulator ohne Signatur und lässt die Tests laufen.
+name: iOS
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode wählen
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | tail -1)"
+      - name: XcodeGen
+        run: brew install xcodegen && xcodegen
+      - name: Simulator wählen
+        run: |
+          SIM=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next(x['udid'] for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
+          echo "SIM=$SIM" >> "$GITHUB_ENV"
+      - name: Bauen und testen
+        run: |
+          set -o pipefail
+          xcodebuild test -project OSMon.xcodeproj -scheme OSMon \
+            -destination "id=$SIM" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            | tee xcodebuild.log | grep -E "error:|warning: unre|Test Case .* (passed|failed)|\*\* (BUILD|TEST)" || true
+          test "${PIPESTATUS[0]}" -eq 0
+      - name: Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-xcodebuild-log
+          path: ios/xcodebuild.log

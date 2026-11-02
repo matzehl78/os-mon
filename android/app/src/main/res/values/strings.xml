@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OS-Mon</string>
+    <string name="widget_label">OS-Mon</string>
+    <string name="widget_description">Dein Handy-Wesen: Akku, Speicher, Bildschirmzeit und Schritte auf einen Blick.</string>
+    <string name="privacy_title">Datenschutz</string>
+</resources>

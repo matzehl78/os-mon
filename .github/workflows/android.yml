@@ -1,0 +1,37 @@
+# Baut die Android-App und lässt die JVM-Unit-Tests laufen (bei jedem Push und manuell).
+name: Android
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"       # wie gradle-wrapper.properties (Wrapper-JAR liegt nicht im Repo)
+      - name: Bauen
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Unit-Tests
+        run: gradle --no-daemon :app:testDebugUnitTest
+      - name: Testberichte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-tests
+          path: android/app/build/reports/tests/
+      - name: Debug-APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: osmon-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk

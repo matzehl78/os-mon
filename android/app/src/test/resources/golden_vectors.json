@@ -1,0 +1,3133 @@
+{
+ "version": 1,
+ "tolerance": 0.01,
+ "targets": [
+  {
+   "name": "kotlin: Akku 50",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 50,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 50.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Low Power",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 50,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 42.5,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Laden",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 50,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 60.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Laden geklemmt",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 95,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 100.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Speicher 30%",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.3,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": 100.0,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Speicher 5%",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.05,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": 0.0,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Speicher 17,5%",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.175,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": 57.43492,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Stress iOS 2Z",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": 360,
+    "nightMinutes": 0,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": 28.0,
+    "f": null,
+    "v": null,
+    "a": 19.6
+   }
+  },
+  {
+   "name": "kotlin: Stress iOS Z+Nacht",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": 180,
+    "nightMinutes": 45,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": 36.0,
+    "f": null,
+    "v": null,
+    "a": 25.2
+   }
+  },
+  {
+   "name": "kotlin: Stress Android 2Z",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": 360,
+    "nightMinutes": 0,
+    "pickups": 0,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": 35.0,
+    "f": null,
+    "v": null,
+    "a": 24.5
+   }
+  },
+  {
+   "name": "kotlin: Stress max",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": 2000,
+    "nightMinutes": 500,
+    "pickups": 1000,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": 0.0,
+    "f": null,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Schritte 3500",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": 3500,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": 61.55722,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Schritte 20000",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": 20000,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": 100.0,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "kotlin: Zuneigung voll",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": 0,
+    "nightMinutes": 0,
+    "pickups": null,
+    "steps": null,
+    "pats": 2,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": null,
+    "r": 100.0,
+    "f": null,
+    "v": null,
+    "a": 100.0
+   }
+  },
+  {
+   "name": "kotlin: Zuneigung nur Interaktion",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 1,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": 25.0
+   }
+  },
+  {
+   "name": "kotlin: alles fehlt",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "Streicheln gedeckelt",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": 0,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": null,
+    "pats": 9,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": 100.0,
+    "f": null,
+    "v": null,
+    "a": 100.0
+   }
+  },
+  {
+   "name": "zufall 0",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": 2.5,
+    "charging": true,
+    "lowPower": true,
+    "freeStorageRatio": 0.406,
+    "screenMinutes": 52.2,
+    "nightMinutes": 3.6,
+    "pickups": null,
+    "steps": 434,
+    "pats": 4,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 12.125,
+    "r": 82.1,
+    "f": 100.0,
+    "v": 11.12353,
+    "a": 87.47
+   }
+  },
+  {
+   "name": "zufall 1",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 70.1,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.522,
+    "screenMinutes": 95.8,
+    "nightMinutes": 33.3,
+    "pickups": null,
+    "steps": 1674,
+    "pats": 0,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 70.1,
+    "r": 60.12,
+    "f": 100.0,
+    "v": 36.73332,
+    "a": 72.084
+   }
+  },
+  {
+   "name": "zufall 2",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.438,
+    "screenMinutes": 583.9,
+    "nightMinutes": 66.2,
+    "pickups": 158,
+    "steps": 5925,
+    "pats": 4,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": null,
+    "r": 0.0,
+    "f": 100.0,
+    "v": 88.98427,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 3",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 4.6,
+    "charging": true,
+    "lowPower": true,
+    "freeStorageRatio": null,
+    "screenMinutes": 60.6,
+    "nightMinutes": null,
+    "pickups": 93,
+    "steps": 5820,
+    "pats": 1,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 13.91,
+    "r": 79.75833,
+    "f": null,
+    "v": 87.87745,
+    "a": 85.83083
+   }
+  },
+  {
+   "name": "zufall 4",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": 68.4,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.147,
+    "screenMinutes": 162.0,
+    "nightMinutes": 82.6,
+    "pickups": null,
+    "steps": 12588,
+    "pats": 6,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 78.4,
+    "r": 0.00444,
+    "f": 46.8884,
+    "v": 100.0,
+    "a": 30.00311
+   }
+  },
+  {
+   "name": "zufall 5",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 3.2,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.566,
+    "screenMinutes": 188.8,
+    "nightMinutes": 47.5,
+    "pickups": 117,
+    "steps": 2287,
+    "pats": 1,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 2.72,
+    "r": 27.82222,
+    "f": 100.0,
+    "v": 45.70016,
+    "a": 49.47556
+   }
+  },
+  {
+   "name": "zufall 6",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 42.8,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.083,
+    "screenMinutes": 453.5,
+    "nightMinutes": 18.3,
+    "pickups": null,
+    "steps": 9771,
+    "pats": 0,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 42.8,
+    "r": 0.0,
+    "f": 19.79061,
+    "v": 100.0,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 7",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 99.6,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.007,
+    "screenMinutes": 409.0,
+    "nightMinutes": 32.0,
+    "pickups": 28,
+    "steps": 2591,
+    "pats": 3,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 99.6,
+    "r": 5.575,
+    "f": 0.0,
+    "v": 49.8722,
+    "a": 26.4025
+   }
+  },
+  {
+   "name": "zufall 8",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": 87.6,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.548,
+    "screenMinutes": 179.1,
+    "nightMinutes": 73.1,
+    "pickups": null,
+    "steps": 8837,
+    "pats": 6,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 97.6,
+    "r": 0.78556,
+    "f": 100.0,
+    "v": 91.7093,
+    "a": 30.54989
+   }
+  },
+  {
+   "name": "zufall 9",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 48.9,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.484,
+    "screenMinutes": 144.5,
+    "nightMinutes": 9.5,
+    "pickups": 17,
+    "steps": 8727,
+    "pats": 6,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 58.9,
+    "r": 66.93194,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 76.85236
+   }
+  },
+  {
+   "name": "zufall 10",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 47.5,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.254,
+    "screenMinutes": 323.6,
+    "nightMinutes": 24.1,
+    "pickups": null,
+    "steps": 10647,
+    "pats": 2,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 40.375,
+    "r": 20.28444,
+    "f": 84.98693,
+    "v": 100.0,
+    "a": 44.19911
+   }
+  },
+  {
+   "name": "zufall 11",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 45.1,
+    "charging": true,
+    "lowPower": true,
+    "freeStorageRatio": null,
+    "screenMinutes": 353.1,
+    "nightMinutes": null,
+    "pickups": 15,
+    "steps": 14834,
+    "pats": 0,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 48.335,
+    "r": 34.74583,
+    "f": null,
+    "v": 100.0,
+    "a": 54.32208
+   }
+  },
+  {
+   "name": "zufall 12",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.079,
+    "screenMinutes": 342.6,
+    "nightMinutes": 94.2,
+    "pickups": 48,
+    "steps": null,
+    "pats": 5,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": null,
+    "r": 0.0,
+    "f": 17.84705,
+    "v": null,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 13",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 41.1,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.388,
+    "screenMinutes": null,
+    "nightMinutes": 96.1,
+    "pickups": null,
+    "steps": 8786,
+    "pats": 3,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 34.935,
+    "r": null,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 100.0
+   }
+  },
+  {
+   "name": "zufall 14",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 27.9,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.517,
+    "screenMinutes": 30.4,
+    "nightMinutes": 100.3,
+    "pickups": 192,
+    "steps": 2724,
+    "pats": 3,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 37.9,
+    "r": 19.58889,
+    "f": 100.0,
+    "v": 51.65072,
+    "a": 43.71222
+   }
+  },
+  {
+   "name": "zufall 15",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 86.5,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": null,
+    "screenMinutes": 555.9,
+    "nightMinutes": 34.2,
+    "pickups": 187,
+    "steps": 9105,
+    "pats": 5,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 73.525,
+    "r": 0.0,
+    "f": null,
+    "v": 100.0,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 16",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": 29.7,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.449,
+    "screenMinutes": null,
+    "nightMinutes": 60.3,
+    "pickups": 40,
+    "steps": null,
+    "pats": 4,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 29.7,
+    "r": null,
+    "f": 100.0,
+    "v": null,
+    "a": 100.0
+   }
+  },
+  {
+   "name": "zufall 17",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 6.9,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.565,
+    "screenMinutes": 347.4,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": 9260,
+    "pats": 4,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 16.9,
+    "r": 30.52,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 51.364
+   }
+  },
+  {
+   "name": "zufall 18",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 20.4,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.403,
+    "screenMinutes": 189.7,
+    "nightMinutes": 8.7,
+    "pickups": null,
+    "steps": 1638,
+    "pats": 0,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 17.34,
+    "r": 56.64667,
+    "f": 100.0,
+    "v": 36.17855,
+    "a": 54.65267
+   }
+  },
+  {
+   "name": "zufall 19",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 13.2,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.171,
+    "screenMinutes": 325.9,
+    "nightMinutes": 118.1,
+    "pickups": 135,
+    "steps": null,
+    "pats": 6,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 11.22,
+    "r": 0.0,
+    "f": 55.95982,
+    "v": null,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 20",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": 10.4,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.445,
+    "screenMinutes": 169.1,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": 13974,
+    "pats": 2,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 8.84,
+    "r": 49.27,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 64.489
+   }
+  },
+  {
+   "name": "zufall 21",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 90.8,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.026,
+    "screenMinutes": 78.5,
+    "nightMinutes": 19.4,
+    "pickups": null,
+    "steps": 9189,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 100.0,
+    "r": 72.22889,
+    "f": 0.0,
+    "v": 100.0,
+    "a": 50.56022
+   }
+  },
+  {
+   "name": "zufall 22",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.501,
+    "screenMinutes": 88.9,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": 13043,
+    "pats": 6,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": null,
+    "r": 82.22,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 87.554
+   }
+  },
+  {
+   "name": "zufall 23",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 21.0,
+    "charging": true,
+    "lowPower": true,
+    "freeStorageRatio": 0.53,
+    "screenMinutes": 372.4,
+    "nightMinutes": null,
+    "pickups": 41,
+    "steps": 13283,
+    "pats": 1,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 27.85,
+    "r": 28.66111,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 50.06278
+   }
+  },
+  {
+   "name": "zufall 24",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.481,
+    "screenMinutes": 486.4,
+    "nightMinutes": null,
+    "pickups": 27,
+    "steps": 634,
+    "pats": 6,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": null,
+    "r": 0.0,
+    "f": 100.0,
+    "v": 14.50315,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 25",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 81.7,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.137,
+    "screenMinutes": null,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": 12670,
+    "pats": 2,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 81.7,
+    "r": null,
+    "f": 42.9797,
+    "v": 100.0,
+    "a": 100.0
+   }
+  },
+  {
+   "name": "zufall 26",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 40.0,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.069,
+    "screenMinutes": 107.1,
+    "nightMinutes": 31.9,
+    "pickups": null,
+    "steps": 11936,
+    "pats": 6,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 40.0,
+    "r": 58.73111,
+    "f": 12.7248,
+    "v": 100.0,
+    "a": 71.11178
+   }
+  },
+  {
+   "name": "zufall 27",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 98.4,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.027,
+    "screenMinutes": 312.0,
+    "nightMinutes": 82.4,
+    "pickups": 188,
+    "steps": 5967,
+    "pats": 3,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 100.0,
+    "r": 0.0,
+    "f": 0.0,
+    "v": 89.42534,
+    "a": 22.5
+   }
+  },
+  {
+   "name": "zufall 28",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": 92.1,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.54,
+    "screenMinutes": 400.1,
+    "nightMinutes": 83.7,
+    "pickups": 49,
+    "steps": 6211,
+    "pats": 5,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 92.1,
+    "r": 0.0,
+    "f": 100.0,
+    "v": 71.64948,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 29",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 30.1,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.258,
+    "screenMinutes": 392.8,
+    "nightMinutes": 53.1,
+    "pickups": null,
+    "steps": 14764,
+    "pats": 6,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 25.585,
+    "r": 0.0,
+    "f": 86.31746,
+    "v": 100.0,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 30",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 28.4,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": null,
+    "screenMinutes": 140.9,
+    "nightMinutes": 96.8,
+    "pickups": null,
+    "steps": null,
+    "pats": 3,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 28.4,
+    "r": 11.58889,
+    "f": null,
+    "v": null,
+    "a": 30.61222
+   }
+  },
+  {
+   "name": "zufall 31",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 88.6,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.24,
+    "screenMinutes": 412.6,
+    "nightMinutes": 103.3,
+    "pickups": 199,
+    "steps": 2881,
+    "pats": 6,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 88.6,
+    "r": 0.0,
+    "f": 80.28804,
+    "v": 53.71699,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 32",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": null,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.481,
+    "screenMinutes": 592.7,
+    "nightMinutes": 114.0,
+    "pickups": 156,
+    "steps": 14614,
+    "pats": 4,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": null,
+    "r": 0.0,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 33",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 54.8,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.156,
+    "screenMinutes": 382.6,
+    "nightMinutes": 62.6,
+    "pickups": 70,
+    "steps": 11690,
+    "pats": 2,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 54.8,
+    "r": 0.0,
+    "f": 50.33762,
+    "v": 100.0,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 34",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 32.0,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.416,
+    "screenMinutes": 38.5,
+    "nightMinutes": 65.1,
+    "pickups": null,
+    "steps": 6883,
+    "pats": 3,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 27.2,
+    "r": 51.79333,
+    "f": 100.0,
+    "v": 98.82705,
+    "a": 58.75533
+   }
+  },
+  {
+   "name": "zufall 35",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 76.6,
+    "charging": false,
+    "lowPower": true,
+    "freeStorageRatio": 0.452,
+    "screenMinutes": 572.1,
+    "nightMinutes": 89.7,
+    "pickups": 154,
+    "steps": 7999,
+    "pats": 1,
+    "focusSessions": 2
+   },
+   "expect": {
+    "e": 65.11,
+    "r": 0.0,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 30.0
+   }
+  },
+  {
+   "name": "zufall 36",
+   "config": {
+    "screenGoalMin": 120.0,
+    "stepGoal": 10000,
+    "pickupRef": 80.0
+   },
+   "inputs": {
+    "batteryPct": 2.9,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.099,
+    "screenMinutes": 76.6,
+    "nightMinutes": 3.2,
+    "pickups": null,
+    "steps": 444,
+    "pats": 0,
+    "focusSessions": 3
+   },
+   "expect": {
+    "e": 2.9,
+    "r": 75.02889,
+    "f": 27.15219,
+    "v": 11.30233,
+    "a": 82.52022
+   }
+  },
+  {
+   "name": "zufall 37",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 46.2,
+    "charging": true,
+    "lowPower": false,
+    "freeStorageRatio": 0.196,
+    "screenMinutes": 227.5,
+    "nightMinutes": 99.8,
+    "pickups": null,
+    "steps": null,
+    "pats": 0,
+    "focusSessions": 0
+   },
+   "expect": {
+    "e": 56.2,
+    "r": 0.0,
+    "f": 65.03247,
+    "v": null,
+    "a": 0.0
+   }
+  },
+  {
+   "name": "zufall 38",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 35.0,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.453,
+    "screenMinutes": 119.6,
+    "nightMinutes": null,
+    "pickups": null,
+    "steps": 10968,
+    "pats": 0,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 35.0,
+    "r": 76.08,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 68.256
+   }
+  },
+  {
+   "name": "zufall 39",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "inputs": {
+    "batteryPct": 25.6,
+    "charging": false,
+    "lowPower": false,
+    "freeStorageRatio": 0.431,
+    "screenMinutes": 98.3,
+    "nightMinutes": 69.4,
+    "pickups": 147,
+    "steps": 6149,
+    "pats": 3,
+    "focusSessions": 1
+   },
+   "expect": {
+    "e": 25.6,
+    "r": 28.99583,
+    "f": 100.0,
+    "v": 91.32602,
+    "a": 50.29708
+   }
+  }
+ ],
+ "step": [
+  {
+   "name": "kotlin: 100 -> 0, 15 min",
+   "prev": {
+    "e": 100.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "target": {
+    "e": 0.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "dtHours": 0.25,
+   "expect": {
+    "e": 60.65307,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   }
+  },
+  {
+   "name": "kotlin: ohne Vorwert",
+   "prev": null,
+   "target": {
+    "e": 0.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "dtHours": 1.0,
+   "expect": {
+    "e": 0.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   }
+  },
+  {
+   "name": "kotlin: Sensor fällt weg",
+   "prev": {
+    "e": 50.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "target": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "dtHours": 1.0,
+   "expect": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   }
+  },
+  {
+   "name": "kotlin: dt negativ",
+   "prev": {
+    "e": 50.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "target": {
+    "e": 0.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "dtHours": -1.0,
+   "expect": {
+    "e": 50.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   }
+  },
+  {
+   "name": "alle Werte, 1 h",
+   "prev": {
+    "e": 80.0,
+    "r": 40.0,
+    "f": 90.0,
+    "v": 10.0,
+    "a": 55.0
+   },
+   "target": {
+    "e": 20.0,
+    "r": 90.0,
+    "f": 30.0,
+    "v": 70.0,
+    "a": 85.0
+   },
+   "dtHours": 1.0,
+   "expect": {
+    "e": 28.12012,
+    "r": 64.32914,
+    "f": 30.0,
+    "v": 70.0,
+    "a": 59.60555
+   }
+  },
+  {
+   "name": "alle Werte, 6 h",
+   "prev": {
+    "e": 80.0,
+    "r": 40.0,
+    "f": 90.0,
+    "v": 10.0,
+    "a": 55.0
+   },
+   "target": {
+    "e": 20.0,
+    "r": 90.0,
+    "f": 30.0,
+    "v": 70.0,
+    "a": 85.0
+   },
+   "dtHours": 6.0,
+   "expect": {
+    "e": 20.00037,
+    "r": 89.08422,
+    "f": 30.0,
+    "v": 70.0,
+    "a": 73.96362
+   }
+  },
+  {
+   "name": "teilweise Vorwerte",
+   "prev": {
+    "e": null,
+    "r": 60.0,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "target": {
+    "e": 70.0,
+    "r": 20.0,
+    "f": null,
+    "v": 5.0,
+    "a": 33.0
+   },
+   "dtHours": 0.5,
+   "expect": {
+    "e": 70.0,
+    "r": 48.66125,
+    "f": null,
+    "v": 5.0,
+    "a": 33.0
+   }
+  }
+ ],
+ "wellbeing": [
+  {
+   "name": "kotlin: alles 100",
+   "stats": {
+    "e": 100.0,
+    "r": 100.0,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 100.0
+   },
+   "expect": 100.0
+  },
+  {
+   "name": "kotlin: schwächstes Glied",
+   "stats": {
+    "e": 0.0,
+    "r": 100.0,
+    "f": 100.0,
+    "v": 100.0,
+    "a": 100.0
+   },
+   "expect": 42.0
+  },
+  {
+   "name": "kotlin: nur E=50",
+   "stats": {
+    "e": 50.0,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "expect": 40.0
+  },
+  {
+   "name": "kotlin: leer",
+   "stats": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "expect": 50.0
+  },
+  {
+   "name": "nur A",
+   "stats": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": 40.0
+   },
+   "expect": 40.0
+  },
+  {
+   "name": "gemischt",
+   "stats": {
+    "e": 70.0,
+    "r": 55.0,
+    "f": null,
+    "v": 30.0,
+    "a": 80.0
+   },
+   "expect": 42.525
+  }
+ ],
+ "mood": [
+  {
+   "name": "h=90 prev=None",
+   "h": 90.0,
+   "prev": null,
+   "expect": "radiant"
+  },
+  {
+   "name": "h=70 prev=None",
+   "h": 70.0,
+   "prev": null,
+   "expect": "content"
+  },
+  {
+   "name": "h=50 prev=None",
+   "h": 50.0,
+   "prev": null,
+   "expect": "tired"
+  },
+  {
+   "name": "h=25 prev=None",
+   "h": 25.0,
+   "prev": null,
+   "expect": "sick"
+  },
+  {
+   "name": "h=5 prev=None",
+   "h": 5.0,
+   "prev": null,
+   "expect": "hibernation"
+  },
+  {
+   "name": "h=86 prev=content",
+   "h": 86.0,
+   "prev": "content",
+   "expect": "content"
+  },
+  {
+   "name": "h=90 prev=content",
+   "h": 90.0,
+   "prev": "content",
+   "expect": "radiant"
+  },
+  {
+   "name": "h=82 prev=radiant",
+   "h": 82.0,
+   "prev": "radiant",
+   "expect": "radiant"
+  },
+  {
+   "name": "h=79 prev=radiant",
+   "h": 79.0,
+   "prev": "radiant",
+   "expect": "content"
+  },
+  {
+   "name": "h=60 prev=content",
+   "h": 60.0,
+   "prev": "content",
+   "expect": "content"
+  },
+  {
+   "name": "h=59 prev=content",
+   "h": 59.0,
+   "prev": "content",
+   "expect": "tired"
+  },
+  {
+   "name": "h=26 prev=tired",
+   "h": 26.0,
+   "prev": "tired",
+   "expect": "sick"
+  },
+  {
+   "name": "h=24 prev=tired",
+   "h": 24.0,
+   "prev": "tired",
+   "expect": "sick"
+  },
+  {
+   "name": "h=45 prev=tired",
+   "h": 45.0,
+   "prev": "tired",
+   "expect": "tired"
+  },
+  {
+   "name": "h=44 prev=tired",
+   "h": 44.0,
+   "prev": "tired",
+   "expect": "tired"
+  },
+  {
+   "name": "h=15 prev=sick",
+   "h": 15.0,
+   "prev": "sick",
+   "expect": "sick"
+  },
+  {
+   "name": "h=14 prev=sick",
+   "h": 14.0,
+   "prev": "sick",
+   "expect": "hibernation"
+  },
+  {
+   "name": "h=95 prev=hibernation",
+   "h": 95.0,
+   "prev": "hibernation",
+   "expect": "radiant"
+  }
+ ],
+ "overlays": [
+  {
+   "name": "kotlin: alle vier",
+   "stats": {
+    "e": 10.0,
+    "r": 20.0,
+    "f": 10.0,
+    "v": 10.0,
+    "a": null
+   },
+   "expect": [
+    "yawning",
+    "chubby",
+    "stressed",
+    "sluggish"
+   ]
+  },
+  {
+   "name": "kotlin: keine",
+   "stats": {
+    "e": 80.0,
+    "r": 80.0,
+    "f": 80.0,
+    "v": 80.0,
+    "a": 80.0
+   },
+   "expect": []
+  },
+  {
+   "name": "kotlin: fehlende Werte",
+   "stats": {
+    "e": null,
+    "r": null,
+    "f": null,
+    "v": null,
+    "a": null
+   },
+   "expect": []
+  },
+  {
+   "name": "nur gestresst",
+   "stats": {
+    "e": 50.0,
+    "r": 29.0,
+    "f": 50.0,
+    "v": 50.0,
+    "a": null
+   },
+   "expect": [
+    "stressed"
+   ]
+  },
+  {
+   "name": "knapp darüber",
+   "stats": {
+    "e": 16.0,
+    "r": 31.0,
+    "f": 21.0,
+    "v": 21.0,
+    "a": null
+   },
+   "expect": []
+  }
+ ],
+ "sequences": [
+  {
+   "name": "A Arbeitstag (Android)",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "steps": [
+    {
+     "inputs": {
+      "batteryPct": 100,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 0,
+      "nightMinutes": 0,
+      "pickups": 5,
+      "steps": 500,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.25,
+     "expect": {
+      "stats": {
+       "e": 100.0,
+       "r": 99.5,
+       "f": 36.11823,
+       "v": 15.7656,
+       "a": 69.65
+      },
+      "wellbeing": 47.36154,
+      "mood": "tired",
+      "overlays": [
+       "sluggish"
+      ]
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 90,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 20,
+      "nightMinutes": 0,
+      "pickups": 15,
+      "steps": 1500,
+      "pats": 1,
+      "focusSessions": 0
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 91.35335,
+       "r": 97.25631,
+       "f": 36.11823,
+       "v": 34.01694,
+       "a": 70.30586
+      },
+      "wellbeing": 52.31738,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 78,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 55,
+      "nightMinutes": 0,
+      "pickups": 30,
+      "steps": 3000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 79.80718,
+       "r": 92.29956,
+       "f": 36.11823,
+       "v": 55.26068,
+       "a": 73.4749
+      },
+      "wellbeing": 52.02174,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 65,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 90,
+      "nightMinutes": 0,
+      "pickups": 45,
+      "steps": 3800,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 67.00393,
+       "r": 85.94987,
+       "f": 36.11823,
+       "v": 65.20485,
+       "a": 75.31714
+      },
+      "wellbeing": 49.22807,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 52,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 140,
+      "nightMinutes": 0,
+      "pickups": 60,
+      "steps": 5200,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 54.03056,
+       "r": 77.56719,
+       "f": 36.11823,
+       "v": 81.21453,
+       "a": 75.74521
+      },
+      "wellbeing": 46.59009,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 40,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 200,
+      "nightMinutes": 0,
+      "pickups": 80,
+      "steps": 6000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 41.89883,
+       "r": 67.0189,
+       "f": 36.11823,
+       "v": 89.77124,
+       "a": 74.72846
+      },
+      "wellbeing": 42.79718,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 28,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 260,
+      "nightMinutes": 0,
+      "pickups": 100,
+      "steps": 6800,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 29.881,
+       "r": 55.35875,
+       "f": 36.11823,
+       "v": 97.99132,
+       "a": 72.48869
+      },
+      "wellbeing": 37.3974,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 15,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.12,
+      "screenMinutes": 330,
+      "nightMinutes": 0,
+      "pickups": 120,
+      "steps": 7200,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 17.01392,
+       "r": 42.24919,
+       "f": 36.11823,
+       "v": 100.0,
+       "a": 69.01964
+      },
+      "wellbeing": 29.92361,
+      "mood": "sick",
+      "overlays": []
+     }
+    }
+   ]
+  },
+  {
+   "name": "B Laden (iOS-Variante)",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "steps": [
+    {
+     "inputs": {
+      "batteryPct": 30,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.25,
+      "screenMinutes": 40,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": null,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.25,
+     "expect": {
+      "stats": {
+       "e": 30.0,
+       "r": 92.0,
+       "f": 83.65116,
+       "v": null,
+       "a": 64.4
+      },
+      "wellbeing": 46.73243,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 24,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.25,
+      "screenMinutes": 70,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": null,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": 26.20728,
+       "r": 90.29919,
+       "f": 83.65116,
+       "v": null,
+       "a": 64.06419
+      },
+      "wellbeing": 44.42383,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 60,
+      "charging": true,
+      "lowPower": false,
+      "freeStorageRatio": 0.25,
+      "screenMinutes": 70,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": null,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": 53.88956,
+       "r": 89.0805,
+       "f": 83.65116,
+       "v": null,
+       "a": 63.75522
+      },
+      "wellbeing": 59.04905,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 85,
+      "charging": true,
+      "lowPower": false,
+      "freeStorageRatio": 0.25,
+      "screenMinutes": 90,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": null,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": 79.87631,
+       "r": 87.0734,
+       "f": 83.65116,
+       "v": null,
+       "a": 63.24709
+      },
+      "wellbeing": 74.41089,
+      "mood": "content",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 100,
+      "charging": true,
+      "lowPower": false,
+      "freeStorageRatio": 0.25,
+      "screenMinutes": 120,
+      "nightMinutes": 10,
+      "pickups": null,
+      "steps": null,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": 92.59691,
+       "r": 82.17063,
+       "f": 83.65116,
+       "v": null,
+       "a": 62.09552
+      },
+      "wellbeing": 77.85803,
+      "mood": "content",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 95,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.25,
+      "screenMinutes": 200,
+      "nightMinutes": 30,
+      "pickups": null,
+      "steps": null,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": 94.11595,
+       "r": 70.59454,
+       "f": 83.65116,
+       "v": null,
+       "a": 59.44401
+      },
+      "wellbeing": 71.16956,
+      "mood": "content",
+      "overlays": []
+     }
+    }
+   ]
+  },
+  {
+   "name": "C Schlechter Tag",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "steps": [
+    {
+     "inputs": {
+      "batteryPct": 20,
+      "charging": false,
+      "lowPower": true,
+      "freeStorageRatio": 0.04,
+      "screenMinutes": 300,
+      "nightMinutes": 60,
+      "pickups": 90,
+      "steps": 400,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.25,
+     "expect": {
+      "stats": {
+       "e": 17.0,
+       "r": 3.5,
+       "f": 0.0,
+       "v": 13.4857,
+       "a": 2.45
+      },
+      "wellbeing": 4.94571,
+      "mood": "hibernation",
+      "overlays": [
+       "chubby",
+       "stressed",
+       "sluggish"
+      ]
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 12,
+      "charging": false,
+      "lowPower": true,
+      "freeStorageRatio": 0.04,
+      "screenMinutes": 420,
+      "nightMinutes": 80,
+      "pickups": 140,
+      "steps": 450,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 2.0,
+     "expect": {
+      "stats": {
+       "e": 10.32455,
+       "r": 0.92259,
+       "f": 0.0,
+       "v": 14.64469,
+       "a": 1.7555
+      },
+      "wellbeing": 3.42016,
+      "mood": "hibernation",
+      "overlays": [
+       "yawning",
+       "chubby",
+       "stressed",
+       "sluggish"
+      ]
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 8,
+      "charging": false,
+      "lowPower": true,
+      "freeStorageRatio": 0.04,
+      "screenMinutes": 520,
+      "nightMinutes": 100,
+      "pickups": 180,
+      "steps": 500,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 2.0,
+     "expect": {
+      "stats": {
+       "e": 6.86455,
+       "r": 0.24319,
+       "f": 0.0,
+       "v": 15.7656,
+       "a": 1.25787
+      },
+      "wellbeing": 2.76647,
+      "mood": "hibernation",
+      "overlays": [
+       "yawning",
+       "chubby",
+       "stressed",
+       "sluggish"
+      ]
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 5,
+      "charging": false,
+      "lowPower": true,
+      "freeStorageRatio": 0.04,
+      "screenMinutes": 600,
+      "nightMinutes": 120,
+      "pickups": 220,
+      "steps": 520,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 2.0,
+     "expect": {
+      "stats": {
+       "e": 4.29789,
+       "r": 0.0641,
+       "f": 0.0,
+       "v": 16.20443,
+       "a": 0.9013
+      },
+      "wellbeing": 2.29571,
+      "mood": "hibernation",
+      "overlays": [
+       "yawning",
+       "chubby",
+       "stressed",
+       "sluggish"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "D Sensor fällt aus",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "steps": [
+    {
+     "inputs": {
+      "batteryPct": 90,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.35,
+      "screenMinutes": 30,
+      "nightMinutes": null,
+      "pickups": null,
+      "steps": 2000,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.25,
+     "expect": {
+      "stats": {
+       "e": 90.0,
+       "r": 94.0,
+       "f": 100.0,
+       "v": 41.60566,
+       "a": 65.8
+      },
+      "wellbeing": 63.85898,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 80,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.35,
+      "screenMinutes": 60,
+      "nightMinutes": null,
+      "pickups": null,
+      "steps": 3000,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": 83.67879,
+       "r": 92.29919,
+       "f": 100.0,
+       "v": 55.26068,
+       "a": 65.46419
+      },
+      "wellbeing": 68.15801,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": null,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.35,
+      "screenMinutes": 90,
+      "nightMinutes": null,
+      "pickups": null,
+      "steps": 4500,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": null,
+       "r": 89.37969,
+       "f": 100.0,
+       "v": 73.39731,
+       "a": 64.81941
+      },
+      "wellbeing": 76.38459,
+      "mood": "content",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": null,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.35,
+      "screenMinutes": 120,
+      "nightMinutes": null,
+      "pickups": null,
+      "steps": 6000,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": null,
+       "r": 85.58697,
+       "f": 100.0,
+       "v": 89.77124,
+       "a": 63.89037
+      },
+      "wellbeing": 82.45741,
+      "mood": "content",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 60,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.35,
+      "screenMinutes": 150,
+      "nightMinutes": null,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 0,
+      "focusSessions": 0
+     },
+     "dtHours": 0.5,
+     "expect": {
+      "stats": {
+       "e": 60.0,
+       "r": 81.16855,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 62.6998
+      },
+      "wellbeing": 66.83218,
+      "mood": "content",
+      "overlays": []
+     }
+    }
+   ]
+  },
+  {
+   "name": "E Guter Tag kippt",
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "steps": [
+    {
+     "inputs": {
+      "batteryPct": 100,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.4,
+      "screenMinutes": 30,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 0.25,
+     "expect": {
+      "stats": {
+       "e": 100.0,
+       "r": 94.0,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 95.8
+      },
+      "wellbeing": 95.72608,
+      "mood": "radiant",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 85,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.4,
+      "screenMinutes": 60,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 87.03003,
+       "r": 91.0805,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 95.15522
+      },
+      "wellbeing": 88.54935,
+      "mood": "radiant",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 60,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.4,
+      "screenMinutes": 120,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 63.65812,
+       "r": 83.74259,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 93.31988
+      },
+      "wellbeing": 72.10113,
+      "mood": "content",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 35,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.4,
+      "screenMinutes": 200,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 38.87845,
+       "r": 72.18985,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 90.04689
+      },
+      "wellbeing": 55.69322,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 15,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.4,
+      "screenMinutes": 300,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 18.2316,
+       "r": 56.52682,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 85.1271
+      },
+      "wellbeing": 42.47101,
+      "mood": "tired",
+      "overlays": []
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 8,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.4,
+      "screenMinutes": 400,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 9.3847,
+       "r": 38.7535,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 78.81334
+      },
+      "wellbeing": 35.31016,
+      "mood": "tired",
+      "overlays": [
+       "yawning"
+      ]
+     }
+    },
+    {
+     "inputs": {
+      "batteryPct": 8,
+      "charging": false,
+      "lowPower": false,
+      "freeStorageRatio": 0.4,
+      "screenMinutes": 480,
+      "nightMinutes": 0,
+      "pickups": null,
+      "steps": 7000,
+      "pats": 2,
+      "focusSessions": 1
+     },
+     "dtHours": 1.0,
+     "expect": {
+      "stats": {
+       "e": 8.1874,
+       "r": 21.84304,
+       "f": 100.0,
+       "v": 100.0,
+       "a": 71.74945
+      },
+      "wellbeing": 31.69564,
+      "mood": "sick",
+      "overlays": [
+       "yawning",
+       "stressed"
+      ]
+     }
+    }
+   ]
+  }
+ ],
+ "evolve": [
+  {
+   "name": "kotlin: dominant Social",
+   "shares": {
+    "social": 0.5,
+    "entertainment": 0.1,
+    "other": 0.4
+   },
+   "avgDailyMinutes": 200.0,
+   "avgWellbeing14": 70.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "chatterling",
+    "hybrid": null,
+    "branch": "radiant"
+   }
+  },
+  {
+   "name": "kotlin: Hybrid",
+   "shares": {
+    "social": 0.4,
+    "entertainment": 0.37,
+    "other": 0.23
+   },
+   "avgDailyMinutes": 200.0,
+   "avgWellbeing14": 50.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "chatterling",
+    "hybrid": "bingeon",
+    "branch": "standard"
+   }
+  },
+  {
+   "name": "kotlin: Balance -> Wandero",
+   "shares": {
+    "social": 0.25,
+    "entertainment": 0.25,
+    "games": 0.2,
+    "productivity": 0.2,
+    "other": 0.1
+   },
+   "avgDailyMinutes": 150.0,
+   "avgWellbeing14": 30.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "wandero",
+    "hybrid": null,
+    "branch": "wild"
+   }
+  },
+  {
+   "name": "kotlin: zu viel Zeit -> nächstliegend",
+   "shares": {
+    "social": 0.25,
+    "entertainment": 0.25,
+    "games": 0.2,
+    "productivity": 0.2,
+    "other": 0.1
+   },
+   "avgDailyMinutes": 400.0,
+   "avgWellbeing14": 50.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "chatterling",
+    "hybrid": null,
+    "branch": "standard"
+   }
+  },
+  {
+   "name": "Games",
+   "shares": {
+    "social": 0.1,
+    "entertainment": 0.1,
+    "games": 0.5,
+    "productivity": 0.1,
+    "other": 0.2
+   },
+   "avgDailyMinutes": 250.0,
+   "avgWellbeing14": 66.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "pixelo",
+    "hybrid": null,
+    "branch": "radiant"
+   }
+  },
+  {
+   "name": "Produktivität",
+   "shares": {
+    "social": 0.1,
+    "entertainment": 0.1,
+    "games": 0.05,
+    "productivity": 0.6,
+    "other": 0.15
+   },
+   "avgDailyMinutes": 220.0,
+   "avgWellbeing14": 45.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "zenfuchs",
+    "hybrid": null,
+    "branch": "standard"
+   }
+  },
+  {
+   "name": "Schwelle genau 0,35",
+   "shares": {
+    "social": 0.35,
+    "entertainment": 0.2,
+    "games": 0.1,
+    "productivity": 0.1,
+    "other": 0.25
+   },
+   "avgDailyMinutes": 200.0,
+   "avgWellbeing14": 65.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "chatterling",
+    "hybrid": null,
+    "branch": "radiant"
+   }
+  },
+  {
+   "name": "knapp unter Schwelle",
+   "shares": {
+    "social": 0.34,
+    "entertainment": 0.3,
+    "games": 0.1,
+    "productivity": 0.1,
+    "other": 0.16
+   },
+   "avgDailyMinutes": 300.0,
+   "avgWellbeing14": 20.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "chatterling",
+    "hybrid": null,
+    "branch": "wild"
+   }
+  },
+  {
+   "name": "Outdoor gewinnt",
+   "shares": {
+    "social": 0.36,
+    "entertainment": 0.1,
+    "games": 0.0,
+    "productivity": 0.1,
+    "other": 0.44
+   },
+   "avgDailyMinutes": 170.0,
+   "avgWellbeing14": 80.0,
+   "outdoorShare": 0.5,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "wandero",
+    "hybrid": null,
+    "branch": "radiant"
+   }
+  },
+  {
+   "name": "Outdoor Hybrid",
+   "shares": {
+    "social": 0.4,
+    "entertainment": 0.1,
+    "other": 0.5
+   },
+   "avgDailyMinutes": 170.0,
+   "avgWellbeing14": 39.0,
+   "outdoorShare": 0.38,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "chatterling",
+    "hybrid": "wandero",
+    "branch": "wild"
+   }
+  },
+  {
+   "name": "Balance exakt 0,30",
+   "shares": {
+    "social": 0.3,
+    "entertainment": 0.3,
+    "games": 0.1,
+    "productivity": 0.1,
+    "other": 0.2
+   },
+   "avgDailyMinutes": 180.0,
+   "avgWellbeing14": 50.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "wandero",
+    "hybrid": null,
+    "branch": "standard"
+   }
+  },
+  {
+   "name": "leere Anteile",
+   "shares": {},
+   "avgDailyMinutes": 100.0,
+   "avgWellbeing14": 50.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "wandero",
+    "hybrid": null,
+    "branch": "standard"
+   }
+  },
+  {
+   "name": "Gleichstand Social/Entertainment",
+   "shares": {
+    "social": 0.4,
+    "entertainment": 0.4,
+    "other": 0.2
+   },
+   "avgDailyMinutes": 200.0,
+   "avgWellbeing14": 50.0,
+   "outdoorShare": 0.0,
+   "config": {
+    "screenGoalMin": 180.0,
+    "stepGoal": 7000,
+    "pickupRef": 50.0
+   },
+   "expect": {
+    "form": "chatterling",
+    "hybrid": "bingeon",
+    "branch": "standard"
+   }
+  }
+ ]
+}

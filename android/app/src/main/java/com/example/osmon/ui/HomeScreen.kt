@@ -55,6 +55,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -384,6 +385,7 @@ fun HomeContent(
         Unit
     }
 
+    Box(Modifier.fillMaxSize()) {
     Box(
         Modifier
             .fillMaxSize()
@@ -412,9 +414,6 @@ fun HomeContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(if (hasScene) 14.dp else 20.dp)
         ) {
-            state.evolutionEvent?.let { EvolutionBanner(it, onAckEvolution) }
-            if (state.newScenes.isNotEmpty()) SceneUnlockBanner(state.newScenes, onUseScene, onAckScenes)
-
             val figure = rememberCurrentFigure()
 
             // Kopf: Wohlbefinden-Ring + Stimmung (mit Szene auf Glas-Karte)
@@ -426,8 +425,9 @@ fun HomeContent(
                         Text(moodTitle(snap.mood), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         val evo = state.evolution
                         Text(
-                            if (evo != null) formTitle(evo.form) + (evo.hybrid?.let { " · ${formBadge(it)}" } ?: "") else figure.name,
-                            style = MaterialTheme.typography.bodyMedium,
+                            // Figurenname bleibt sichtbar; die Entwicklungsform steht dahinter
+                            if (evo != null) "${figure.name} · ${formTitle(evo.form)}" + (evo.hybrid?.let { " ${formBadge(it)}" } ?: "") else figure.name,
+                            style = MaterialTheme.typography.bodyMedium, maxLines = 1,
                             color = if (hasScene) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -516,7 +516,25 @@ fun HomeContent(
                 Text("Zuletzt aktualisiert: $rel", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            // Platz, damit die Einblendung unten nichts verdeckt
+            if (state.evolutionEvent != null || state.newScenes.isNotEmpty()) Spacer(Modifier.height(96.dp))
         }
+    }
+
+    // Hinweise (Entwicklung, neuer Hintergrund) unten als Einblendung: verschieben Kopfzeile und Wesen nicht
+    Column(
+        Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        state.evolutionEvent?.let { Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { EvolutionBanner(it, onAckEvolution) } }
+        if (state.newScenes.isNotEmpty()) {
+            Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { SceneUnlockBanner(state.newScenes, onUseScene, onAckScenes) }
+        }
+    }
     }
 }
 

@@ -145,6 +145,8 @@ struct SceneUnlockBanner: View {
             }
             .padding(12)
             .background(Color.green.opacity(0.15), in: RoundedRectangle(cornerRadius: 16))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
         }
     }
 }

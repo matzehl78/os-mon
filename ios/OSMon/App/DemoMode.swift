@@ -39,6 +39,7 @@ enum DemoMode {
                                             "3 Fokus-Sessions geschafft"])
         }
         if flag("OSMonUnlock") { s.newScenes = [PetScene.byID("zauberwald")] }
+        if flag("OSMonEvent") { s.evolutionEvent = PetEvoEvent(kind: .evolved, from: nil, to: .chatterling, epochDay: 0) }
         return s
     }
 }
@@ -49,7 +50,8 @@ struct DemoRoot: View {
         switch DemoMode.screen {
         case "settings": SettingsView()
         case "onboarding": OnboardingView {}
-        default: HomeContent(state: DemoMode.state(), onOpenSettings: {})
+        default: HomeContent(state: DemoMode.state(), onOpenSettings: {},
+                             demoScrollTo: UserDefaults.standard.string(forKey: "OSMonScroll"))
         }
     }
 }

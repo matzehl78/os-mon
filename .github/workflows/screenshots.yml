@@ -59,6 +59,8 @@ jobs:
           shot 06_suess_sunni           light -OSMonDemo home -OSMonScene suess       -OSMonFigure sunni    -OSMonMood content
           shot 07_zen_wolki             light -OSMonDemo home -OSMonScene zen         -OSMonFigure wolki    -OSMonMood radiant
           shot 08_ohne_minto            light -OSMonDemo home -OSMonScene none        -OSMonFigure minto    -OSMonMood content
+          shot 11_wochenrueckblick      light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure glut     -OSMonMood radiant -OSMonReview YES -OSMonScroll review
+          shot 12_entwicklung_rauti     light -OSMonDemo home -OSMonScene studio      -OSMonFigure rauti    -OSMonMood radiant -OSMonEvent YES
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

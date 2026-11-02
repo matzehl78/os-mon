@@ -201,6 +201,7 @@ struct HomeContent: View {
     var onDismissReview: () -> Void = {}
     var onUseScene: (PetScene) -> Void = { _ in }
     var onAckScenes: () -> Void = {}
+    var demoScrollTo: String? = nil               // nur Screenshots: z. B. "review"
 
     private var snap: PetSnapshot { state.snapshot }
     @AppStorage(PetFigureStore.key, store: STShared.defaults) private var figureID = PetFigure.defaultID
@@ -217,10 +218,9 @@ struct HomeContent: View {
     @State private var reaction: ActiveReaction? = nil
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(spacing: hasScene ? 14 : 20) {
-                if let event = state.evolutionEvent { EvolutionBanner(event: event, onAck: onAckEvolution) }
-                if !state.newScenes.isEmpty { SceneUnlockBanner(scenes: state.newScenes, onUse: onUseScene, onDismiss: onAckScenes) }
                 glass(header)
                 VStack(spacing: 8) {
                     speechBubble
@@ -229,7 +229,7 @@ struct HomeContent: View {
                 glass(rings)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { ringsFrame = $0 }
                 actions
-                if let r = state.review { WeeklyReviewCard(review: r, onDismiss: onDismissReview) }
+                if let r = state.review { WeeklyReviewCard(review: r, onDismiss: onDismissReview).id("review") }
                 if !state.quests.isEmpty { questList }
                 Text("Zuletzt aktualisiert: \(state.updatedAt.formatted(.relative(presentation: .named)))")
                     .font(.caption2).foregroundStyle(.secondary)
@@ -250,7 +250,24 @@ struct HomeContent: View {
             }
             .coordinateSpace(.named("home"))
         }
+        .onAppear {
+            guard let target = demoScrollTo else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { proxy.scrollTo(target, anchor: .center) }
+        }
+        }
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
+        // Hinweise (Entwicklung, neuer Hintergrund) unten als Einblendung: verschieben Kopfzeile und Wesen nicht
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if state.evolutionEvent != nil || !state.newScenes.isEmpty {
+                VStack(spacing: 8) {
+                    if let event = state.evolutionEvent { EvolutionBanner(event: event, onAck: onAckEvolution) }
+                    if !state.newScenes.isEmpty { SceneUnlockBanner(scenes: state.newScenes, onUse: onUseScene, onDismiss: onAckScenes) }
+                }
+                .padding(.horizontal).padding(.bottom, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.35), value: state.newScenes.isEmpty)
         .background(
             Group {
                 if hasScene { Color(.systemBackground) }
@@ -317,8 +334,9 @@ struct HomeContent: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(snap.mood.title).font(.title2.bold())
                 if let evo = state.evolution {
-                    Text(evo.form.title + (evo.hybrid.map { " · \($0.badge)" } ?? ""))
-                        .font(.subheadline).foregroundStyle(.secondary)
+                    // Figurenname bleibt sichtbar; die Entwicklungsform steht dahinter
+                    Text(PetFigure.byID(figureID).name + " · " + evo.form.title + (evo.hybrid.map { " \($0.badge)" } ?? ""))
+                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
                 } else {
                     Text(PetFigure.byID(figureID).name).font(.subheadline).foregroundStyle(.secondary)
                 }
@@ -415,6 +433,8 @@ struct EvolutionBanner: View {
         }
         .padding(12)
         .background(Color.accentColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 16))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
         .accessibilityElement(children: .combine)
     }
 }

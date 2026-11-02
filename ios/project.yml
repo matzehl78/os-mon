@@ -47,7 +47,7 @@ targets:
       path: OSMon/App/Info.plist
       properties:
         CFBundleDisplayName: OS-Mon
-        UILaunchScreen: {}
+        UILaunchScreen: { UIColorName: LaunchBackground }   # weiß, passend zum Logo-Film
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [fetch]
         BGTaskSchedulerPermittedIdentifiers: [com.example.osmon.refresh]

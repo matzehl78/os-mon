@@ -1,4 +1,4 @@
-// MainActivity.kt: Einstieg der App. Verbindet Vorspann-Film, Onboarding, Home-Screen und Einstellungen
+// MainActivity.kt: Einstieg der App. Verbindet Logo-Film (jeder Start), Vorspann-Film, Onboarding, Home-Screen und Einstellungen
 // und reicht Tipps auf Meldungen an PushDelivery weiter.
 
 package com.example.osmon
@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.osmon.ui.BedtimeScreen
 import com.example.osmon.ui.HomeScreen
 import com.example.osmon.ui.IntroScreen
+import com.example.osmon.ui.LogoScreen
 import com.example.osmon.ui.OnboardingScreen
 import com.example.osmon.ui.SettingsScreen
 
@@ -61,7 +62,10 @@ private fun Root() {
     val activity = LocalContext.current as? ComponentActivity
     var showBedtime by rememberSaveable { mutableStateOf(activity?.intent?.getStringExtra("open") == "bedtime") }
 
+    var logoDone by rememberSaveable { mutableStateOf(false) }   // Logo-Film bei jedem Kaltstart
+
     when {
+        !logoDone -> LogoScreen(onFinished = { logoDone = true })
         // Vorspann einmal vor dem Onboarding
         !done && !introSeen -> IntroScreen(onFinished = { prefs.edit().putBoolean("intro.seen", true).apply(); introSeen = true })
         !done -> OnboardingScreen(onFinished = { done = true })

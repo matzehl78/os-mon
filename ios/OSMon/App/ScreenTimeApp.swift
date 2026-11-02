@@ -5,6 +5,7 @@
 import SwiftUI
 import FamilyControls
 import DeviceActivity
+import ManagedSettings          // ApplicationToken, ActivityCategoryToken, WebDomainToken
 
 @MainActor
 final class ScreenTimeManager: ObservableObject {

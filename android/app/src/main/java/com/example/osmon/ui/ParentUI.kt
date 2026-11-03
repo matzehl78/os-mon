@@ -288,6 +288,22 @@ private fun ParentContent(onChanged: () -> Unit) {
     Text("Das Kind sieht diese Aufgaben mit „von den Eltern“, kann sie abhaken, aber nicht löschen.",
         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
+    // Mini-Spiele: Runden pro Tag
+    Text("Mini-Spiele", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+    var limit by remember { mutableIntStateOf(GameStore.limit(ctx)) }
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        (0..com.example.osmon.engine.MiniGames.MAX_LIMIT).forEach { n ->
+            val l = if (n == 0) "Aus" else "$n× täglich"
+            if (n == limit) Button(onClick = {}) { Text(l) } else OutlinedButton(onClick = { limit = n; GameStore.setLimit(ctx, n) }) { Text(l) }
+        }
+    }
+    Text("Jede Runde dauert 30 Sekunden. Standard: 2 Runden am Tag.", style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+    // Premium (Einmalkauf, nur hier hinter dem PIN)
+    Text("Premium", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+    PremiumCard()
+
     // Schutz
     Text("Schutz", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     var lock by remember { mutableStateOf(ParentStore.lockSettings(ctx)) }

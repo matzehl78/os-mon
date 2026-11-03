@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 
 class AchievementsTest {
     @Test fun listIsConsistent() {
-        assertEquals(23, Achievements.ALL.size)
+        assertEquals(25, Achievements.ALL.size)
         assertEquals(Achievements.ALL.size, Achievements.ALL.map { it.id }.toSet().size)
         Achievements.ALL.forEach { assertTrue(it.target > 0 && it.title.isNotBlank() && it.hint.isNotBlank(), it.id) }
     }

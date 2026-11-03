@@ -43,6 +43,7 @@ struct WatchComplicationView: View {
     private var pose: PetPose {
         var pose = p.map { PetPose(snapshot: $0.snapshot) } ?? .preview
         pose.accessory = p?.accessory.flatMap(Accessory.init(rawValue:))
+        pose.glasses = p?.glasses.flatMap(Glasses.init(rawValue:))
         pose.stage = p?.growth
         return pose
     }

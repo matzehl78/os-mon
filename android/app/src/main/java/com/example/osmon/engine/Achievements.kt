@@ -5,7 +5,7 @@
 
 package com.example.osmon.engine
 
-enum class Metric { STAGE, TASKS, STREAK, KIND, GOODNIGHT, FESTIVALS, SCENES, COMEBACK, DAYS }
+enum class Metric { STAGE, TASKS, STREAK, KIND, GOODNIGHT, FESTIVALS, SCENES, COMEBACK, DAYS, GAMES, GOODDAYS }
 
 data class Achievement(val id: String, val emoji: String, val title: String, val hint: String, val metric: Metric, val target: Int)
 
@@ -33,7 +33,9 @@ object Achievements {
         Achievement("scene3", "🗺️", "Entdecker", "Schalte 3 Hintergründe frei.", Metric.SCENES, 3),
         Achievement("scene10", "🌍", "Weltreisender", "Schalte alle 10 Hintergründe frei.", Metric.SCENES, 10),
         Achievement("comeback", "🩹", "Wieder aufgepäppelt", "Hilf deinem Wesen nach einem Rückfall wieder zu wachsen.", Metric.COMEBACK, 1),
-        Achievement("days100", "💯", "100 Tage zusammen", "Seid 100 Tage zusammen.", Metric.DAYS, 100)
+        Achievement("days100", "💯", "100 Tage zusammen", "Seid 100 Tage zusammen.", Metric.DAYS, 100),
+        Achievement("game1", "🎮", "Spielkind", "Spiel ein Mini-Spiel mit deinem Wesen.", Metric.GAMES, 1),
+        Achievement("game20", "🕹️", "Spiele-Fan", "Spiel 20 Mini-Spiele.", Metric.GAMES, 20)
     )
 
     fun byId(id: String) = ALL.firstOrNull { it.id == id }

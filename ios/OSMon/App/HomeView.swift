@@ -234,7 +234,8 @@ struct HomeScreen: View {
             onTapEgg: { model.tapEgg() },
             onAckGrowth: { model.ackGrowth() },
             onRough: { model.rough() },
-            onAckAchievement: { model.ackAchievement() })
+            onAckAchievement: { model.ackAchievement() },
+            onExtrasChanged: { model.refresh() })
             .fullScreenCover(isPresented: $showBedtime, onDismiss: { model.refresh() }) { BedtimeView { showBedtime = false } }
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
@@ -265,6 +266,7 @@ struct HomeContent: View {
     var onAckGrowth: () -> Void = {}
     var onRough: () -> Void = {}
     var onAckAchievement: () -> Void = {}
+    var onExtrasChanged: () -> Void = {}
     var demoScrollTo: String? = nil               // nur Screenshots: z. B. "review"
 
     private var snap: PetSnapshot { state.snapshot }
@@ -278,6 +280,12 @@ struct HomeContent: View {
     @State private var headerFrame: CGRect = .zero
     @State private var eggShakeAt: Date? = nil
     @State private var showAlbum = false
+    @State private var showWardrobe = false
+    @State private var showGames = false
+    @State private var extrasV = 0                     // Kleiderschrank/Spiel/Kauf geändert
+    private var outfit: Outfit { _ = extrasV; return WardrobeStore.outfit }
+    /// Kopf: Fest-Zubehör hat Vorrang vor der Mütze aus dem Kleiderschrank.
+    private var head: Accessory? { Wardrobe.hat(festival: state.festival?.accessory, outfit: outfit) }
     @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
     @AppStorage(Pet3D.failedKey, store: STShared.defaults) private var failed3D = false
     @StateObject private var shake = ShakeMonitor()
@@ -303,7 +311,11 @@ struct HomeContent: View {
                 glass(rings)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { ringsFrame = $0 }
                 actions
-                if let a = state.album { AlbumButton(album: a) { showAlbum = true } }
+                // Sammelalbum, Kleiderschrank, Mini-Spiele
+                ViewThatFits {
+                    HStack(spacing: 14) { extras }
+                    VStack(spacing: 6) { extras }
+                }
                 if let f = state.festival, state.festivalCard {
                     FestivalCard(festival: f, onCelebrate: { AchievementStore.addFestival(f.id.rawValue); celebrate() }, onHide: onHideFestival).id("festival")
                 }
@@ -383,6 +395,48 @@ struct HomeContent: View {
         }
         .animation(.spring(duration: 0.35), value: state.newScenes.isEmpty)
         .sheet(isPresented: $showAlbum) { if let a = state.album { AlbumView(album: a) } }
+        .sheet(isPresented: $showWardrobe, onDismiss: { extrasV += 1; onExtrasChanged() }) {
+            WardrobeView(figureName: PetFigure.byID(figureID).name, stage: state.growth?.stage)
+        }
+        .fullScreenCover(isPresented: $showGames) {
+            GameView(figureName: PetFigure.byID(figureID).name, stage: state.growth?.stage, onClose: { stars, cheer in
+                showGames = false
+                if let cheer {
+                    reaction = ActiveReaction(kind: (stars ?? 0) >= 2 ? .spin : .giggle, start: .now, say: cheer)
+                    if stars == 3 { celebrateAt = .now }
+                }
+                extrasV += 1; onExtrasChanged()
+            }, demoGame: demoGame)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .osmonExtrasChanged)) { _ in extrasV += 1 }
+        // Geräusche und Stimme: Brabbeln zur Sprechblase, sonst ein kurzer Ton je Reaktion
+        .onChange(of: reaction) { _, r in
+            guard let r else { return }
+            if !r.say.isEmpty { SoundPlayer.shared.say(r.say, stage: state.growth?.stage) }
+            else {
+                switch r.kind {
+                case .dizzy, .startle: SoundPlayer.shared.play(.oops)
+                case .sleepy, .night: SoundPlayer.shared.play(.yawn, stage: state.growth?.stage)
+                case .giggle, .spin: SoundPlayer.shared.play(.giggle, stage: state.growth?.stage)
+                default: SoundPlayer.shared.play(.tap, stage: state.growth?.stage)
+                }
+            }
+        }
+        .onChange(of: snap.overlays.contains(.yawning)) { _, y in
+            if y { DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { SoundPlayer.shared.play(.yawn, stage: state.growth?.stage) } }
+        }
+        .onChange(of: state.growth?.eggTaps) { old, new in if (new ?? 0) > (old ?? 0) { SoundPlayer.shared.play(.crack) } }
+        .onChange(of: state.album?.pending.first?.id) { _, id in if id != nil { SoundPlayer.shared.play(.achievement) } }
+        .onChange(of: state.growth?.pending) { _, st in
+            guard let st else { return }
+            SoundPlayer.shared.play(state.growth?.pendingDown == true ? .stageDown : st == .baby ? .hatch : .stageUp)
+        }
+        .onAppear {
+            #if DEBUG
+            if UserDefaults.standard.string(forKey: "OSMonOpen") == "wardrobe" { showWardrobe = true }
+            if demoGame != nil { showGames = true }
+            #endif
+        }
         // Grob: kräftig schütteln (nach dem Schlüpfen, nur solange sichtbar)
         .onAppear { startShake() }
         .onDisappear { shake.stop() }
@@ -450,9 +504,10 @@ struct HomeContent: View {
     private var pet3D: some View {
         let g = state.growth
         let egg = g?.stage == .egg
-        let st = Pet3DState(figureID: figureID, accessory: state.festival?.accessory, mood: snap.mood, overlays: snap.overlays,
+        let st = Pet3DState(figureID: figureID, accessory: head, mood: snap.mood, overlays: snap.overlays,
                             energy: snap.stats.e, rest: snap.stats.r, form: state.evolution?.form, branch: state.evolution?.branch,
-                            stage: g?.stage, eggCracks: egg ? Growth.cracks(g?.eggTaps ?? 0) : nil, platform: !hasScene)
+                            stage: g?.stage, eggCracks: egg ? Growth.cracks(g?.eggTaps ?? 0) : nil, platform: !hasScene,
+                            glasses: outfit.glasses)
         return Pet3DView(state: st, reaction: reaction, eggShakeAt: eggShakeAt) {
             if egg {
                 eggShakeAt = .now
@@ -474,14 +529,31 @@ struct HomeContent: View {
         PetAvatarView(mood: snap.mood, overlays: snap.overlays,
                       form: state.evolution?.form, branch: state.evolution?.branch,
                       energy: snap.stats.e, rest: snap.stats.r,
-                      size: hasScene ? 260 : 220, reaction: reaction, accessory: state.festival?.accessory,
-                      stage: state.growth?.stage)
+                      size: hasScene ? 260 : 220, reaction: reaction, accessory: head,
+                      stage: state.growth?.stage, glasses: outfit.glasses)
             .overlay { if let r = reaction { ReactionParticles(reaction: r) } }
             .contentShape(Rectangle())
             .onTapGesture { tapPet() }
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Antippen für eine Reaktion")
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
+    }
+
+    @ViewBuilder
+    private var extras: some View {
+        if let a = state.album { AlbumButton(album: a) { showAlbum = true } }
+        if state.growth?.stage != .egg {
+            WardrobeButton(version: extrasV) { showWardrobe = true }
+            GameButton(version: extrasV) { showGames = true }
+        }
+    }
+
+    private var demoGame: MiniGame? {
+        #if DEBUG
+        return UserDefaults.standard.string(forKey: "OSMonGame").flatMap(MiniGame.init(rawValue:))
+        #else
+        return nil
+        #endif
     }
 
     /// Aufgabe abgehakt / Miteinander-Tipp ausprobiert: das Wesen freut sich mit (alles geschafft = Drehung + Konfetti).
@@ -713,6 +785,7 @@ struct PetAvatarView: View {
     var reaction: ActiveReaction? = nil
     var accessory: Accessory? = nil
     var stage: GrowthStage? = nil
+    var glasses: Glasses? = nil
 
     var body: some View {
         PetFigureView(pose: pose, reaction: reaction)
@@ -725,6 +798,7 @@ struct PetAvatarView: View {
         var p = PetPose(mood: mood, overlays: overlays, form: form, branch: branch,
                         energy: energy, rest: rest, charging: charging, petted: petted, accessory: accessory)
         p.stage = stage
+        p.glasses = glasses
         return p
     }
 }

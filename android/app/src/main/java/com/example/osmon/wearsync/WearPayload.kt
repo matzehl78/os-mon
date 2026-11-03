@@ -20,7 +20,7 @@ data class WearPayload(
     val updatedAtMs: Long,
     val figureId: String,
     val petName: String,
-    val accessory: String?,          // Accessory.name (Fest-Zubehör)
+    val accessory: String?,          // Accessory.name (Fest-Zubehör oder Mütze aus dem Kleiderschrank)
     val form: String?,               // Form.name (Entwicklungsstufe)
     val day: Long,                   // epochDay, für den die Aufgaben gelten
     val tasks: List<DayTask>,
@@ -28,7 +28,8 @@ data class WearPayload(
     val kindTip: String?,
     val kindCategory: String?,
     val kindDone: Boolean,
-    val stage: String? = null        // GrowthStage.name (EGG … ADULT)
+    val stage: String? = null,       // GrowthStage.name (EGG … ADULT)
+    val glasses: String? = null      // Glasses.name (Kleiderschrank)
 ) {
     val progress: TaskProgress get() = DayTasks.progress(tasks, day)
 
@@ -53,6 +54,7 @@ data class WearPayload(
         kindTip?.let { put("kindTip", it) }; kindCategory?.let { put("kindCategory", it) }
         put("kindDone", kindDone)
         stage?.let { put("stage", it) }
+        glasses?.let { put("glasses", it) }
     }.toString()
 
     companion object {
@@ -84,7 +86,7 @@ data class WearPayload(
                 o.optString("accessory").ifEmpty { null }, o.optString("form").ifEmpty { null },
                 o.getLong("day"), tasks, o.optString("motivation"),
                 o.optString("kindTip").ifEmpty { null }, o.optString("kindCategory").ifEmpty { null },
-                o.optBoolean("kindDone"), o.optString("stage").ifEmpty { null })
+                o.optBoolean("kindDone"), o.optString("stage").ifEmpty { null }, o.optString("glasses").ifEmpty { null })
         }
     }
 }

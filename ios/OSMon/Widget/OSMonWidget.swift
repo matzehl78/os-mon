@@ -261,10 +261,12 @@ struct PetWidgetView: View {
         var p = PetPose(snapshot: snap, charging: entry.charging)
         p.stage = GrowthStorage.stage
         let d = STShared.defaults
+        let outfit = WardrobeStore.outfit                       // Kleiderschrank; Fest-Zubehör hat Vorrang
+        p.accessory = outfit.hat; p.glasses = outfit.glasses
         if d.object(forKey: "festivals.enabled") as? Bool ?? true {
             let m = d.integer(forKey: "user.birthday.m"), dd = d.integer(forKey: "user.birthday.d")
             p.accessory = Festivals.today(EpochDay.of(entry.date), birthday: m > 0 && dd > 0 ? (m, dd) : nil,
-                                          hatchDay: nil, pet: PetFigureStore.current.name)?.accessory
+                                          hatchDay: nil, pet: PetFigureStore.current.name)?.accessory ?? outfit.hat
         }
         return p
     }

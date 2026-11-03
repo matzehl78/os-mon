@@ -60,6 +60,7 @@ struct WatchPetPage: View {
         var pose = PetPose(snapshot: p.snapshot)
         pose.form = p.form.flatMap(PetForm.init(rawValue:))
         pose.accessory = p.accessory.flatMap(Accessory.init(rawValue:))
+        pose.glasses = p.glasses.flatMap(Glasses.init(rawValue:))
         pose.stage = p.growth
         return pose
     }

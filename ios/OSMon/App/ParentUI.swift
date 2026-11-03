@@ -168,6 +168,7 @@ private struct ParentContentView: View {
     @State private var title = ""
     @State private var rule: TaskRepeat = .daily
     @State private var lock = ParentStore.lockSettings
+    @State private var gameLimit = GameStore.limit
     private let week = ParentStore.week()
     private let rules: [(TaskRepeat, String)] = [(.once, "Einmal"), (.daily, "Täglich"), (.weekdays, "Mo–Fr"), (.weekend, "Wochenende")]
 
@@ -190,6 +191,15 @@ private struct ParentContentView: View {
             } header: { Text("Aufgaben fürs Kind") } footer: {
                 Text("Das Kind sieht diese Aufgaben mit „von den Eltern“, kann sie abhaken, aber nicht löschen. Löschen: nach links wischen.")
             }
+            Section {
+                Picker("Runden pro Tag", selection: $gameLimit) {
+                    Text("Aus").tag(0)
+                    ForEach(1...MiniGames.maxLimit, id: \.self) { n in Text("\(n)×").tag(n) }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: gameLimit) { _, n in GameStore.setLimit(n) }
+            } header: { Text("Mini-Spiele") } footer: { Text("Jede Runde dauert 30 Sekunden. Standard: 2 Runden am Tag.") }
+            Section("Premium") { PremiumCard().listRowInsets(EdgeInsets()) }
             Section("Schutz") {
                 Toggle("Einstellungen sperren (Ziele, Schlafenszeit, Daten löschen)", isOn: $lock)
                     .onChange(of: lock) { ParentStore.lockSettings = lock; onChanged() }

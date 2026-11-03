@@ -94,7 +94,8 @@ fun moodTitle(m: Mood) = when (m) {
 val WearPayload.growth: GrowthStage? get() = stage?.let { runCatching { GrowthStage.valueOf(it) }.getOrNull() }
 
 fun WearPayload.pose(): PetPose = PetPose.of(snapshot, form = form?.let { runCatching { Form.valueOf(it) }.getOrNull() })
-    .copy(accessory = accessory?.let { runCatching { Accessory.valueOf(it) }.getOrNull() }, stage = growth)
+    .copy(accessory = accessory?.let { runCatching { Accessory.valueOf(it) }.getOrNull() }, stage = growth,
+        glasses = glasses?.let { runCatching { com.example.osmon.engine.Glasses.valueOf(it) }.getOrNull() })
 
 fun figureOf(id: String?) = ALL_FIGURES.firstOrNull { it.id == id } ?: ALL_FIGURES[0]
 

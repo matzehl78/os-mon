@@ -14,7 +14,8 @@ enum class FestivalId { BIRTHDAY, HATCHDAY, MILESTONE, CHRISTMAS, SILVESTER, NEW
     VALENTINE, CARNIVAL, EASTER, MOTHERS_DAY, FATHERS_DAY, ADVENT }
 
 /** Zubehör, das die Figur trägt (Zeichnung: figure/PetAccessory.kt). */
-enum class Accessory { PARTY_HAT, SANTA_HAT, BUNNY_EARS, WITCH_HAT, CROWN, FLOWERS, LANTERN, JESTER }
+enum class Accessory { PARTY_HAT, SANTA_HAT, BUNNY_EARS, WITCH_HAT, CROWN, FLOWERS, LANTERN, JESTER,
+    BEANIE, CAP, BOW, TOP_HAT, WIZARD_HAT, PIRATE_HAT }   // ab BEANIE: Kleiderschrank (Wardrobe.kt)
 
 /** Was über dem Hintergrund schwebt. */
 enum class Decor { CONFETTI, SNOW, HEARTS, EGGS, PUMPKINS, STARS, LIGHTS, PETALS, LEAVES, BUTTERFLIES }

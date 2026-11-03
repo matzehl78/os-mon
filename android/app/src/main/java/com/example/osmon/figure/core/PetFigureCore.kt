@@ -15,6 +15,7 @@ import android.graphics.Typeface
 import androidx.core.graphics.PathParser
 import com.example.osmon.engine.Accessory
 import com.example.osmon.engine.Branch
+import com.example.osmon.engine.Glasses
 import com.example.osmon.engine.Form
 import com.example.osmon.engine.Growth
 import com.example.osmon.engine.GrowthStage
@@ -83,8 +84,9 @@ data class PetPose(
     val petted: Boolean = false,
     val reaction: ReactionKind? = null,      // Antippen: Gesicht, Arme/Beine, Körperbewegung
     val reactU: Float = -1f,                 // Fortschritt 0..1 (außerhalb = keine Reaktion)
-    val accessory: Accessory? = null,        // Fest-Zubehör (Partyhut, Weihnachtsmütze …), PetAccessory.kt
-    val stage: GrowthStage? = null           // Wachstumsstufe (Baby … Erwachsen); null = erwachsen. Ei: drawEgg()
+    val accessory: Accessory? = null,        // Kopf: Fest-Zubehör oder Mütze aus dem Kleiderschrank, PetAccessory.kt
+    val stage: GrowthStage? = null,          // Wachstumsstufe (Baby … Erwachsen); null = erwachsen. Ei: drawEgg()
+    val glasses: Glasses? = null             // Brille aus dem Kleiderschrank
 ) {
     companion object {
         fun of(s: Snapshot, form: Form? = null, branch: Branch? = null, charging: Boolean = false, petted: Boolean = false) =
@@ -386,7 +388,7 @@ object PetFigureRenderer {
         tail()
         feet()
         fun antG() { c.save(); c.scale(L.ant, L.ant, 110f, S.ant.y + 8f); antennas(); c.restore() }
-        fun faceG() { c.save(); c.scale(L.face, L.face, cx, ey); face(); c.restore() }
+        fun faceG() { c.save(); c.scale(L.face, L.face, cx, ey); face(); p.glasses?.let { PetAccessory.drawGlasses(c, it, cx, ey, dx, r, line) }; c.restore() }
         val headBase = S.head?.let { it.cy + it.ry } ?: (ey + 40f)
         fun headScale() { if (L.head != 1f) c.scale(L.head, L.head, 110f, headBase) }
         if (S.lumo) {

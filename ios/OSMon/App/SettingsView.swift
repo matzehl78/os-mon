@@ -92,6 +92,7 @@ struct SettingsView: View {
     @State private var parentVersion = 0
     private var locked: Bool { _ = parentVersion; return ParentStore.settingsLocked }
     @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
+    @AppStorage(SoundPlayer.key, store: STShared.defaults) private var sound = true
     @State private var showWallpaper = false
     @Environment(\.scenePhase) private var phase
     var onDataDeleted: () -> Void = {}
@@ -152,6 +153,8 @@ struct SettingsView: View {
             PetFigurePicker().padding(.vertical, 4)
             Toggle("3D-Wesen", isOn: $use3D)
                 .onChange(of: use3D) { _, on in if on { STShared.defaults.set(false, forKey: Pet3D.failedKey) } }
+            Toggle("Töne & Stimme", isOn: $sound)
+                .onChange(of: sound) { _, on in if on { SoundPlayer.shared.play(.giggle) } }
         } header: {
             Text("Figur")
         } footer: {

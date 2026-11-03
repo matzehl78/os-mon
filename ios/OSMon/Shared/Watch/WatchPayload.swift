@@ -12,7 +12,7 @@ struct WatchPayload: Codable, Equatable {
     var updatedAt: Date
     var figureID: String
     var petName: String
-    var accessory: String?           // Accessory.rawValue (Fest-Zubehör)
+    var accessory: String?           // Accessory.rawValue (Fest-Zubehör oder Mütze aus dem Kleiderschrank)
     var form: String?                // PetForm.rawValue (Entwicklungsstufe)
     var day: Int                     // epochDay, für den die Aufgaben gelten
     var tasks: [DayTask]
@@ -21,6 +21,7 @@ struct WatchPayload: Codable, Equatable {
     var kindCategory: String?
     var kindDone: Bool
     var stage: String? = nil         // GrowthStage.rawValue (egg … adult)
+    var glasses: String? = nil       // Glasses.rawValue (Kleiderschrank)
 
     static let key = "watch.payload"
 

@@ -86,9 +86,12 @@ object AchievementStore {
             Metric.FESTIVALS to (p(ctx).getStringSet("ach.festivals", emptySet())?.size ?: 0),
             Metric.SCENES to scenesUnlocked,
             Metric.COMEBACK to p(ctx).getInt("ach.comeback", 0),
-            Metric.DAYS to (growth?.ageDays ?: 0)
+            Metric.DAYS to (growth?.ageDays ?: 0),
+            Metric.GAMES to p(ctx).getInt("ach.games", 0),
+            Metric.GOODDAYS to (growth?.state?.goodDays ?: 0)
         )
         val m = Achievements.merge(loadMetrics(ctx), now)
+        WardrobeStore.noteGoodDays(ctx, m[Metric.GOODDAYS] ?: 0)            // Kleiderschrank: Höchstwert der guten Tage
         val un = unlocked(ctx)
         val fresh = Achievements.newlyUnlocked(m, un)
         val o = JSONObject(); m.forEach { (k, v) -> o.put(k.name, v) }

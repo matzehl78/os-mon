@@ -47,9 +47,12 @@ enum AchievementStore {
             .festivals: (d.stringArray(forKey: "ach.festivals") ?? []).count,
             .scenes: scenesUnlocked,
             .comeback: d.integer(forKey: "ach.comeback"),
-            .days: growth?.ageDays ?? 0
+            .days: growth?.ageDays ?? 0,
+            .games: d.integer(forKey: "ach.games"),
+            .goodDays: growth?.state.goodDays ?? 0
         ]
         let m = Achievements.merge(loadMetrics(), now)
+        WardrobeStore.noteGoodDays(m[.goodDays] ?? 0)                  // Kleiderschrank: Höchstwert der guten Tage
         let un = unlocked
         let fresh = Achievements.newlyUnlocked(m, unlocked: un)
         var pend = pendingIDs

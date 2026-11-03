@@ -12,7 +12,7 @@ window.make3D = () => (() => {
   let eyeCtx, eyeTex, heartCtx, heartTex;
   let target = null, cur = { open: 1, chubby: 0, tilt: 0, glow: 0.5 };
   let lastHeart = -1, lastEye = "", lastBadge = "", lastBranch = "";
-  let ACC = null;
+  let ACC = null, GLS = null;                                   // Kopf-Zubehör, Brille (Kleiderschrank)
   // Wachstum (Growth.kt): Proportionen je Stufe; Ei mit Rissen
   const LOOK = { baby: [0.66, 0.60, 1.25, 0.62, 1.18], child: [0.78, 0.74, 1.14, 0.78, 1.10], teen: [0.90, 0.89, 1.05, 0.92, 1.04] };
   let STAGE = null, EGG = null, eggGroup = null, eggKey = "", eggShake = 0, eggShakeAt = 0;
@@ -275,7 +275,7 @@ window.make3D = () => (() => {
 
     // Fest-Zubehör (für Werbe-Startbilder): auf dem Kopf zwischen den Antennen
     if (ACC) {
-      const SC = { santa: 1.35, bunny: 1.5, crown: 1.85, flowers: 1.8, jester: 1.45, lantern: 1 };
+      const SC = { santa: 1.35, bunny: 1.5, crown: 1.85, flowers: 1.8, jester: 1.45, lantern: 1, beanie: 1.75, cap: 1.75, bow: 1.3, tophat: 1.45, wizard: 1.45, pirate: 1.45 };
       const g = new T.Group(); g.position.set(0, hy(ant.y) - 0.05, 0.02); g.scale.setScalar(SC[ACC] || 1.7); hg.add(g);
       const cone = (r, h, col) => { const m = new T.Mesh(new T.ConeGeometry(r, h, 40), phys(col)); return m; };
       const coneOutline = (m, r, h) => { const o = new T.Mesh(m.geometry, lineMat()); o.scale.set(1 + LINE_W / r, 1 + LINE_W / h, 1 + LINE_W / r); m.add(o); };
@@ -344,6 +344,48 @@ window.make3D = () => (() => {
           const ol = new T.Mesh(geo, lineMat()); ol.scale.setScalar(1.03); m.add(ol);
           const bell = sphere(0.075, phys(0xffd54f, { metalness: 0.4, roughness: 0.25 })); at(g, bell, sd * 0.8, 0.12, 0.04); outline(bell);
         });
+      } else if (ACC === "beanie") {
+        // Wollmütze: Halbkugel mit Rippen, Umschlag, Bommel
+        const dome = new T.Mesh(new T.SphereGeometry(0.34, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), phys(0xef5350, { roughness: 0.75, clearcoat: 0 }));
+        dome.scale.set(1, 0.95, 1); at(g, dome, 0, 0.04, 0);
+        const dOl = new T.Mesh(dome.geometry, lineMat()); dOl.scale.setScalar(1 + LINE_W / 0.34); dome.add(dOl);
+        for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2;
+          const rib = new T.Mesh(new T.TorusGeometry(0.335, 0.012, 6, 24, Math.PI / 2), flat(0xc62828)); rib.rotation.set(0, -a, Math.PI / 2); rib.position.set(0, 0.04, 0); rib.scale.y = 0.95; g.add(rib); }
+        const cuff = new T.Mesh(new T.CylinderGeometry(0.36, 0.36, 0.12, 40), phys(0xffcdd2, { roughness: 0.7, clearcoat: 0 })); at(g, cuff, 0, 0.05, 0);
+        const pom = sphere(0.11, phys(0xffffff, { roughness: 0.9, clearcoat: 0 })); at(g, pom, 0, 0.4, 0); outline(pom);
+      } else if (ACC === "cap") {
+        // Kappe: Halbkugel, Schirm nach vorn, Knopf
+        const dome = new T.Mesh(new T.SphereGeometry(0.32, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), phys(0x42a5f5)); dome.scale.set(1, 0.85, 1); at(g, dome, 0, 0.03, 0);
+        const dOl = new T.Mesh(dome.geometry, lineMat()); dOl.scale.setScalar(1 + LINE_W / 0.32); dome.add(dOl);
+        const brim = new T.Mesh(new T.CylinderGeometry(0.26, 0.26, 0.03, 40, 1, false, -Math.PI / 2, Math.PI), phys(0x1e88e5));
+        brim.scale.set(1.15, 1, 1.25); brim.rotation.x = 0.12; at(g, brim, 0, 0.04, 0.22);
+        const btn = sphere(0.04, phys(0x1e88e5)); at(g, btn, 0, 0.3, 0); outline(btn);
+      } else if (ACC === "bow") {
+        // Schleife: zwei Schlaufen und Knoten, seitlich oben am Kopf
+        const B = new T.Group(); B.position.set(0.3, 0.02, 0.18); B.rotation.set(0.2, -0.4, -0.25); g.add(B);
+        [-1, 1].forEach(sd => { const l = sphere(1, phys(0xff4fa8), 28); l.scale.set(0.2, 0.13, 0.08); at(B, l, sd * 0.17, 0, 0); l.rotation.z = sd * 0.25; outline(l); });
+        const k = sphere(0.075, phys(0xff80c0)); at(B, k, 0, 0, 0.02); outline(k);
+      } else if (ACC === "tophat") {
+        // Zylinder: Krempe, hoher Hut, rotes Band
+        const brim = new T.Mesh(new T.CylinderGeometry(0.46, 0.46, 0.04, 48), phys(0x263238)); at(g, brim, 0, 0.03, 0);
+        const crown = new T.Mesh(new T.CylinderGeometry(0.27, 0.28, 0.56, 40), phys(0x37474f)); at(g, crown, 0, 0.32, 0);
+        const cOl = new T.Mesh(crown.geometry, lineMat()); cOl.scale.set(1 + LINE_W / 0.28, 1 + LINE_W / 0.56, 1 + LINE_W / 0.28); crown.add(cOl);
+        const band = new T.Mesh(new T.CylinderGeometry(0.285, 0.285, 0.09, 40), phys(0xe53935)); at(g, band, 0, 0.1, 0);
+      } else if (ACC === "wizard") {
+        // Zauberhut (Premium): blau, Sterne
+        const brim = new T.Mesh(new T.CylinderGeometry(0.6, 0.6, 0.05, 48), phys(0x283593)); at(g, brim, 0, 0.04, 0);
+        const c = cone(0.32, 0.95, 0x3949ab); at(g, c, -0.04, 0.52, 0); c.rotation.z = 0.18; coneOutline(c, 0.32, 0.95);
+        [[0.05, 0.25, 0.27, 0.06], [-0.1, 0.5, 0.17, 0.05], [0.02, 0.72, 0.09, 0.04]].forEach(([x, y, z, r]) => {
+          const st = new T.Mesh(new T.OctahedronGeometry(r), phys(0xffeb3b, { emissive: 0xffc107, emissiveIntensity: 0.4 })); at(g, st, x, y, z); });
+      } else if (ACC === "pirate") {
+        // Piratenhut (Premium): Dreispitz mit goldener Borte und Totenkopf
+        const crown = sphere(1, phys(0x212121), 36); crown.scale.set(0.34, 0.26, 0.32); at(g, crown, 0, 0.08, 0); outline(crown);
+        [0, 1, 2].forEach(k => { const a = k / 3 * Math.PI * 2 + Math.PI / 3;
+          const flap = sphere(1, phys(0x212121), 28); flap.scale.set(0.32, 0.15, 0.06);
+          flap.position.set(0.3 * Math.sin(a), 0.12, 0.3 * Math.cos(a)); flap.lookAt(0, 0.4, 0); g.add(flap); outline(flap); });
+        const trim = new T.Mesh(new T.TorusGeometry(0.36, 0.022, 8, 48), phys(0xffc107, { metalness: 0.4 })); trim.rotation.x = Math.PI / 2; at(g, trim, 0, 0.06, 0);
+        const skull = sphere(0.075, phys(0xffffff)); skull.scale.z = 0.5; at(g, skull, 0, 0.17, 0.33);
+        [-1, 1].forEach(sd => { const e = sphere(0.018, flat(0x212121)); at(g, e, sd * 0.026, 0.18, 0.37); });
       } else if (ACC === "lantern") {
         // Laterne (St. Martin): an einem Stab neben der Figur, leuchtet warm
         const L = new T.Group(); L.position.set(1.18, 0, 0.2); root.add(L);
@@ -367,6 +409,43 @@ window.make3D = () => (() => {
       m.rotation.y = sd * 0.8 * Math.atan2(face.eyeX, Math.max(z, 0.2));
       m.renderOrder = 2; hg.add(m); p.eyes.push(m);
     });
+    // Brille (Kleiderschrank): vor den Augen, folgt der Gesichtsrundung
+    if (GLS) {
+      const GC = { round: [0x5d4037, 0xffffff, 0.15], sun: [0x1b1e4b, 0x263238, 0.92], heart: [0xd81b60, 0xff80ab, 0.4], star: [0xf9a825, 0xffeb3b, 0.35], monocle: [0xffb300, 0xffffff, 0.15] }[GLS] || [lineHex, 0xffffff, 0.15];
+      const R = face.eyeR * 1.16, frameMat = phys(GC[0], { metalness: GLS === "monocle" || GLS === "star" ? 0.4 : 0 });
+      const lensMat = new T.MeshBasicMaterial({ color: GC[1], transparent: true, opacity: GC[2], depthWrite: false, side: T.DoubleSide });
+      const shapeOf = () => {                      // Umriss der Gläser (Einheitsgröße, mal R)
+        if (GLS === "heart") return Array.from({ length: 40 }, (_, k) => { const t = k / 40 * Math.PI * 2;
+          return [0.062 * (16 * Math.sin(t) ** 3), 0.062 * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) + 0.1]; });
+        if (GLS === "star") return Array.from({ length: 10 }, (_, k) => { const a = Math.PI / 2 + k * Math.PI / 5, r = k % 2 ? 0.55 : 1.22; return [r * Math.cos(a), r * Math.sin(a)]; });
+        if (GLS === "sun") return Array.from({ length: 40 }, (_, k) => { const t = k / 40 * Math.PI * 2, c = Math.cos(t), s2 = Math.sin(t);
+          return [1.08 * Math.sign(c) * Math.abs(c) ** 0.6, 0.82 * Math.sign(s2) * Math.abs(s2) ** 0.6 - 0.05]; });
+        return Array.from({ length: 40 }, (_, k) => { const t = k / 40 * Math.PI * 2; return [Math.cos(t), Math.sin(t)]; });
+      };
+      const pts = shapeOf();
+      const sides = GLS === "monocle" ? [1] : [-1, 1];
+      sides.forEach(sd => {
+        const x = sd * face.eyeX, z = fz(x, face.eyeY) + 0.12;
+        const G = new T.Group(); G.position.set(x, hy(face.eyeY), z); G.rotation.y = sd * 0.8 * Math.atan2(face.eyeX, Math.max(z, 0.2)); hg.add(G);
+        const curve = new T.CatmullRomCurve3(pts.map(([u, v]) => new T.Vector3(u * R, v * R, 0)), true, "catmullrom", GLS === "star" ? 0.02 : 0.5);
+        const fr = new T.Mesh(new T.TubeGeometry(curve, 80, 0.034, 8, true), frameMat); fr.renderOrder = 3; G.add(fr);
+        const sh = new T.Shape(pts.map(([u, v]) => new T.Vector2(u * R, v * R)));
+        const lens = new T.Mesh(new T.ShapeGeometry(sh, 24), lensMat); lens.renderOrder = 3; G.add(lens);
+        if (GLS === "sun") { const gl = new T.Mesh(new T.PlaneGeometry(R * 0.5, 0.04), new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
+          gl.rotation.z = 0.6; gl.position.set(-R * 0.3, R * 0.3, 0.01); G.add(gl); }
+        // Bügel nach hinten
+        const tx = sd * (face.eyeX + R * 1.02), tz = fz(tx, face.eyeY);
+        const arm = new T.CatmullRomCurve3([new T.Vector3(sd * (face.eyeX + R), hy(face.eyeY) + 0.02, z - 0.02), new T.Vector3(tx + sd * 0.06, hy(face.eyeY) + 0.04, Math.max(0, tz - 0.1)), new T.Vector3(tx + sd * 0.02, hy(face.eyeY) + 0.04, Math.max(-0.2, tz - 0.4))]);
+        if (GLS !== "monocle") hg.add(new T.Mesh(new T.TubeGeometry(arm, 16, 0.022, 6, false), frameMat));
+        else { const ch = new T.CatmullRomCurve3([new T.Vector3(x + R * 0.3, hy(face.eyeY) - R * 0.95, z), new T.Vector3(x + R * 1.0, hy(face.eyeY) - R * 2.0, z - 0.05), new T.Vector3(x + R * 0.5, hy(face.eyeY) - R * 3.0, z - 0.15)]);
+          hg.add(new T.Mesh(new T.TubeGeometry(ch, 20, 0.012, 6, false), frameMat)); }
+      });
+      if (sides.length === 2) {                    // Steg
+        const zb = fz(0, face.eyeY + R * 0.2) + 0.12;
+        const br = new T.CatmullRomCurve3([new T.Vector3(-face.eyeX + R * 0.85, hy(face.eyeY) + R * 0.15, zb - 0.02), new T.Vector3(0, hy(face.eyeY) + R * 0.35, zb + 0.02), new T.Vector3(face.eyeX - R * 0.85, hy(face.eyeY) + R * 0.15, zb - 0.02)]);
+        hg.add(new T.Mesh(new T.TubeGeometry(br, 16, 0.026, 6, false), frameMat));
+      }
+    }
     // Brauen, Augenringe
     const browGeo = new T.TorusGeometry(0.12, 0.022, 6, 20, Math.PI * 0.7);
     const browMat = new T.MeshBasicMaterial({ color: lineHex });
@@ -663,7 +742,7 @@ window.make3D = () => (() => {
       } catch (e) { return false; }
     },
     /** Figur wechseln (wird beim nächsten Bild neu aufgebaut). colors: wie figColors() plus irisDark. */
-    setFigure(F, SH, colors, acc) { ACC = acc || null; pending = [F, SH, colors]; },
+    setFigure(F, SH, colors, acc, glasses) { ACC = acc || null; GLS = glasses || null; pending = [F, SH, colors]; },
     /** Reaktion auf Antippen: Bewegung im 3D-Raum (Gesicht kommt über update(p.react)) */
     react(type, dur) { reactType = type; reactDur = dur; reactStart = performance.now(); },
     /** Leuchtring + Bodenscheibe ein/aus (aus, wenn ein Hintergrundbild eine eigene Plattform zeigt) */

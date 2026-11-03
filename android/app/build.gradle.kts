@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.health.connect)
     implementation(libs.play.services.wearable)          // Wear-OS-Uhr (PhoneWearBridge.kt)
+    implementation(libs.billing.ktx)                     // Premium als Einmalkauf (Premium.kt)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(kotlin("test"))

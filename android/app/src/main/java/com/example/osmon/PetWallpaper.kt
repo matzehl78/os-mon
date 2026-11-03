@@ -118,7 +118,8 @@ object PetWallpaper {
             c.drawRect(0f, 0f, w, h, paint); paint.shader = null
         }
         val pose = (snap?.let { PetPose.of(it) } ?: PetPose(Mood.CONTENT, energy = 80f, rest = 80f))
-            .copy(accessory = FestivalStore.today(ctx, withHatchDay = false)?.accessory)
+            .let { val o = com.example.osmon.ui.WardrobeStore.outfit(ctx)
+                it.copy(accessory = com.example.osmon.engine.Wardrobe.hat(FestivalStore.today(ctx, withHatchDay = false)?.accessory, o), glasses = o.glasses) }
         val size = w * 0.62f
         c.save()
         c.translate((w - size) / 2f, feetY - size * 0.92f)

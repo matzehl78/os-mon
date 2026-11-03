@@ -15,6 +15,7 @@ wearCompose = "1.4.0"
 complications = "1.2.1"
 coroutinesPlay = "1.9.0"
 orgJson = "20240303"
+billing = "7.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,6 +36,7 @@ androidx-wear-compose-material = { group = "androidx.wear.compose", name = "comp
 androidx-wear-compose-foundation = { group = "androidx.wear.compose", name = "compose-foundation", version.ref = "wearCompose" }
 androidx-wear-complications-source = { group = "androidx.wear.watchface", name = "watchface-complications-data-source-ktx", version.ref = "complications" }
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playWearable" }
+billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutinesPlay" }
 org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 

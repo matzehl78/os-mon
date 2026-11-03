@@ -7,7 +7,8 @@ enum FestivalID: String { case birthday, hatchday, milestone, christmas, silvest
                                valentine, carnival, easter, mothersDay, fathersDay, advent }
 
 /// Zubehör, das die Figur trägt (Zeichnung: PetAccessory.swift).
-enum Accessory: String { case partyHat, santaHat, bunnyEars, witchHat, crown, flowers, lantern, jester }
+enum Accessory: String { case partyHat, santaHat, bunnyEars, witchHat, crown, flowers, lantern, jester,
+    beanie, cap, bow, topHat, wizardHat, pirateHat }   // ab beanie: Kleiderschrank (Wardrobe.swift)
 
 /// Was über dem Hintergrund schwebt.
 enum Decor: String { case confetti, snow, hearts, eggs, pumpkins, stars, lights, petals, leaves, butterflies }

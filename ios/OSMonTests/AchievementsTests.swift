@@ -4,7 +4,7 @@ import XCTest
 
 final class AchievementsTests: XCTestCase {
     func testListIsConsistent() {
-        XCTAssertEqual(Achievements.all.count, 23)
+        XCTAssertEqual(Achievements.all.count, 25)
         XCTAssertEqual(Set(Achievements.all.map(\.id)).count, Achievements.all.count)
         for a in Achievements.all { XCTAssertTrue(a.target > 0 && !a.title.isEmpty && !a.hint.isEmpty, a.id) }
     }

@@ -17,6 +17,7 @@ struct OSMonApp: App {
         #endif
         PushResponder.shared.setUp()
         PhoneWatchBridge.shared.start()                 // Apple Watch (falls gekoppelt)
+        Task { @MainActor in PremiumStore.shared.start() }   // Einmalkauf mit dem App Store abgleichen
     }
 
     var body: some Scene {

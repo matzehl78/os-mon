@@ -5,7 +5,7 @@
 
 import Foundation
 
-enum Metric: String, Codable, CaseIterable { case stage, tasks, streak, kind, goodnight, festivals, scenes, comeback, days }
+enum Metric: String, Codable, CaseIterable { case stage, tasks, streak, kind, goodnight, festivals, scenes, comeback, days, games, goodDays }
 
 struct Achievement: Identifiable, Equatable {
     let id, emoji, title, hint: String
@@ -37,7 +37,9 @@ enum Achievements {
         Achievement(id: "scene3", emoji: "🗺️", title: "Entdecker", hint: "Schalte 3 Hintergründe frei.", metric: .scenes, target: 3),
         Achievement(id: "scene10", emoji: "🌍", title: "Weltreisender", hint: "Schalte alle 10 Hintergründe frei.", metric: .scenes, target: 10),
         Achievement(id: "comeback", emoji: "🩹", title: "Wieder aufgepäppelt", hint: "Hilf deinem Wesen nach einem Rückfall wieder zu wachsen.", metric: .comeback, target: 1),
-        Achievement(id: "days100", emoji: "💯", title: "100 Tage zusammen", hint: "Seid 100 Tage zusammen.", metric: .days, target: 100)
+        Achievement(id: "days100", emoji: "💯", title: "100 Tage zusammen", hint: "Seid 100 Tage zusammen.", metric: .days, target: 100),
+        Achievement(id: "game1", emoji: "🎮", title: "Spielkind", hint: "Spiel ein Mini-Spiel mit deinem Wesen.", metric: .games, target: 1),
+        Achievement(id: "game20", emoji: "🕹️", title: "Spiele-Fan", hint: "Spiel 20 Mini-Spiele.", metric: .games, target: 20)
     ]
 
     static func byID(_ id: String) -> Achievement? { all.first { $0.id == id } }

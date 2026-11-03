@@ -95,7 +95,9 @@ class PetWidget : GlanceAppWidget() {
         val pet = if (stage == com.example.osmon.engine.GrowthStage.EGG)
             PetFigureRenderer.eggBitmap(PetFigures.current(context), com.example.osmon.ui.GrowthStore.cracks(context), sizePx = 300)
         else PetFigureRenderer.bitmap(PetFigures.current(context), PetPose.of(snap).copy(
-            accessory = com.example.osmon.ui.FestivalStore.today(context, withHatchDay = false)?.accessory, stage = stage), sizePx = 300)
+            accessory = com.example.osmon.engine.Wardrobe.hat(com.example.osmon.ui.FestivalStore.today(context, withHatchDay = false)?.accessory,
+                com.example.osmon.ui.WardrobeStore.outfit(context)),
+            glasses = com.example.osmon.ui.WardrobeStore.outfit(context).glasses, stage = stage), sizePx = 300)
         provideContent { PetContent(snap, readyText, pet) }
     }
 }

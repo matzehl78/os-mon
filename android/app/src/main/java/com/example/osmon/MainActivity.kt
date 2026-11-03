@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
             PetScheduler.start(this)                 // idempotent; läuft sonst erst nach dem Onboarding
             EvolutionScheduler.start(this)
         }
+        runCatching { com.example.osmon.ui.PremiumStore.restore(this) }     // Kaufstatus mit Google Play abgleichen
         setContent { OSMonTheme { Root() } }
     }
 

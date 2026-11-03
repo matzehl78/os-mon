@@ -46,11 +46,13 @@ object PhoneWearBridge {
         val content = TaskContent.get(ctx)
         val fig = PetFigures.current(ctx)
         val tip = content.tipOfTheDay(day)
+        val outfit = com.example.osmon.ui.WardrobeStore.outfit(ctx)
+        val head = accessory ?: outfit.hat?.name                    // Fest-Zubehör hat Vorrang (Wardrobe.hat)
         return WearPayload(
-            snap, System.currentTimeMillis(), fig.id, fig.name, accessory, form, day,
+            snap, System.currentTimeMillis(), fig.id, fig.name, head, form, day,
             DayTasks.forDay(tasks, day), content.motivation(DayTasks.progress(tasks, day), day, fig.name),
             tip?.second?.tip, tip?.first?.let { "${it.emoji} ${it.title}" }, TaskStore.kindDone(ctx, day),
-            com.example.osmon.ui.GrowthStore.stage(ctx).name)
+            com.example.osmon.ui.GrowthStore.stage(ctx).name, outfit.glasses?.name)
     }
 
     /** Aktion der Uhr ausführen. */

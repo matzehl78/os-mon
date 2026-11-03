@@ -25,6 +25,13 @@ enum DemoMode {
         } else { ParentStore.removePin() }
         d.set(flag("OSMon3D"), forKey: Pet3D.key)                     // 3D nur mit -OSMon3D YES (alte Bilder bleiben 2D)
         d.set(false, forKey: Pet3D.failedKey)
+        // Kleiderschrank: -OSMonOutfit "cap,sun" (Teile anziehen, alles freigeschaltet), -OSMonPremium YES
+        d.set(flag("OSMonPremium"), forKey: "premium.demo")
+        d.set(args.string(forKey: "OSMonOutfit") ?? "", forKey: "wr.equipped")
+        d.set(args.object(forKey: "OSMonGoodDays") != nil ? args.integer(forKey: "OSMonGoodDays") : 99, forKey: "wr.maxgood")
+        d.set(Wardrobe.all.map(\.id), forKey: "wr.known")
+        d.set(nil, forKey: "games.day"); d.set(0, forKey: "games.played")
+        d.set(false, forKey: SoundPlayer.key)                        // Screenshots ohne Ton
     }
 
     static var mood: PetMood { PetMood(rawValue: args.string(forKey: "OSMonMood") ?? "") ?? .radiant }
@@ -87,6 +94,7 @@ enum DemoMode {
 
 /// Bildschirm für den Demo-Start.
 struct DemoRoot: View {
+    private func args(_ k: String) -> String? { UserDefaults.standard.string(forKey: k) }
     var body: some View {
         switch DemoMode.screen {
         case "settings": SettingsView()
@@ -95,6 +103,9 @@ struct DemoRoot: View {
         case "wallpaper": WallpaperPreview {}
         case "album": AlbumView(album: DemoMode.album(pending: false))
         case "parent": ParentView()
+        case "wardrobe": WardrobeView(figureName: PetFigure.byID(args("OSMonFigure")).name, stage: nil)
+        case "games": GameView(figureName: PetFigure.byID(args("OSMonFigure")).name, stage: nil, onClose: { _, _ in },
+                               demoGame: UserDefaults.standard.string(forKey: "OSMonGame").flatMap(MiniGame.init(rawValue:)))
         case "tasks": TasksManageView(model: TaskModel(), content: .shared, onToggle: { _ in })
         case "kindness": KindnessListView(model: TaskModel(), content: .shared)
         case "bedtime": BedtimeView {}

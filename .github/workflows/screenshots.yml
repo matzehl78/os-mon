@@ -101,6 +101,14 @@ jobs:
           shot 49_erfolg_banner         light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure sunni -OSMonMood radiant -OSMonStage child -OSMonAlbum YES -OSMon3D YES
           shot 50_sammelalbum           light -OSMonDemo album
           shot 51_eltern_bereich        light -OSMonDemo parent
+          shot 52_kleiderschrank        light -OSMonDemo wardrobe -OSMonFigure lumo -OSMonOutfit cap,round -OSMonGoodDays 20
+          shot 53_outfit_kasto          light -OSMonDemo home -OSMonScene raumstation -OSMonFigure kasto -OSMonMood radiant -OSMonOutfit tophat,sun
+          shot 54_outfit_3d_lila        light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila  -OSMonMood radiant -OSMon3D YES -OSMonOutfit bow,heart
+          shot 55_outfit_3d_glut_premium light -OSMonDemo home -OSMonScene mondbasis  -OSMonFigure glut  -OSMonMood content -OSMon3D YES -OSMonPremium YES -OSMonOutfit wizard,monocle
+          shot 56_spiele_auswahl        dark  -OSMonDemo games -OSMonFigure sunni
+          shot 57_spiel_sterne          dark  -OSMonDemo games -OSMonFigure sunni -OSMonGame stars
+          shot 58_spiel_seifenblasen    dark  -OSMonDemo games -OSMonFigure minto -OSMonGame bubbles
+          shot 59_kasto_gaehnt_2d       light -OSMonDemo home -OSMonScene raumstation -OSMonFigure kasto -OSMonMood tired
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

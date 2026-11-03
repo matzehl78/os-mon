@@ -15,7 +15,7 @@ enum Pet3D {
 /// Was die 3D-Ansicht zeigen soll.
 struct Pet3DState: Equatable {
     var figureID: String
-    var accessory: Accessory?
+    var accessory: Accessory?            // Kopf: Fest-Zubehör oder Mütze (Wardrobe.hat)
     var mood: PetMood
     var overlays: Set<PetOverlay> = []
     var energy: Float?
@@ -25,6 +25,7 @@ struct Pet3DState: Equatable {
     var stage: GrowthStage? = nil
     var eggCracks: Int? = nil            // nicht nil = Ei
     var platform = true                  // Leuchtring (ohne Hintergrundbild)
+    var glasses: Glasses? = nil          // Brille aus dem Kleiderschrank
 }
 
 struct Pet3DView: UIViewRepresentable {
@@ -113,7 +114,7 @@ struct Pet3DView: UIViewRepresentable {
             func n(_ v: Float?) -> String { v.map { String(format: "%.1f", $0) } ?? "null" }
             let ov = s.overlays.map { "'\($0.rawValue)'" }.sorted().joined(separator: ",")
             let color = hex(s.mood.color)
-            return "OSPet.setFigure(\(q(s.figureID)), \(q(s.accessory?.rawValue)));" +
+            return "OSPet.setFigure(\(q(s.figureID)), \(q(s.accessory?.rawValue)), \(q(s.glasses?.rawValue)));" +
                 "OSPet.update({mood:'\(s.mood.rawValue)',ov:[\(ov)],energy:\(n(s.energy)),rest:\(n(s.rest))," +
                 "form:\(q(s.form?.rawValue)),branch:\(q(s.branch?.rawValue)),stage:\(q(s.stage?.rawValue))," +
                 "egg:\(s.eggCracks.map(String.init) ?? "null"),shake:\(shake ? 1 : 0),color:'\(color)',platform:\(s.platform)," +

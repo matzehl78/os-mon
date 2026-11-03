@@ -22,6 +22,7 @@ import com.example.osmon.PetSync
 import com.example.osmon.engine.Accessory
 import com.example.osmon.engine.Branch
 import com.example.osmon.engine.Form
+import com.example.osmon.engine.Glasses
 import com.example.osmon.engine.GrowthStage
 import com.example.osmon.engine.Mood
 import com.example.osmon.engine.Overlay
@@ -41,7 +42,7 @@ object Pet3D {
 /** Was die 3D-Ansicht zeigen soll. */
 data class Pet3DState(
     val figureId: String,
-    val accessory: Accessory?,
+    val accessory: Accessory?,                // Kopf: Fest-Zubehör oder Mütze (Wardrobe.hat)
     val mood: Mood,
     val overlays: Set<Overlay> = emptySet(),
     val energy: Float?,
@@ -50,7 +51,8 @@ data class Pet3DState(
     val branch: Branch? = null,
     val stage: GrowthStage? = null,
     val eggCracks: Int? = null,               // nicht null = Ei
-    val platform: Boolean = true              // Leuchtring (ohne Hintergrundbild)
+    val platform: Boolean = true,             // Leuchtring (ohne Hintergrundbild)
+    val glasses: Glasses? = null              // Brille aus dem Kleiderschrank
 )
 
 private class Pet3DController(val web: WebView) {
@@ -98,7 +100,7 @@ private class Pet3DController(val web: WebView) {
         val ov = s.overlays.map { "'${it.name.lowercase()}'" }.sorted().joinToString(",")
         val color = "#%06x".format(moodColor(s.mood).toArgb() and 0xFFFFFF)
         val acc = s.accessory?.let { accName(it) }
-        return "OSPet.setFigure(${q(s.figureId)}, ${q(acc)});" +
+        return "OSPet.setFigure(${q(s.figureId)}, ${q(acc)}, ${q(s.glasses?.name?.lowercase())});" +
             "OSPet.update({mood:'${s.mood.name.lowercase()}',ov:[$ov],energy:${n(s.energy)},rest:${n(s.rest)}," +
             "form:${q(s.form?.name?.lowercase())},branch:${q(s.branch?.name?.lowercase())},stage:${q(s.stage?.name?.let { stageName(it) })}," +
             "egg:${s.eggCracks ?: "null"},shake:${if (shake) 1 else 0},color:'$color',platform:${s.platform}," +
@@ -110,6 +112,8 @@ private class Pet3DController(val web: WebView) {
         Accessory.PARTY_HAT -> "partyHat"; Accessory.SANTA_HAT -> "santaHat"; Accessory.WITCH_HAT -> "witchHat"
         Accessory.BUNNY_EARS -> "bunnyEars"; Accessory.CROWN -> "crown"; Accessory.FLOWERS -> "flowers"
         Accessory.LANTERN -> "lantern"; Accessory.JESTER -> "jester"
+        Accessory.BEANIE -> "beanie"; Accessory.CAP -> "cap"; Accessory.BOW -> "bow"; Accessory.TOP_HAT -> "topHat"
+        Accessory.WIZARD_HAT -> "wizardHat"; Accessory.PIRATE_HAT -> "pirateHat"
     }
     private fun stageName(s: String) = s.lowercase()
 }

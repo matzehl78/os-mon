@@ -260,6 +260,8 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
                 use3D = it
                 PetSync.prefs(ctx).edit().putBoolean(Pet3D.KEY, it).apply { if (it) putBoolean(Pet3D.FAILED, false) }.apply()
             }
+            var sound by remember { mutableStateOf(SoundPlayer.enabled(ctx)) }
+            ToggleRow("Töne & Stimme", sound) { sound = it; SoundPlayer.setEnabled(ctx, it); if (it) SoundPlayer.play(ctx, com.example.osmon.engine.Sfx.GIGGLE) }
         }
 
         Card("Hintergrund", "Weitere Hintergründe schaltest du mit gesunden Gewohnheiten frei: Bewegung, Fokus-Pausen, weniger Bildschirm. Freigeschaltet bleibt freigeschaltet.") {

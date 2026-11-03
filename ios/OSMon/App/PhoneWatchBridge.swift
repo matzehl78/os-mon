@@ -42,13 +42,14 @@ final class PhoneWatchBridge: NSObject, WCSessionDelegate {
         let content = TaskContent.shared
         let figure = PetFigureStore.current
         let tip = content.tipOfTheDay(day)
+        let outfit = WardrobeStore.outfit
         return WatchPayload(
             snapshot: snap, updatedAt: now, figureID: figure.id, petName: figure.name,
-            accessory: accessory?.rawValue, form: form?.rawValue, day: day,
+            accessory: Wardrobe.hat(festival: accessory, outfit: outfit)?.rawValue, form: form?.rawValue, day: day,
             tasks: DayTasks.forDay(tasks, day),
             motivation: content.motivation(DayTasks.progress(tasks, day), day: day, pet: figure.name),
             kindTip: tip?.1.tip, kindCategory: tip.map { "\($0.0.emoji) \($0.0.title)" },
-            kindDone: TaskStore.kindDone(day), stage: GrowthStorage.stage.rawValue)
+            kindDone: TaskStore.kindDone(day), stage: GrowthStorage.stage.rawValue, glasses: outfit.glasses?.rawValue)
     }
 
     // MARK: Aktionen der Uhr

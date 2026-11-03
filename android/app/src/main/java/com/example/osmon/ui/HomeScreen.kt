@@ -138,6 +138,10 @@ import com.example.osmon.figure.ReactionPicker
 import com.example.osmon.engine.SceneUnlock
 import com.example.osmon.engine.DayPhase
 import com.example.osmon.engine.Accessory
+import com.example.osmon.engine.Glasses
+import com.example.osmon.engine.Sfx
+import com.example.osmon.engine.Wardrobe
+import androidx.compose.foundation.layout.FlowRow
 import com.example.osmon.engine.Festival
 import com.example.osmon.engine.Festivals
 import com.example.osmon.engine.SceneTheme
@@ -399,12 +403,14 @@ fun HomeScreen(
         onTapEgg = vm::tapEgg,
         onAckGrowth = vm::ackGrowth,
         onRough = vm::rough,
-        onAckAchievement = vm::ackAchievement
+        onAckAchievement = vm::ackAchievement,
+        onExtrasChanged = vm::refresh
     )
 }
 
 // ---------- Reine Darstellung (gut für Previews) ----------
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun HomeContent(
     state: HomeState,
@@ -424,6 +430,7 @@ fun HomeContent(
     onAckGrowth: () -> Unit = {},
     onRough: () -> Unit = {},
     onAckAchievement: () -> Unit = {},
+    onExtrasChanged: () -> Unit = {},
     scene: Scene = rememberCurrentScene()
 ) {
     val snap = state.snapshot
@@ -441,6 +448,13 @@ fun HomeContent(
 
     var showAlbum by remember { mutableStateOf(false) }
     if (showAlbum) state.album?.let { AlbumDialog(it) { showAlbum = false } }
+    var showWardrobe by remember { mutableStateOf(false) }
+    var showGames by remember { mutableStateOf(false) }
+    // Kleiderschrank: Mütze (Fest-Zubehör hat Vorrang) und Brille
+    val ctxX = LocalContext.current
+    val extrasV = ExtrasEvents.version.intValue
+    val outfit = remember(extrasV) { WardrobeStore.outfit(ctxX) }
+    val head = Wardrobe.hat(state.festival?.accessory, outfit)
 
     // Antippen
     val picker = remember { ReactionPicker() }
@@ -518,6 +532,15 @@ fun HomeContent(
             verticalArrangement = Arrangement.spacedBy(if (hasScene) 14.dp else 20.dp)
         ) {
             val figure = rememberCurrentFigure()
+            if (showWardrobe) WardrobeDialog(figure.name, state.growth?.stage) { showWardrobe = false; onExtrasChanged() }
+            if (showGames) GameDialog(figure.name, state.growth?.stage) { stars, cheer ->
+                showGames = false
+                if (cheer != null) {
+                    reaction = ActiveReaction(if ((stars ?: 0) >= 2) ReactionKind.SPIN else ReactionKind.GIGGLE, SystemClock.uptimeMillis(), cheer)
+                    if ((stars ?: 0) == 3) celebrateAt = System.currentTimeMillis()
+                }
+                onExtrasChanged()
+            }
 
             // Kopf: Wohlbefinden-Ring + Stimmung (mit Szene auf Glas-Karte)
             Box(Modifier.onGloballyPositioned { headerBottom = it.positionInRoot().y - rootY + it.size.height }) {
@@ -558,6 +581,21 @@ fun HomeContent(
                 value = SystemClock.uptimeMillis()
             }
             val say = reaction?.takeIf { it.saying(now) }?.say
+            // Geräusche und Stimme: Brabbeln zur Sprechblase, sonst ein kurzer Ton je Reaktion
+            LaunchedEffect(reaction?.startMs) {
+                val r = reaction ?: return@LaunchedEffect
+                if (r.say.isNotBlank()) SoundPlayer.say(ctxX, r.say, state.growth?.stage)
+                else SoundPlayer.play(ctxX, when (r.kind) {
+                    ReactionKind.DIZZY, ReactionKind.STARTLE -> Sfx.OOPS
+                    ReactionKind.SLEEPY, ReactionKind.NIGHT -> Sfx.YAWN
+                    ReactionKind.GIGGLE, ReactionKind.SPIN -> Sfx.GIGGLE
+                    else -> Sfx.TAP
+                })
+            }
+            val yawning = Overlay.YAWNING in snap.overlays
+            LaunchedEffect(yawning) { if (yawning) { delay(800); SoundPlayer.play(ctxX, Sfx.YAWN) } }
+            val eggTaps = state.growth?.takeIf { it.stage == GrowthStage.EGG }?.eggTaps ?: 0
+            LaunchedEffect(eggTaps) { if (eggTaps > 0) SoundPlayer.play(ctxX, Sfx.CRACK) }
             Surface(shape = RoundedCornerShape(16.dp), tonalElevation = 2.dp, shadowElevation = if (hasScene) 4.dp else 0.dp) {
                 Text(
                     say ?: eggLine(state.growth) ?: state.festival?.greeting ?: PetCopy.line(snap),
@@ -583,9 +621,9 @@ fun HomeContent(
                     val egg = g?.stage == GrowthStage.EGG
                     var shakeAt by remember { mutableStateOf<Long?>(null) }
                     Pet3DView(
-                        Pet3DState(figure.id, state.festival?.accessory, snap.mood, snap.overlays, snap.stats.e, snap.stats.r,
+                        Pet3DState(figure.id, head, snap.mood, snap.overlays, snap.stats.e, snap.stats.r,
                             state.evolution?.form, state.evolution?.branch, g?.stage,
-                            if (egg) Growth.cracks(g?.eggTaps ?: 0) else null, platform = !hasScene),
+                            if (egg) Growth.cracks(g?.eggTaps ?: 0) else null, platform = !hasScene, glasses = outfit.glasses),
                         Modifier.size(if (hasScene) 300.dp else 250.dp).semantics {
                             contentDescription = if (egg) "Ei. Antippen, damit es schlüpft." else "Dein Wesen: ${moodTitle(snap.mood)}. Antippen für eine Reaktion, ziehen zum Drehen."
                         },
@@ -613,7 +651,8 @@ fun HomeContent(
                     energy = snap.stats.e, rest = snap.stats.r,
                     size = if (hasScene) 260.dp else 220.dp,
                     reaction = reaction,
-                    accessory = state.festival?.accessory,
+                    accessory = head,
+                    glasses = outfit.glasses,
                     stage = g?.stage,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() }, indication = null,
@@ -645,7 +684,14 @@ fun HomeContent(
             }
 
             Actions(state, onPat, onStartFocus, onCancelFocus)
-            state.album?.let { AlbumButton(it) { showAlbum = true } }
+            // Sammelalbum, Kleiderschrank, Mini-Spiele
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                state.album?.let { AlbumButton(it) { showAlbum = true } }
+                if (state.growth?.stage != GrowthStage.EGG) {
+                    WardrobeButton { showWardrobe = true }
+                    GameButton { showGames = true }
+                }
+            }
 
             state.festival?.takeIf { state.festivalCard }?.let { f ->
                 val ctxF = LocalContext.current
@@ -692,13 +738,17 @@ fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         state.album?.pending?.firstOrNull()?.let { a ->
+            LaunchedEffect(a.id) { SoundPlayer.play(ctxX, Sfx.ACHIEVEMENT) }
             Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) {
                 AchievementBanner(a, onOpen = { showAlbum = true; onAckAchievement() }, onAck = onAckAchievement)
             }
         }
         state.growth?.pending?.let { st ->
             val down = state.growth?.pendingDown == true
-            LaunchedEffect(st) { if (!down) onCelebrate() }    // Konfetti + Drehung beim Aufstieg (nicht beim Rückfall)
+            LaunchedEffect(st) {
+                if (!down) onCelebrate()                        // Konfetti + Drehung beim Aufstieg (nicht beim Rückfall)
+                SoundPlayer.play(ctxX, when { down -> Sfx.STAGE_DOWN; st == GrowthStage.BABY -> Sfx.HATCH; else -> Sfx.STAGE_UP })
+            }
             Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { GrowthBanner(rememberCurrentFigure().name, st, down, onAckGrowth) }
         }
         state.evolutionEvent?.let { Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { EvolutionBanner(it, onAckEvolution) } }
@@ -901,10 +951,11 @@ fun PetAvatar(
     size: Dp = 220.dp,
     reaction: ActiveReaction? = null,
     accessory: Accessory? = null,
-    stage: GrowthStage? = null
+    stage: GrowthStage? = null,
+    glasses: Glasses? = null
 ) {
     PetFigureCanvas(
-        PetPose(mood, overlays, form, branch, energy, rest, charging, petted, accessory = accessory, stage = stage),
+        PetPose(mood, overlays, form, branch, energy, rest, charging, petted, accessory = accessory, stage = stage, glasses = glasses),
         modifier.size(size).semantics { contentDescription = "Dein Wesen: ${moodTitle(mood)}. Antippen für eine Reaktion." },
         reaction = reaction
     )

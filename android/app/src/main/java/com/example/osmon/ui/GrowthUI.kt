@@ -1,0 +1,186 @@
+// GrowthUI.kt: Wachsen vom Ei bis zum Erwachsenen – Speicher und Bausteine. Gegenstück: GrowthUI.swift.
+// Regeln: engine/Growth.kt. Ei auf der Startseite antippen (5×, mit Rissen) → schlüpft als Baby.
+// Gute Tage werden beim Aktualisieren nachgetragen (DayLog-Mittel der abgeschlossenen Tage).
+
+package com.example.osmon.ui
+
+import android.content.Context
+import android.os.SystemClock
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.osmon.DayLog
+import com.example.osmon.EvolutionStore
+import com.example.osmon.PetSync
+import com.example.osmon.engine.Growth
+import com.example.osmon.engine.GrowthStage
+import com.example.osmon.engine.GrowthState
+import com.example.osmon.figure.PetFigure
+import com.example.osmon.figure.PetFigureRenderer
+import java.time.LocalDate
+import org.json.JSONObject
+
+/** Was die Oberfläche braucht. */
+data class GrowthInfo(
+    val state: GrowthState,
+    val stage: GrowthStage,
+    val eggTaps: Int,
+    val ageDays: Int,                         // Tage seit dem Schlüpfen
+    val progress: Pair<Float, Int>?           // (Anteil, fehlende gute Tage) bis zur nächsten Stufe
+) {
+    val pending: GrowthStage? get() = state.pendingStage
+}
+
+object GrowthStore {
+    private const val KEY = "growth.state"
+    private const val TAPS = "growth.eggTaps"
+    private fun p(ctx: Context) = PetSync.prefs(ctx)
+    private fun today() = LocalDate.now().toEpochDay()
+
+    fun load(ctx: Context): GrowthState {
+        p(ctx).getString(KEY, null)?.let { raw ->
+            runCatching {
+                val o = JSONObject(raw)
+                return GrowthState(o.getBoolean("hatched"), o.getInt("good"), o.getLong("last"),
+                    if (o.has("hatchedDay")) o.getLong("hatchedDay") else null,
+                    o.optString("pending").takeIf { it.isNotEmpty() }?.let { runCatching { GrowthStage.valueOf(it) }.getOrNull() })
+            }
+        }
+        // Erster Aufruf: wer OS-Mon schon hatte, ist geschlüpft (nichts geht verloren); sonst liegt ein Ei da.
+        val t = today()
+        val s = if (p(ctx).getBoolean("onboarding.done", false)) {
+            Growth.migrated(EvolutionStore.load(ctx)?.hatchDay ?: t, t)
+        } else GrowthState(hatched = false, lastDay = t)
+        save(ctx, s)
+        return s
+    }
+
+    /** Neues Wesen (Ende des Onboardings): Ei, noch nicht geschlüpft. Vorhandener Stand bleibt. */
+    fun startEgg(ctx: Context) {
+        if (p(ctx).contains(KEY)) return
+        p(ctx).edit().putInt(TAPS, 0).apply()
+        save(ctx, GrowthState(hatched = false, lastDay = today()))
+    }
+
+    fun save(ctx: Context, s: GrowthState) {
+        val o = JSONObject().put("hatched", s.hatched).put("good", s.goodDays).put("last", s.lastDay)
+        s.hatchedDay?.let { o.put("hatchedDay", it) }
+        s.pendingStage?.let { o.put("pending", it.name) }
+        p(ctx).edit().putString(KEY, o.toString()).apply()
+    }
+
+    /** Gute Tage nachtragen (bis gestern) und aktuellen Stand liefern. */
+    fun refresh(ctx: Context): GrowthInfo {
+        var s = load(ctx)
+        val t = today()
+        if (s.hatched && s.lastDay < t - 1) {
+            val from = maxOf(s.lastDay + 1, t - Growth.MAX_CATCH_UP)
+            for (d in from until t) s = Growth.closeDay(s, d, DayLog.average(ctx, d))
+            save(ctx, s)
+        }
+        return info(ctx, s)
+    }
+
+    fun info(ctx: Context, s: GrowthState = load(ctx)) = GrowthInfo(
+        s, Growth.stage(s), p(ctx).getInt(TAPS, 0),
+        s.hatchedDay?.let { (today() - it).toInt() } ?: 0, Growth.progress(s))
+
+    /** Ei antippen. Gibt den neuen Stand zurück (nach Growth.EGG_TAPS geschlüpft). */
+    fun tapEgg(ctx: Context): GrowthInfo {
+        var s = load(ctx)
+        if (s.hatched) return info(ctx, s)
+        val taps = p(ctx).getInt(TAPS, 0) + 1
+        p(ctx).edit().putInt(TAPS, taps).apply()
+        if (taps >= Growth.EGG_TAPS) { s = Growth.hatch(s, today()); save(ctx, s) }
+        return info(ctx, s)
+    }
+
+    fun ackStage(ctx: Context) { save(ctx, load(ctx).copy(pendingStage = null)) }
+
+    /** Stufe für Widget, Hintergrundbild und Uhr (ohne Nachtragen). */
+    fun stage(ctx: Context): GrowthStage = Growth.stage(load(ctx))
+    fun cracks(ctx: Context) = Growth.cracks(p(ctx).getInt(TAPS, 0))
+}
+
+// ---------- Bausteine ----------
+
+/** Das Ei (schaukelt; shakeAtMs = letztes Antippen → kräftiges Wackeln). */
+@Composable
+fun EggCanvas(figure: PetFigure, cracks: Int, shakeAtMs: Long?, modifier: Modifier = Modifier) {
+    var t by remember { mutableStateOf(0.0) }
+    LaunchedEffect(Unit) {
+        val start = withFrameNanos { it }
+        while (true) withFrameNanos { now -> t = (now - start) / 1e9 }
+    }
+    Canvas(modifier.aspectRatio(1f)) {
+        val since = shakeAtMs?.let { (SystemClock.uptimeMillis() - it) / 1000f } ?: 99f
+        drawIntoCanvas { PetFigureRenderer.drawEgg(it.nativeCanvas, size.width, size.height, figure, cracks, t, (1f - since / 0.5f).coerceAtLeast(0f)) }
+    }
+}
+
+/** Zeile unter dem Namen: Fortschritt bis zur nächsten Stufe. */
+@Composable
+fun GrowthProgress(g: GrowthInfo, onScene: Boolean) {
+    val p = g.progress ?: return
+    val next = g.stage.next ?: return
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        LinearProgressIndicator(progress = { p.first }, modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFF2E9E5B), trackColor = Color.White.copy(alpha = if (onScene) 0.25f else 0.6f))
+        Text("Noch ${p.second} gute ${if (p.second == 1) "Tag" else "Tage"} bis ${next.title}",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (onScene) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Feier beim Aufstieg (unten eingeblendet, wie das Entwicklungs-Banner). */
+@Composable
+fun GrowthBanner(name: String, stage: GrowthStage, onAck: () -> Unit) {
+    val text = when (stage) {
+        GrowthStage.BABY -> "$name ist geschlüpft! Willkommen, kleines Baby."
+        GrowthStage.CHILD -> "$name ist jetzt ein Kind! Größer, mutiger, neugieriger."
+        GrowthStage.TEEN -> "$name ist jetzt jugendlich! Fast schon groß."
+        GrowthStage.ADULT -> "$name ist erwachsen! Danke, dass du so gut aufgepasst hast."
+        GrowthStage.EGG -> ""
+    }
+    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("🎉", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.width(10.dp))
+            Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = onAck) { Text("Juhu!") }
+        }
+    }
+}
+
+/** Kopfzeile: „Lumo · Kind · Tag 9“. */
+fun growthLabel(name: String, g: GrowthInfo): String = when (g.stage) {
+    GrowthStage.EGG -> "$name · Ei"
+    else -> "$name · ${g.stage.title} · Tag ${g.ageDays + 1}"
+}

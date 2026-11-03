@@ -84,6 +84,10 @@ jobs:
           shot 32_aufgaben_lumo         light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lumo -OSMonMood radiant -OSMonTasks YES -OSMonScroll tasks
           shot 33_aufgaben_verwalten    light -OSMonDemo tasks -OSMonFigure lumo
           shot 34_miteinander           light -OSMonDemo kindness -OSMonFigure lumo
+          shot 35_ei_lumo               light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lumo -OSMonMood radiant -OSMonStage egg -OSMonEggTaps 3
+          shot 36_baby_lumo             light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lumo -OSMonMood radiant -OSMonStage baby
+          shot 37_kind_lila             light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila -OSMonMood content -OSMonStage child -OSMonGrowUp YES
+          shot 38_jugend_glut           light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure glut -OSMonMood radiant -OSMonStage teen
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

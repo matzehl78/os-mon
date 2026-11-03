@@ -54,7 +54,8 @@ class PetComplicationService : SuspendingComplicationDataSourceService() {
                 .setTitle(text(p?.petName ?: "OS-Mon")).setTapAction(tapIntent()).build()
             ComplicationType.SMALL_IMAGE -> {
                 val pose = p?.pose() ?: com.example.osmon.figure.PetPose.Preview
-                val bmp = PetFigureRenderer.bitmap(figureOf(p?.figureId), pose, 144)
+                val bmp = if (p?.growth == com.example.osmon.engine.GrowthStage.EGG) PetFigureRenderer.eggBitmap(figureOf(p!!.figureId), 2, 144)
+                    else PetFigureRenderer.bitmap(figureOf(p?.figureId), pose, 144)
                 SmallImageComplicationData.Builder(SmallImage.Builder(Icon.createWithBitmap(bmp), SmallImageType.PHOTO).build(), desc)
                     .setTapAction(tapIntent()).build()
             }

@@ -53,6 +53,16 @@ enum DemoMode {
         if let se = args.string(forKey: "OSMonSeason"), let v = Season(rawValue: se) { s.season = v }
         if let f = args.string(forKey: "OSMonFestival"), f == "none" { s.festival = nil }
         if flag("OSMonEvent") { s.evolutionEvent = PetEvoEvent(kind: .evolved, from: nil, to: .chatterling, epochDay: 0) }
+        // Wachstum: -OSMonStage egg|baby|child|teen|adult, -OSMonEggTaps n, -OSMonGrowUp YES (Aufstiegs-Banner)
+        if let raw = args.string(forKey: "OSMonStage"), let st = GrowthStage(rawValue: raw) {
+            let today = EpochDay.of(.now)
+            let good = st == .egg ? 0 : st == .adult ? 90 : st.minDays + (st.next.map { ($0.minDays - st.minDays) / 2 } ?? 0)
+            var g = GrowthState(hatched: st != .egg, goodDays: good, lastDay: today - 1, hatchedDay: st == .egg ? nil : today - good - 3)
+            if flag("OSMonGrowUp") { g.pendingStage = st }
+            let p = Growth.progress(g)
+            s.growth = GrowthInfo(state: g, stage: st, eggTaps: args.integer(forKey: "OSMonEggTaps"),
+                                  ageDays: g.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft)
+        }
         return s
     }
 }

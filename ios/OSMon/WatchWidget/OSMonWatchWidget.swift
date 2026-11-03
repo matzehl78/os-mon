@@ -31,10 +31,20 @@ struct WatchComplicationView: View {
     private var p: WatchPayload? { entry.payload }
     private var wellbeing: Double { Double(p?.snapshot.wellbeing ?? 0) }
 
+    @ViewBuilder
     private var figure: some View {
+        if p?.growth == .egg {
+            PetEggView(figure: PetFigure.byID(p?.figureID), cracks: 2, animated: false)
+        } else {
+            PetFigureView(figure: PetFigure.byID(p?.figureID), pose: pose, animated: false)
+        }
+    }
+
+    private var pose: PetPose {
         var pose = p.map { PetPose(snapshot: $0.snapshot) } ?? .preview
         pose.accessory = p?.accessory.flatMap(Accessory.init(rawValue:))
-        return PetFigureView(figure: PetFigure.byID(p?.figureID), pose: pose, animated: false)
+        pose.stage = p?.growth
+        return pose
     }
 
     private var tasksText: String? {

@@ -86,6 +86,7 @@ struct PetPose {
     var reaction: ReactionKind? = nil  // Antippen: Gesicht, Arme/Beine, Körperbewegung
     var reactU: Double = -1            // Fortschritt 0..1 (außerhalb = keine Reaktion)
     var accessory: Accessory? = nil    // Fest-Zubehör, PetAccessory.swift
+    var stage: GrowthStage? = nil      // Wachstumsstufe (Baby … Erwachsen); nil = erwachsen. Ei: drawEgg()
 
     init(mood: PetMood, overlays: Set<PetOverlay> = [], form: PetForm? = nil, branch: PetBranch? = nil,
          energy: Float? = 100, rest: Float? = 100, charging: Bool = false, petted: Bool = false,
@@ -176,6 +177,34 @@ struct PetFigurePicker: View {
     }
 }
 
+/// Das Ei vor dem Schlüpfen (schaukelt leicht; shakeAt = Zeitpunkt des letzten Antippens → kräftiges Wackeln).
+struct PetEggView: View {
+    var figure: PetFigure? = nil
+    let cracks: Int
+    var shakeAt: Date? = nil
+    var animated = true
+    @AppStorage(PetFigureStore.key, store: STShared.defaults) private var figureID = PetFigure.defaultID
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let f = figure ?? PetFigure.byID(figureID)
+        Group {
+            if animated && !reduceMotion {
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { ctx in
+                    let since = shakeAt.map { ctx.date.timeIntervalSince($0) } ?? 99
+                    Canvas { g, size in
+                        PetFigureRenderer.drawEgg(g, size: size, figure: f, cracks: cracks,
+                                                  t: ctx.date.timeIntervalSinceReferenceDate, shake: max(0, 1 - since / 0.5))
+                    }
+                }
+            } else {
+                Canvas { g, size in PetFigureRenderer.drawEgg(g, size: size, figure: f, cracks: cracks, t: nil) }
+            }
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+}
+
 // MARK: - Zeichnung (Port von lumoSVG)
 
 enum PetFigureRenderer {
@@ -210,6 +239,9 @@ enum PetFigureRenderer {
             g.scaleBy(x: bm.sx, y: bm.sy)
             g.translateBy(x: -110, y: -210)
         }
+        // Wachstum: kleiner und gedrungener, Kopf/Gesicht größer, Antennen kürzer (um die Füße skaliert)
+        let L = Growth.look(p.stage)
+        if L.sx != 1 || L.sy != 1 { g.concatenate(scale(L.sx, L.sy, about: CGPoint(x: 110, y: 212))) }
 
         // Animation (entspricht den CSS-Keyframes im Prototyp)
         var breathe: CGFloat = 0, blink: CGFloat = 0, wobble: CGFloat = 0, pulse: Double = 1, zzOff: CGFloat = 0
@@ -454,18 +486,23 @@ enum PetFigureRenderer {
         pet.translateBy(x: 0, y: slug ? 4 : 0)
         pet.concatenate(scale(1 + breathe, 1 - breathe, about: CGPoint(x: 110, y: 212)))
         var tilted = pet; tilted.concatenate(tilt)
+        let headBase = S.head.map { $0.cy + $0.ry } ?? (ey + 40)
+        var headG = tilted
+        if S.lumo && L.head != 1 { headG.concatenate(scale(L.head, L.head, about: CGPoint(x: 110, y: headBase))) }
+        var antG = headG; antG.concatenate(scale(L.ant, L.ant, about: CGPoint(x: 110, y: S.ant.y + 8)))
+        var faceG = headG; faceG.concatenate(scale(L.face, L.face, about: CGPoint(x: cx, y: ey)))
 
         tail(pet)
         feet(pet)
         if S.lumo {
             bodyParts(pet); heart(pet)
-            antennas(tilted); head(tilted); glint(tilted); face(tilted)
+            antennas(antG); head(headG); glint(headG); face(faceG)
         } else {
-            antennas(tilted)
+            antennas(antG)
             bodyParts(pet); head(pet); glint(pet); heart(pet)
-            face(tilted)
+            face(faceG)
         }
-        if let a = p.accessory { PetAccessory.draw(tilted, a, top: S.ant.y, line: line) }
+        if let a = p.accessory { PetAccessory.draw(headG, a, top: S.ant.y, line: line) }
 
         // Außerhalb des atmenden Körpers
         if stress {
@@ -483,6 +520,51 @@ enum PetFigureRenderer {
         if let form = p.form { text(g, form.badge, size: 28, at: CGPoint(x: 182, y: 22)) }
         if p.branch == .radiant { text(g, "✨", size: 20, at: CGPoint(x: 4, y: 78)) }
         if p.branch == .wild { text(g, "🍂", size: 20, at: CGPoint(x: 18, y: 212)) }
+    }
+
+    /// Das Ei in den Farben der Figur: Grundfarbe = Körper, Tupfen = Antennenfarbe. cracks 0...4 (Growth.cracks),
+    /// shake 0...1 = Wackeln nach dem Antippen, t = Zeit (leichtes Schaukeln); nil = Standbild. Gleiche Maße wie drawEgg() in Kotlin.
+    static func drawEgg(_ ctx: GraphicsContext, size: CGSize, figure F: PetFigure, cracks: Int, t: Double?, shake: Double = 0) {
+        var g = ctx
+        let s = min(size.width, size.height) / viewBox.width
+        g.translateBy(x: (size.width - viewBox.width * s) / 2, y: (size.height - viewBox.height * s) / 2)
+        g.scaleBy(x: s, y: s)
+        g.translateBy(x: -viewBox.minX, y: -viewBox.minY)
+        let C = F.colors, line = col(C.line)
+        var sh = g; sh.opacity = 0.16
+        sh.fill(Path(ellipseIn: CGRect(x: 60, y: 206, width: 100, height: 14)), with: .color(.black))
+        let tt = t ?? 0
+        let rock = 2 * sin(tt * 2.4) + shake * 9 * sin(tt * 38)
+        g.concatenate(rotate(CGFloat(rock), about: CGPoint(x: 110, y: 212)))
+        var egg = Path()
+        egg.move(to: CGPoint(x: 110, y: 52))
+        egg.addCurve(to: CGPoint(x: 170, y: 152), control1: CGPoint(x: 146, y: 52), control2: CGPoint(x: 170, y: 112))
+        egg.addCurve(to: CGPoint(x: 110, y: 212), control1: CGPoint(x: 170, y: 190), control2: CGPoint(x: 144, y: 212))
+        egg.addCurve(to: CGPoint(x: 50, y: 152), control1: CGPoint(x: 76, y: 212), control2: CGPoint(x: 50, y: 190))
+        egg.addCurve(to: CGPoint(x: 110, y: 52), control1: CGPoint(x: 50, y: 112), control2: CGPoint(x: 74, y: 52))
+        egg.closeSubpath()
+        g.fill(egg, with: .color(col(C.body)))
+        var inner = g
+        inner.clip(to: egg)
+        var spots = inner; spots.opacity = 0.85
+        for (x, y, r) in [(84.0, 150.0, 14.0), (132, 120, 10), (122, 180, 12), (98, 92, 7), (146, 162, 6)] as [(CGFloat, CGFloat, CGFloat)] {
+            spots.fill(circle(x, y, r), with: .color(col(C.ant)))
+        }
+        var gl = inner; gl.opacity = 0.38
+        gl.fill(Path(ellipseIn: CGRect(x: 72, y: 84, width: 28, height: 42)), with: .color(white))
+        g.stroke(egg, with: .color(line), lineWidth: 4)
+        let crackPts: [[CGFloat]] = [
+            [96, 102, 104, 112, 98, 120, 108, 130],
+            [108, 130, 120, 124, 126, 136, 138, 130],
+            [72, 136, 82, 130, 90, 140, 98, 134, 108, 130],
+            [138, 130, 146, 140, 152, 132]
+        ]
+        for pts in crackPts.prefix(max(0, min(4, cracks))) {
+            var p = Path()
+            p.move(to: CGPoint(x: pts[0], y: pts[1]))
+            stride(from: 2, to: pts.count, by: 2).forEach { p.addLine(to: CGPoint(x: pts[$0], y: pts[$0 + 1])) }
+            g.stroke(p, with: .color(line), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+        }
     }
 
     // MARK: Hilfen

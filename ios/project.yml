@@ -131,6 +131,7 @@ targets:
       - OSMon/Shared/Logic/ScreenTimeShared.swift
       - OSMon/Shared/Logic/DayTasks.swift
       - OSMon/Shared/Logic/Festivals.swift
+      - OSMon/Shared/Logic/Growth.swift
       - OSMon/Shared/Sync/PetFigure.swift
       - OSMon/Shared/Sync/PetFigureData.swift
       - OSMon/Shared/Sync/PetAccessory.swift
@@ -166,6 +167,7 @@ targets:
       - OSMon/Shared/Logic/ScreenTimeShared.swift
       - OSMon/Shared/Logic/DayTasks.swift
       - OSMon/Shared/Logic/Festivals.swift
+      - OSMon/Shared/Logic/Growth.swift
       - OSMon/Shared/Sync/PetFigure.swift
       - OSMon/Shared/Sync/PetFigureData.swift
       - OSMon/Shared/Sync/PetAccessory.swift

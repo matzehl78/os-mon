@@ -31,6 +31,8 @@ import com.example.osmon.figure.PetFigures
 import com.example.osmon.figure.PetPose
 import com.example.osmon.ui.FestivalStore
 import com.example.osmon.ui.SceneStore
+import com.example.osmon.ui.GrowthStore
+import com.example.osmon.engine.GrowthStage
 
 class PetWallpaperService : WallpaperService() {
     override fun onCreateEngine(): Engine = PetEngine()
@@ -120,7 +122,9 @@ object PetWallpaper {
         val size = w * 0.62f
         c.save()
         c.translate((w - size) / 2f, feetY - size * 0.92f)
-        PetFigureRenderer.draw(c, size, size, PetFigures.current(ctx), pose, t)
+        val stage = GrowthStore.stage(ctx)
+        if (stage == GrowthStage.EGG) PetFigureRenderer.drawEgg(c, size, size, PetFigures.current(ctx), GrowthStore.cracks(ctx), t)
+        else PetFigureRenderer.draw(c, size, size, PetFigures.current(ctx), pose.copy(stage = stage), t)
         c.restore()
     }
 

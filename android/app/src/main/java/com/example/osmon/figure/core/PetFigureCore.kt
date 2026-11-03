@@ -16,6 +16,8 @@ import androidx.core.graphics.PathParser
 import com.example.osmon.engine.Accessory
 import com.example.osmon.engine.Branch
 import com.example.osmon.engine.Form
+import com.example.osmon.engine.Growth
+import com.example.osmon.engine.GrowthStage
 import com.example.osmon.engine.Mood
 import com.example.osmon.engine.Overlay
 import com.example.osmon.engine.Snapshot
@@ -81,7 +83,8 @@ data class PetPose(
     val petted: Boolean = false,
     val reaction: ReactionKind? = null,      // Antippen: Gesicht, Arme/Beine, Körperbewegung
     val reactU: Float = -1f,                 // Fortschritt 0..1 (außerhalb = keine Reaktion)
-    val accessory: Accessory? = null         // Fest-Zubehör (Partyhut, Weihnachtsmütze …), PetAccessory.kt
+    val accessory: Accessory? = null,        // Fest-Zubehör (Partyhut, Weihnachtsmütze …), PetAccessory.kt
+    val stage: GrowthStage? = null           // Wachstumsstufe (Baby … Erwachsen); null = erwachsen. Ei: drawEgg()
 ) {
     companion object {
         fun of(s: Snapshot, form: Form? = null, branch: Branch? = null, charging: Boolean = false, petted: Boolean = false) =
@@ -119,6 +122,13 @@ object PetFigureRenderer {
     fun bitmap(figure: PetFigure, pose: PetPose, sizePx: Int = 360): Bitmap {
         val b = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         draw(Canvas(b), sizePx.toFloat(), sizePx.toFloat(), figure, pose, null)
+        return b
+    }
+
+    /** Ei als Standbild (Widget, Complication). */
+    fun eggBitmap(figure: PetFigure, cracks: Int, sizePx: Int = 360): Bitmap {
+        val b = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        drawEgg(Canvas(b), sizePx.toFloat(), sizePx.toFloat(), figure, cracks, null)
         return b
     }
 
@@ -164,6 +174,9 @@ object PetFigureRenderer {
         if (bm != null) {                                   // Reaktion bewegt die ganze Figur (Drehpunkt Mitte unten)
             c.translate(110f + bm.dx, 210f + bm.dy); c.rotate(bm.rot); c.scale(bm.sx, bm.sy); c.translate(-110f, -210f)
         }
+        // Wachstum: kleiner und gedrungener, Kopf/Gesicht größer, Antennen kürzer (um die Füße skaliert)
+        val L = Growth.look(p.stage)
+        if (L.sx != 1f || L.sy != 1f) c.scale(L.sx, L.sy, 110f, 212f)
 
         fun circle(x: Float, y: Float, rr: Float, fillColor: Int, alpha: Float = 1f, strokeW: Float = 0f) {
             c.drawCircle(x, y, rr, fill(fillColor, alpha))
@@ -359,15 +372,19 @@ object PetFigureRenderer {
         c.scale(1 + breathe, 1 - breathe, 110f, 212f)
         tail()
         feet()
+        fun antG() { c.save(); c.scale(L.ant, L.ant, 110f, S.ant.y + 8f); antennas(); c.restore() }
+        fun faceG() { c.save(); c.scale(L.face, L.face, cx, ey); face(); c.restore() }
+        val headBase = S.head?.let { it.cy + it.ry } ?: (ey + 40f)
+        fun headScale() { if (L.head != 1f) c.scale(L.head, L.head, 110f, headBase) }
         if (S.lumo) {
             bodyParts(); heart()
-            c.save(); tilt(); antennas(); head(); glint(); face(); c.restore()
+            c.save(); tilt(); headScale(); antG(); head(); glint(); faceG(); c.restore()
         } else {
-            c.save(); tilt(); antennas(); c.restore()
+            c.save(); tilt(); antG(); c.restore()
             bodyParts(); head(); glint(); heart()
-            c.save(); tilt(); face(); c.restore()
+            c.save(); tilt(); faceG(); c.restore()
         }
-        p.accessory?.let { c.save(); tilt(); PetAccessory.draw(c, it, S.ant.y, line); c.restore() }
+        p.accessory?.let { c.save(); tilt(); if (S.lumo) headScale(); PetAccessory.draw(c, it, S.ant.y, line); c.restore() }
         c.restore()
 
         // Außerhalb des atmenden Körpers
@@ -380,6 +397,52 @@ object PetFigureRenderer {
         p.form?.let { text(c, badge(it), 28f, line, 182f, 22f) }
         if (p.branch == Branch.RADIANT) text(c, "✨", 20f, line, 4f, 78f)
         if (p.branch == Branch.WILD) text(c, "🍂", 20f, line, 18f, 212f)
+        c.restore()
+    }
+
+    /**
+     * Das Ei in den Farben der Figur: Grundfarbe = Körper, Tupfen = Antennenfarbe. cracks 0..4 (Growth.cracks),
+     * shake 0..1 = Wackeln nach dem Antippen, t = Zeit (leichtes Schaukeln); null = Standbild.
+     */
+    fun drawEgg(c: Canvas, w: Float, h: Float, F: PetFigure, cracks: Int, t: Double?, shake: Float = 0f) {
+        val C = F.colors; val line = C.line
+        val s = min(w, h) / VB_W
+        c.save()
+        c.translate((w - VB_W * s) / 2f, (h - VB_W * s) / 2f)
+        c.scale(s, s)
+        c.translate(-VB_X, -VB_Y)
+        // Schatten
+        c.drawOval(RectF(60f, 206f, 160f, 220f), fill(0xFF000000.toInt(), 0.16f))
+        val tt = t ?: 0.0
+        val rock = (2.0 * sin(tt * 2.4) + shake * 9.0 * sin(tt * 38.0)).toFloat()
+        c.rotate(rock, 110f, 212f)
+        val egg = Path().apply {
+            moveTo(110f, 52f)
+            cubicTo(146f, 52f, 170f, 112f, 170f, 152f)
+            cubicTo(170f, 190f, 144f, 212f, 110f, 212f)
+            cubicTo(76f, 212f, 50f, 190f, 50f, 152f)
+            cubicTo(50f, 112f, 74f, 52f, 110f, 52f)
+            close()
+        }
+        c.drawPath(egg, fill(C.body))
+        c.save(); c.clipPath(egg)
+        for ((x, y, r) in listOf(Triple(84f, 150f, 14f), Triple(132f, 120f, 10f), Triple(122f, 180f, 12f), Triple(98f, 92f, 7f), Triple(146f, 162f, 6f))) {
+            c.drawCircle(x, y, r, fill(C.ant, 0.85f))
+        }
+        c.drawOval(RectF(72f, 84f, 100f, 126f), fill(WHITE, 0.38f))
+        c.restore()
+        c.drawPath(egg, stroke(line, 4f))
+        // Risse: wachsen mit jedem Tippen
+        val crackPaths = listOf(
+            floatArrayOf(96f, 102f, 104f, 112f, 98f, 120f, 108f, 130f),
+            floatArrayOf(108f, 130f, 120f, 124f, 126f, 136f, 138f, 130f),
+            floatArrayOf(72f, 136f, 82f, 130f, 90f, 140f, 98f, 134f, 108f, 130f),
+            floatArrayOf(138f, 130f, 146f, 140f, 152f, 132f)
+        )
+        crackPaths.take(cracks.coerceIn(0, 4)).forEach { pts ->
+            val path = Path().apply { moveTo(pts[0], pts[1]); var i = 2; while (i < pts.size) { lineTo(pts[i], pts[i + 1]); i += 2 } }
+            c.drawPath(path, stroke(line, 3f))
+        }
         c.restore()
     }
 

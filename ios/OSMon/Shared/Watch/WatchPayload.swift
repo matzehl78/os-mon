@@ -20,6 +20,7 @@ struct WatchPayload: Codable, Equatable {
     var kindTip: String?             // Miteinander: Tipp des Tages
     var kindCategory: String?
     var kindDone: Bool
+    var stage: String? = nil         // GrowthStage.rawValue (egg … adult)
 
     static let key = "watch.payload"
 
@@ -27,6 +28,7 @@ struct WatchPayload: Codable, Equatable {
     static func decode(_ data: Data?) -> WatchPayload? { data.flatMap { try? JSONDecoder().decode(WatchPayload.self, from: $0) } }
 
     var progress: TaskProgress { DayTasks.progress(tasks, day) }
+    var growth: GrowthStage? { stage.flatMap(GrowthStage.init(rawValue:)) }
 }
 
 /// Aktionen von der Uhr ans iPhone (sendMessage, sonst transferUserInfo).

@@ -19,7 +19,10 @@ struct WallpaperArt: View {
             let feetY = h * 0.72, size = w * 0.62
             ZStack(alignment: .topLeading) {
                 background(feetY: feetY)
-                PetFigureView(figure: figure, pose: pose, animated: false)
+                Group {
+                    if pose.stage == .egg { PetEggView(figure: figure, cracks: GrowthStorage.cracks, animated: false) }
+                    else { PetFigureView(figure: figure, pose: pose, animated: false) }
+                }
                     .frame(width: size, height: size)
                     .offset(x: (w - size) / 2, y: feetY - size * 0.92)
             }
@@ -49,6 +52,7 @@ enum WallpaperExport {
     static func currentArt(now: Date = .now) -> WallpaperArt {
         let d = STShared.defaults
         var pose = PetSync.lastSnapshot().map { PetPose(snapshot: $0.snapshot) } ?? .preview
+        pose.stage = GrowthStorage.stage
         if d.object(forKey: "festivals.enabled") as? Bool ?? true {
             let m = d.integer(forKey: "user.birthday.m"), dd = d.integer(forKey: "user.birthday.d")
             pose.accessory = Festivals.today(EpochDay.of(now), birthday: m > 0 && dd > 0 ? (m, dd) : nil,

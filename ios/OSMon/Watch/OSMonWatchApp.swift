@@ -60,12 +60,17 @@ struct WatchPetPage: View {
         var pose = PetPose(snapshot: p.snapshot)
         pose.form = p.form.flatMap(PetForm.init(rawValue:))
         pose.accessory = p.accessory.flatMap(Accessory.init(rawValue:))
+        pose.stage = p.growth
         return pose
     }
 
     var body: some View {
         VStack(spacing: 2) {
             ZStack(alignment: .top) {
+                if p.growth == .egg {
+                    PetEggView(figure: PetFigure.byID(p.figureID), cracks: 2)
+                        .accessibilityLabel("Ein Ei. Auf dem iPhone antippen, damit es schlüpft.")
+                } else {
                 PetFigureView(figure: PetFigure.byID(p.figureID), pose: pose, animated: true, reaction: reaction)
                     .onTapGesture {
                         let k = picker.pick(mood: p.snapshot.mood, overlays: p.snapshot.overlays)
@@ -74,6 +79,7 @@ struct WatchPetPage: View {
                     }
                     .accessibilityLabel("\(p.petName): \(p.snapshot.mood.title). Antippen für eine Reaktion.")
                     .accessibilityAddTraits(.isButton)
+                }
                 if let r = reaction, r.saying(.now) {
                     Text(r.say).font(.caption2).padding(.horizontal, 6).padding(.vertical, 3)
                         .background(.ultraThinMaterial, in: Capsule())
@@ -81,10 +87,11 @@ struct WatchPetPage: View {
                 }
             }
             HStack(spacing: 4) {
-                Text(p.snapshot.mood.title).font(.headline)
+                Text(p.growth == .egg ? "Ei" : p.snapshot.mood.title).font(.headline)
                 Text("\(Int(p.snapshot.wellbeing.rounded()))").font(.headline).monospacedDigit().foregroundStyle(p.snapshot.mood.color)
             }
-            Text(p.petName).font(.caption2).foregroundStyle(.secondary)
+            Text(p.petName + (p.growth.flatMap { $0 == .egg ? nil : " · \($0.title)" } ?? ""))
+                .font(.caption2).foregroundStyle(.secondary)
         }
         .containerBackground(p.snapshot.mood.color.gradient, for: .tabView)
         .task(id: reaction?.start) {

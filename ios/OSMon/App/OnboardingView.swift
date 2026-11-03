@@ -114,6 +114,7 @@ final class OnboardingModel: ObservableObject {
     func finish() {
         defaults.set(true, forKey: "onboarding.done")
         EvolutionStore.ensureHatched()                       // Schlüpftag festlegen (Evolution ab Tag 11)
+        GrowthStore.startEgg()                               // Ei liegt auf dem Startbildschirm
     }
 }
 
@@ -158,7 +159,7 @@ struct OnboardingView: View {
                 primary("Los geht’s") { model.next() }
 
             case .egg:
-                primary("Weiter", enabled: model.hatched) { model.next() }
+                primary("Dieses Ei nehmen") { model.next() }
 
             case .basics:
                 primary("Weiter") { model.next() }
@@ -226,28 +227,16 @@ private struct EggStep: View {
     @ObservedObject var model: OnboardingModel
     @AppStorage(PetFigureStore.key, store: STShared.defaults) private var figureID = PetFigure.defaultID
 
+    // Ei aussuchen: jede Figur hat ihr eigenes Ei (Farben). Geschlüpft wird später auf dem Startbildschirm.
     var body: some View {
-        StepPage(symbol: nil, title: model.hatched ? "Hallo, \(PetFigure.byID(figureID).name)!" : "Tippe auf das Ei",
-                 text: model.hatched ? "Dein Wesen ist geschlüpft. Such dir aus, wie es aussieht. Das geht später jederzeit in den Einstellungen."
-                                     : "Noch \(max(0, 3 - model.eggTaps))× tippen …") {
-            if model.hatched {
-                PetAvatarView(mood: .radiant, overlays: [], form: nil, branch: nil)
-                    .scaleEffect(0.85)
-                    .frame(height: 190)
-                    .transition(.scale.combined(with: .opacity))
-                PetFigurePicker()
-                    .transition(.opacity)
-            } else {
-                Text("🥚").font(.system(size: 120))
-                    .rotationEffect(.degrees(model.eggTaps.isMultiple(of: 2) ? -6 : 6))
-                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: model.eggTaps)
-                    .onTapGesture { model.tapEgg() }
-                    .accessibilityLabel("Ei")
-                    .accessibilityHint("Aktivieren, damit es schlüpft. Dreimal nötig.")
-                    .accessibilityAddTraits(.isButton)
-            }
+        let name = PetFigure.byID(figureID).name
+        StepPage(symbol: nil, title: "Such dir ein Ei aus",
+                 text: "Daraus schlüpft \(name). Tippe das Ei gleich auf dem Startbildschirm an, bis es aufbricht. Danach wächst dein Wesen in etwa drei Monaten vom Baby zum Erwachsenen – jeder gute Tag zählt.") {
+            PetEggView(cracks: 0)
+                .frame(height: 170)
+                .accessibilityLabel("Ei von \(name)")
+            PetFigurePicker()
         }
-        .animation(.easeInOut, value: model.hatched)
     }
 }
 

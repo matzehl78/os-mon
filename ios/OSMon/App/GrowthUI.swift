@@ -1,0 +1,117 @@
+// GrowthUI.swift: Wachsen vom Ei bis zum Erwachsenen – Nachtragen, Ei antippen, Banner. Gegenstück: GrowthUI.kt.
+// Regeln: Shared/Logic/Growth.swift. Ei auf der Startseite antippen (5×, mit Rissen) → schlüpft als Baby.
+
+import SwiftUI
+
+struct GrowthInfo: Equatable {
+    let state: GrowthState
+    let stage: GrowthStage
+    let eggTaps: Int
+    let ageDays: Int
+    let progress: Double?
+    let daysLeft: Int?
+    var pending: GrowthStage? { state.pendingStage }
+}
+
+enum GrowthStore {
+    private static var today: Int { EpochDay.of(.now) }
+
+    static func load() -> GrowthState {
+        if let s = GrowthStorage.load() { return s }
+        // Erster Aufruf: wer OS-Mon schon hatte, ist geschlüpft (nichts geht verloren); sonst liegt ein Ei da.
+        let s = STShared.defaults.bool(forKey: "onboarding.done")
+            ? Growth.migrated(hatchDay: EvolutionStore.load()?.hatchDay ?? today, today: today)
+            : GrowthState(hatched: false, lastDay: today)
+        GrowthStorage.save(s)
+        return s
+    }
+
+    /// Ende des Onboardings: neues Wesen beginnt als Ei.
+    static func startEgg() {
+        guard GrowthStorage.load() == nil else { return }
+        GrowthStorage.eggTaps = 0
+        GrowthStorage.save(GrowthState(hatched: false, lastDay: today))
+    }
+
+    /// Gute Tage bis gestern nachtragen.
+    static func refresh() -> GrowthInfo {
+        var s = load()
+        let t = today
+        if s.hatched && s.lastDay < t - 1 {
+            for d in max(s.lastDay + 1, t - Growth.maxCatchUp)..<t { s = Growth.closeDay(s, day: d, avgWellbeing: DayLog.average(day: d)) }
+            GrowthStorage.save(s)
+        }
+        return info(s)
+    }
+
+    static func info(_ s: GrowthState = load()) -> GrowthInfo {
+        let p = Growth.progress(s)
+        return GrowthInfo(state: s, stage: Growth.stage(s), eggTaps: GrowthStorage.eggTaps,
+                          ageDays: s.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft)
+    }
+
+    static func tapEgg() -> GrowthInfo {
+        var s = load()
+        guard !s.hatched else { return info(s) }
+        GrowthStorage.eggTaps += 1
+        if GrowthStorage.eggTaps >= Growth.eggTaps { s = Growth.hatch(s, today: today); GrowthStorage.save(s) }
+        return info(s)
+    }
+
+    static func ackStage() {
+        var s = load(); s.pendingStage = nil; GrowthStorage.save(s)
+    }
+}
+
+/// „Lumo · Kind · Tag 9“
+func growthLabel(_ name: String, _ g: GrowthInfo) -> String {
+    g.stage == .egg ? "\(name) · Ei" : "\(name) · \(g.stage.title) · Tag \(g.ageDays + 1)"
+}
+
+struct GrowthProgressView: View {
+    let g: GrowthInfo
+    var body: some View {
+        if let p = g.progress, let left = g.daysLeft, let next = g.stage.next {
+            VStack(alignment: .leading, spacing: 2) {
+                ProgressView(value: p).tint(.green)
+                Text("Noch \(left) gute \(left == 1 ? "Tag" : "Tage") bis \(next.title)")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            .padding(.top, 2)
+            .accessibilityElement(children: .combine)
+        }
+    }
+}
+
+struct GrowthBanner: View {
+    let name: String
+    let stage: GrowthStage
+    let onAck: () -> Void
+
+    private var text: String {
+        switch stage {
+        case .baby: "\(name) ist geschlüpft! Willkommen, kleines Baby."
+        case .child: "\(name) ist jetzt ein Kind! Größer, mutiger, neugieriger."
+        case .teen: "\(name) ist jetzt jugendlich! Fast schon groß."
+        case .adult: "\(name) ist erwachsen! Danke, dass du so gut aufgepasst hast."
+        case .egg: ""
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("🎉").font(.title)
+            Text(text).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
+            Button("Juhu!", action: onAck).buttonStyle(.borderedProminent)
+        }
+        .padding(14)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
+    }
+}
+
+/// Sprechblase, solange das Ei noch nicht geschlüpft ist.
+func eggLine(_ g: GrowthInfo?) -> String? {
+    guard let g, g.stage == .egg else { return nil }
+    return g.eggTaps == 0 ? "Da liegt ein Ei! Tippe es an …" : "Es knackt! Noch \(Growth.eggTaps - g.eggTaps)× tippen …"
+}

@@ -60,6 +60,7 @@ import androidx.wear.compose.material.TimeText
 import com.example.osmon.engine.Accessory
 import com.example.osmon.engine.DayTasks
 import com.example.osmon.engine.Form
+import com.example.osmon.engine.GrowthStage
 import com.example.osmon.engine.Mood
 import com.example.osmon.engine.TaskStage
 import com.example.osmon.figure.ActiveReaction
@@ -90,8 +91,10 @@ fun moodTitle(m: Mood) = when (m) {
     Mood.SICK -> "Kränklich"; Mood.HIBERNATION -> "Winterschlaf"
 }
 
+val WearPayload.growth: GrowthStage? get() = stage?.let { runCatching { GrowthStage.valueOf(it) }.getOrNull() }
+
 fun WearPayload.pose(): PetPose = PetPose.of(snapshot, form = form?.let { runCatching { Form.valueOf(it) }.getOrNull() })
-    .copy(accessory = accessory?.let { runCatching { Accessory.valueOf(it) }.getOrNull() })
+    .copy(accessory = accessory?.let { runCatching { Accessory.valueOf(it) }.getOrNull() }, stage = growth)
 
 fun figureOf(id: String?) = ALL_FIGURES.firstOrNull { it.id == id } ?: ALL_FIGURES[0]
 
@@ -160,7 +163,11 @@ private fun PetHeader(p: WearPayload) {
     LaunchedEffect(reaction) { if (reaction != null) { kotlinx.coroutines.delay(2700); reaction = null } }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.TopCenter) {
-            PetCanvas(p.figureId, p.pose(), reaction,
+            if (p.growth == GrowthStage.EGG) {
+                Canvas(Modifier.size(110.dp).semantics { contentDescription = "Ei. Auf dem Handy antippen, damit es schlüpft." }) {
+                    drawIntoCanvas { PetFigureRenderer.drawEgg(it.nativeCanvas, size.width, size.height, figureOf(p.figureId), 2, null) }
+                }
+            } else PetCanvas(p.figureId, p.pose(), reaction,
                 Modifier.size(110.dp).clickable {
                     val now = SystemClock.uptimeMillis()
                     val t = LocalTime.now()
@@ -171,11 +178,12 @@ private fun PetHeader(p: WearPayload) {
             reaction?.let { Text(it.say, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp)) }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(moodTitle(p.snapshot.mood), fontWeight = FontWeight.Bold)
+            Text(if (p.growth == GrowthStage.EGG) "Ei" else moodTitle(p.snapshot.mood), fontWeight = FontWeight.Bold)
             Spacer(Modifier.width(6.dp))
             Text("${p.snapshot.wellbeing.toInt()}", color = moodColor(p.snapshot.mood), fontWeight = FontWeight.Bold)
         }
-        Text(p.petName, fontSize = 11.sp, color = MaterialTheme.colors.onSurfaceVariant)
+        Text(p.petName + (p.growth?.takeIf { it != GrowthStage.EGG }?.let { " · ${it.title}" } ?: ""),
+            fontSize = 11.sp, color = MaterialTheme.colors.onSurfaceVariant)
     }
 }
 

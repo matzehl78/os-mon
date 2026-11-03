@@ -60,6 +60,7 @@ struct HomeState {
     var festivalCard = false                   // Karte „Feiern“ sichtbar
     var season: Season = .autumn               // Jahreszeit (Tönung, Deko, Teilchen)
     var seasonsOn = true
+    var growth: GrowthInfo? = nil              // Ei … Erwachsen (GrowthUI.swift); nil = Vorschau
 
     static let empty = HomeState(
         snapshot: PetSnapshot(stats: PetStats(e: 100, r: 100, f: 100, v: 100, a: 70),
@@ -107,10 +108,19 @@ final class HomeViewModel: ObservableObject {
             festival: FestivalStore.today(now),
             festivalCard: FestivalStore.today(now) != nil && !FestivalStore.cardHidden(EpochDay.of(now)),
             season: SceneTheme.season(day: EpochDay.of(now)),
-            seasonsOn: FestivalStore.seasons)
+            seasonsOn: FestivalStore.seasons,
+            growth: GrowthStore.refresh())
 
         PhoneWatchBridge.shared.push(snapshot: t.snapshot, accessory: state.festival?.accessory,
                                      form: evo.current?.form, updateExtras: true)
+    }
+
+    /// Ei antippen; nach dem letzten Tippen schlüpft das Wesen (Banner „geschlüpft“).
+    func tapEgg() { state.growth = GrowthStore.tapEgg() }
+
+    func ackGrowth() {
+        GrowthStore.ackStage()
+        state.growth = GrowthStore.info()
     }
 
     func hideFestivalCard() {
@@ -208,7 +218,9 @@ struct HomeScreen: View {
             onAckScenes: { model.ackScenes() },
             onOpenBedtime: { showBedtime = true },
             onDismissMorning: { model.dismissMorning() },
-            onHideFestival: { model.hideFestivalCard() })
+            onHideFestival: { model.hideFestivalCard() },
+            onTapEgg: { model.tapEgg() },
+            onAckGrowth: { model.ackGrowth() })
             .fullScreenCover(isPresented: $showBedtime, onDismiss: { model.refresh() }) { BedtimeView { showBedtime = false } }
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
@@ -235,6 +247,8 @@ struct HomeContent: View {
     var onOpenBedtime: () -> Void = {}
     var onDismissMorning: () -> Void = {}
     var onHideFestival: () -> Void = {}
+    var onTapEgg: () -> Void = {}
+    var onAckGrowth: () -> Void = {}
     var demoScrollTo: String? = nil               // nur Screenshots: z. B. "review"
 
     private var snap: PetSnapshot { state.snapshot }
@@ -246,6 +260,7 @@ struct HomeContent: View {
     // Lage von Figur und Ringen im Inhalt (für die Bildlage)
     @State private var stageFrame: CGRect = .zero
     @State private var headerFrame: CGRect = .zero
+    @State private var eggShakeAt: Date? = nil
     @State private var topInset: CGFloat = 0
     @State private var ringsFrame: CGRect = .zero
     // Antippen
@@ -326,8 +341,12 @@ struct HomeContent: View {
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
         // Hinweise (Entwicklung, neuer Hintergrund) unten als Einblendung: verschieben Kopfzeile und Wesen nicht
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if state.evolutionEvent != nil || !state.newScenes.isEmpty {
+            if state.evolutionEvent != nil || !state.newScenes.isEmpty || state.growth?.pending != nil {
                 VStack(spacing: 8) {
+                    if let st = state.growth?.pending {
+                        GrowthBanner(name: PetFigure.byID(figureID).name, stage: st, onAck: onAckGrowth)
+                            .onAppear { celebrate() }          // Konfetti + Drehung beim Aufstieg
+                    }
                     if let event = state.evolutionEvent { EvolutionBanner(event: event, onAck: onAckEvolution) }
                     if !state.newScenes.isEmpty { SceneUnlockBanner(scenes: state.newScenes, onUse: onUseScene, onDismiss: onAckScenes) }
                 }
@@ -361,7 +380,7 @@ struct HomeContent: View {
     private var speechBubble: some View {
         TimelineView(.periodic(from: .now, by: 0.25)) { tl in
             let say = reaction.flatMap { $0.saying(tl.date) ? $0.say : nil }
-            Text(say ?? state.festival?.greeting ?? PetCopy.line(for: snap))
+            Text(say ?? eggLine(state.growth) ?? state.festival?.greeting ?? PetCopy.line(for: snap))
                 .font(say == nil ? .callout : .callout.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16).padding(.vertical, 10)
@@ -372,11 +391,32 @@ struct HomeContent: View {
     }
 
     /// Das Wesen (antippbar) mit Partikeln.
+    @ViewBuilder
     private var pet: some View {
+        if let g = state.growth, g.stage == .egg {
+            PetEggView(cracks: Growth.cracks(g.eggTaps), shakeAt: eggShakeAt)
+                .frame(width: hasScene ? 260 : 220, height: hasScene ? 260 : 220)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    eggShakeAt = .now
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onTapEgg()
+                }
+                .accessibilityLabel("Ei")
+                .accessibilityHint("Noch \(Growth.eggTaps - g.eggTaps)× antippen, dann schlüpft dein Wesen.")
+                .accessibilityAddTraits(.isButton)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
+        } else {
+            petFigure
+        }
+    }
+
+    private var petFigure: some View {
         PetAvatarView(mood: snap.mood, overlays: snap.overlays,
                       form: state.evolution?.form, branch: state.evolution?.branch,
                       energy: snap.stats.e, rest: snap.stats.r,
-                      size: hasScene ? 260 : 220, reaction: reaction, accessory: state.festival?.accessory)
+                      size: hasScene ? 260 : 220, reaction: reaction, accessory: state.festival?.accessory,
+                      stage: state.growth?.stage)
             .overlay { if let r = reaction { ReactionParticles(reaction: r) } }
             .contentShape(Rectangle())
             .onTapGesture { tapPet() }
@@ -413,13 +453,11 @@ struct HomeContent: View {
                        color: snap.mood.color, size: 72)
             VStack(alignment: .leading, spacing: 2) {
                 Text(snap.mood.title).font(.title2.bold())
-                if let evo = state.evolution {
-                    // Figurenname bleibt sichtbar; die Entwicklungsform steht dahinter
-                    Text(PetFigure.byID(figureID).name + " · " + evo.form.title + (evo.hybrid.map { " \($0.badge)" } ?? ""))
-                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
-                } else {
-                    Text(PetFigure.byID(figureID).name).font(.subheadline).foregroundStyle(.secondary)
-                }
+                // Figurenname, Wachstumsstufe und Alter; die Entwicklungsform steht dahinter
+                let name = PetFigure.byID(figureID).name
+                Text((state.growth.map { growthLabel(name, $0) } ?? name) + (state.evolution.map { " · " + $0.form.title } ?? ""))
+                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.75)
+                if let g = state.growth { GrowthProgressView(g: g) }
             }
             Spacer()
             if let onOpenSettings {
@@ -602,14 +640,20 @@ struct PetAvatarView: View {
     var size: CGFloat = 220
     var reaction: ActiveReaction? = nil
     var accessory: Accessory? = nil
+    var stage: GrowthStage? = nil
 
     var body: some View {
-        PetFigureView(pose: PetPose(mood: mood, overlays: overlays, form: form, branch: branch,
-                                    energy: energy, rest: rest, charging: charging, petted: petted, accessory: accessory),
-                      reaction: reaction)
+        PetFigureView(pose: pose, reaction: reaction)
             .frame(width: size, height: size)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Dein Wesen: \(mood.title)")
+    }
+
+    private var pose: PetPose {
+        var p = PetPose(mood: mood, overlays: overlays, form: form, branch: branch,
+                        energy: energy, rest: rest, charging: charging, petted: petted, accessory: accessory)
+        p.stage = stage
+        return p
     }
 }
 

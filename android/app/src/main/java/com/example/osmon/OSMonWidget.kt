@@ -91,7 +91,11 @@ class PetWidget : GlanceAppWidget() {
         val readyAt = PetSync.patReadyAt(context, now)
         val readyText = readyAt?.let { DateFormat.getTimeFormat(context).format(Date(it)) }
         // Gewählte Figur als Bild (Glance kann nicht selbst zeichnen; gleicher Renderer wie im Home-Screen)
-        val pet = PetFigureRenderer.bitmap(PetFigures.current(context), PetPose.of(snap).copy(accessory = com.example.osmon.ui.FestivalStore.today(context, withHatchDay = false)?.accessory), sizePx = 300)
+        val stage = com.example.osmon.ui.GrowthStore.stage(context)
+        val pet = if (stage == com.example.osmon.engine.GrowthStage.EGG)
+            PetFigureRenderer.eggBitmap(PetFigures.current(context), com.example.osmon.ui.GrowthStore.cracks(context), sizePx = 300)
+        else PetFigureRenderer.bitmap(PetFigures.current(context), PetPose.of(snap).copy(
+            accessory = com.example.osmon.ui.FestivalStore.today(context, withHatchDay = false)?.accessory, stage = stage), sizePx = 300)
         provideContent { PetContent(snap, readyText, pet) }
     }
 }

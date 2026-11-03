@@ -149,6 +149,8 @@ import com.example.osmon.engine.EvoEvent
 import com.example.osmon.engine.EvoKind
 import com.example.osmon.engine.Evolution
 import com.example.osmon.engine.Form
+import com.example.osmon.engine.Growth
+import com.example.osmon.engine.GrowthStage
 import com.example.osmon.engine.Inputs
 import com.example.osmon.engine.Mood
 import com.example.osmon.engine.Overlay
@@ -203,7 +205,8 @@ data class HomeState(
     val festival: Festival? = null,           // Fest heute (Zubehör, Deko, Gruß)
     val festivalCard: Boolean = false,        // Karte „Feiern“ sichtbar
     val season: Season = Season.AUTUMN,       // Jahreszeit (Tönung, Deko, Teilchen)
-    val seasonsOn: Boolean = true
+    val seasonsOn: Boolean = true,
+    val growth: GrowthInfo? = null            // Ei … Erwachsen (GrowthUI.kt); null = Vorschau
 ) {
     companion object {
         val Empty = HomeState(
@@ -271,6 +274,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         ackScenes()
     }
 
+    /** Ei antippen; nach dem letzten Tippen schlüpft das Wesen (Banner „geschlüpft“). */
+    fun tapEgg() { _state.value = _state.value.copy(growth = GrowthStore.tapEgg(ctx)) }
+
+    fun ackGrowth() {
+        GrowthStore.ackStage(ctx)
+        _state.value = _state.value.copy(growth = GrowthStore.info(ctx))
+    }
+
     fun hideFestivalCard() {
         FestivalStore.hideCard(ctx)
         _state.value = _state.value.copy(festivalCard = false)
@@ -314,7 +325,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             festival = FestivalStore.today(ctx),
             festivalCard = FestivalStore.today(ctx) != null && !FestivalStore.cardHidden(ctx),
             season = SceneTheme.season(LocalDate.now().toEpochDay()),
-            seasonsOn = FestivalStore.seasons(ctx)
+            seasonsOn = FestivalStore.seasons(ctx),
+            growth = GrowthStore.refresh(ctx)
         )
         PetSync.updateWidgetIfNeeded(ctx, t.snapshot, force = forceWidget)
         PhoneWearBridge.push(ctx, t.snapshot, _state.value.festival?.accessory, evo.current?.form, updateExtras = true)
@@ -371,7 +383,9 @@ fun HomeScreen(
         onAckScenes = vm::ackScenes,
         onOpenBedtime = onOpenBedtime,
         onDismissMorning = vm::dismissMorning,
-        onHideFestival = vm::hideFestivalCard
+        onHideFestival = vm::hideFestivalCard,
+        onTapEgg = vm::tapEgg,
+        onAckGrowth = vm::ackGrowth
     )
 }
 
@@ -392,6 +406,8 @@ fun HomeContent(
     onOpenBedtime: () -> Unit = {},
     onDismissMorning: () -> Unit = {},
     onHideFestival: () -> Unit = {},
+    onTapEgg: () -> Unit = {},
+    onAckGrowth: () -> Unit = {},
     scene: Scene = rememberCurrentScene()
 ) {
     val snap = state.snapshot
@@ -487,10 +503,12 @@ fun HomeContent(
                         val evo = state.evolution
                         Text(
                             // Figurenname bleibt sichtbar; die Entwicklungsform steht dahinter
-                            if (evo != null) "${figure.name} · ${formTitle(evo.form)}" + (evo.hybrid?.let { " ${formBadge(it)}" } ?: "") else figure.name,
+                            (state.growth?.let { growthLabel(figure.name, it) } ?: figure.name) +
+                                (evo?.let { " · ${formTitle(it.form)}" } ?: ""),
                             style = MaterialTheme.typography.bodyMedium, maxLines = 1,
                             color = if (hasScene) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        state.growth?.let { GrowthProgress(it, hasScene) }
                     }
                     Spacer(Modifier.weight(1f))
                     onOpenSettings?.let {
@@ -510,7 +528,7 @@ fun HomeContent(
             val say = reaction?.takeIf { it.saying(now) }?.say
             Surface(shape = RoundedCornerShape(16.dp), tonalElevation = 2.dp, shadowElevation = if (hasScene) 4.dp else 0.dp) {
                 Text(
-                    say ?: state.festival?.greeting ?: PetCopy.line(snap),
+                    say ?: eggLine(state.growth) ?: state.festival?.greeting ?: PetCopy.line(snap),
                     Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (say != null) FontWeight.SemiBold else FontWeight.Normal,
@@ -526,12 +544,25 @@ fun HomeContent(
                 },
                 contentAlignment = Alignment.Center
             ) {
-                PetAvatar(
+                val g = state.growth
+                if (g?.stage == GrowthStage.EGG) {
+                    var shakeAt by remember { mutableStateOf<Long?>(null) }
+                    EggCanvas(figure, g.eggTaps.let { Growth.cracks(it) }, shakeAt,
+                        Modifier.size(if (hasScene) 260.dp else 220.dp)
+                            .semantics { contentDescription = "Ei. Noch ${Growth.EGG_TAPS - g.eggTaps}× antippen, dann schlüpft dein Wesen." }
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null,
+                                onClickLabel = "Ei antippen") {
+                                shakeAt = SystemClock.uptimeMillis()
+                                view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                                onTapEgg()
+                            })
+                } else PetAvatar(
                     snap.mood, snap.overlays, state.evolution?.form, state.evolution?.branch,
                     energy = snap.stats.e, rest = snap.stats.r,
                     size = if (hasScene) 260.dp else 220.dp,
                     reaction = reaction,
                     accessory = state.festival?.accessory,
+                    stage = g?.stage,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() }, indication = null,
                         onClickLabel = "Wesen antippen", onClick = onTapPet
@@ -590,7 +621,7 @@ fun HomeContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             // Platz, damit die Einblendung unten nichts verdeckt
-            if (state.evolutionEvent != null || state.newScenes.isNotEmpty()) Spacer(Modifier.height(96.dp))
+            if (state.evolutionEvent != null || state.newScenes.isNotEmpty() || state.growth?.pending != null) Spacer(Modifier.height(96.dp))
         }
     }
 
@@ -603,6 +634,10 @@ fun HomeContent(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        state.growth?.pending?.let { st ->
+            LaunchedEffect(st) { onCelebrate() }               // Konfetti + Drehung beim Aufstieg
+            Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { GrowthBanner(rememberCurrentFigure().name, st, onAckGrowth) }
+        }
         state.evolutionEvent?.let { Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { EvolutionBanner(it, onAckEvolution) } }
         if (state.newScenes.isNotEmpty()) {
             Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { SceneUnlockBanner(state.newScenes, onUseScene, onAckScenes) }
@@ -802,13 +837,21 @@ fun PetAvatar(
     petted: Boolean = false,
     size: Dp = 220.dp,
     reaction: ActiveReaction? = null,
-    accessory: Accessory? = null
+    accessory: Accessory? = null,
+    stage: GrowthStage? = null
 ) {
     PetFigureCanvas(
-        PetPose(mood, overlays, form, branch, energy, rest, charging, petted, accessory = accessory),
+        PetPose(mood, overlays, form, branch, energy, rest, charging, petted, accessory = accessory, stage = stage),
         modifier.size(size).semantics { contentDescription = "Dein Wesen: ${moodTitle(mood)}. Antippen für eine Reaktion." },
         reaction = reaction
     )
+}
+
+/** Sprechblase, solange das Ei noch nicht geschlüpft ist. */
+private fun eggLine(g: GrowthInfo?): String? {
+    if (g?.stage != GrowthStage.EGG) return null
+    val left = Growth.EGG_TAPS - g.eggTaps
+    return if (g.eggTaps == 0) "Da liegt ein Ei! Tippe es an …" else "Es knackt! Noch ${left}× tippen …"
 }
 
 // ---------- Previews ----------

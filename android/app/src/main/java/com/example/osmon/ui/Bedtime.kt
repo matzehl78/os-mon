@@ -338,7 +338,8 @@ fun BedtimeScreen(onClose: () -> Unit) {
             )
             PetFigureCanvas(
                 PetPose(if (asleep) Mood.HIBERNATION else Mood.TIRED, if (asleep) emptySet() else setOf(Overlay.YAWNING),
-                    energy = 70f, rest = if (asleep) 100f else 40f),
+                    energy = 70f, rest = if (asleep) 100f else 40f,
+                    stage = GrowthStore.stage(ctx).takeIf { it != com.example.osmon.engine.GrowthStage.EGG }),
                 Modifier.size(250.dp).semantics { contentDescription = if (asleep) "${figure.name} schläft" else "${figure.name} ist müde" }
             )
             Spacer(Modifier.weight(1f))

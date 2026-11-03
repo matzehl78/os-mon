@@ -27,7 +27,8 @@ data class WearPayload(
     val motivation: String,
     val kindTip: String?,
     val kindCategory: String?,
-    val kindDone: Boolean
+    val kindDone: Boolean,
+    val stage: String? = null        // GrowthStage.name (EGG … ADULT)
 ) {
     val progress: TaskProgress get() = DayTasks.progress(tasks, day)
 
@@ -51,6 +52,7 @@ data class WearPayload(
         put("motivation", motivation)
         kindTip?.let { put("kindTip", it) }; kindCategory?.let { put("kindCategory", it) }
         put("kindDone", kindDone)
+        stage?.let { put("stage", it) }
     }.toString()
 
     companion object {
@@ -82,7 +84,7 @@ data class WearPayload(
                 o.optString("accessory").ifEmpty { null }, o.optString("form").ifEmpty { null },
                 o.getLong("day"), tasks, o.optString("motivation"),
                 o.optString("kindTip").ifEmpty { null }, o.optString("kindCategory").ifEmpty { null },
-                o.optBoolean("kindDone"))
+                o.optBoolean("kindDone"), o.optString("stage").ifEmpty { null })
         }
     }
 }

@@ -69,6 +69,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -183,7 +184,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             when (step) {
                 Step.WELCOME -> Primary("Los geht’s") { next() }
-                Step.EGG -> Primary("Weiter", enabled = eggTaps >= 3) { next() }
+                Step.EGG -> Primary("Dieses Ei nehmen") { next() }
                 Step.BASICS -> Primary("Weiter") { next() }
                 Step.SCREEN_TIME ->
                     if (usageGranted) Primary("Weiter") { next() } else {
@@ -205,6 +206,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     sp.edit().putBoolean("onboarding.done", true).apply()
                     PetScheduler.start(ctx)                       // Hintergrund-Sync auch ohne Widget
                     EvolutionStore.ensureHatched(ctx)             // Schlüpftag festlegen
+                    GrowthStore.startEgg(ctx)                     // Ei liegt auf dem Startbildschirm
                     EvolutionScheduler.start(ctx)                 // täglicher Evolutions-Abschluss
                     onFinished()
                 }
@@ -232,30 +234,15 @@ private fun WelcomeContent() = StepPage(
 
 @Composable
 private fun EggContent(taps: Int, onTap: () -> Unit) {
-    val hatched = taps >= 3
-    val angle by animateFloatAsState(
-        targetValue = if (taps % 2 == 0) -6f else 6f,
-        animationSpec = spring(dampingRatio = 0.4f, stiffness = 800f), label = "egg"
-    )
+    // Ei aussuchen: jede Figur hat ihr eigenes Ei (Farben). Geschlüpft wird später auf dem Startbildschirm.
     val figure = rememberCurrentFigure()
     StepPage(
-        null,
-        if (hatched) "Hallo, ${figure.name}!" else "Tippe auf das Ei",
-        if (hatched) "Dein Wesen ist geschlüpft. Such dir aus, wie es aussieht. Das geht später jederzeit in den Einstellungen."
-        else "Noch ${3 - taps}× tippen …"
+        null, "Such dir ein Ei aus",
+        "Daraus schlüpft ${figure.name}. Tippe das Ei gleich auf dem Startbildschirm an, bis es aufbricht. " +
+            "Danach wächst dein Wesen in etwa drei Monaten vom Baby zum Erwachsenen – jeder gute Tag zählt."
     ) {
-        if (hatched) {
-            PetAvatar(Mood.RADIANT, emptySet(), null, null, Modifier.scale(0.85f))
-            PetFigurePicker(Modifier.fillMaxWidth())
-        } else {
-            Text(
-                "🥚", fontSize = 120.sp,
-                modifier = Modifier
-                    .graphicsLayer { rotationZ = angle }
-                    .semantics { contentDescription = "Ei, antippen zum Ausbrüten" }
-                    .clickable(onClickLabel = "Ei antippen", onClick = onTap)
-            )
-        }
+        EggCanvas(figure, 0, null, Modifier.size(170.dp).semantics { contentDescription = "Ei von ${figure.name}" })
+        PetFigurePicker(Modifier.fillMaxWidth())
     }
 }
 

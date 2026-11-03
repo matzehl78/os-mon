@@ -245,14 +245,21 @@ struct PetWidgetView: View {
     }
 
     /// Die gewählte Figur als Standbild (Widgets animieren nicht). Auf dem Sperrbildschirm färbt iOS sie einfarbig ein.
+    @ViewBuilder
     private var figure: some View {
-        PetFigureView(figure: PetFigureStore.current, pose: widgetPose, animated: false)
-            .accessibilityLabel("Dein Wesen: \(snap.mood.title)")
+        if GrowthStorage.stage == .egg {
+            PetEggView(figure: PetFigureStore.current, cracks: GrowthStorage.cracks, animated: false)
+                .accessibilityLabel("Ein Ei. In der App antippen, damit es schlüpft.")
+        } else {
+            PetFigureView(figure: PetFigureStore.current, pose: widgetPose, animated: false)
+                .accessibilityLabel("Dein Wesen: \(snap.mood.title)")
+        }
     }
 
     /// Pose mit Fest-Zubehör (Geburtstag aus den Einstellungen; Schlüpftag nur in der App).
     private var widgetPose: PetPose {
         var p = PetPose(snapshot: snap, charging: entry.charging)
+        p.stage = GrowthStorage.stage
         let d = STShared.defaults
         if d.object(forKey: "festivals.enabled") as? Bool ?? true {
             let m = d.integer(forKey: "user.birthday.m"), dd = d.integer(forKey: "user.birthday.d")

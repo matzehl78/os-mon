@@ -48,7 +48,7 @@ final class PhoneWatchBridge: NSObject, WCSessionDelegate {
             tasks: DayTasks.forDay(tasks, day),
             motivation: content.motivation(DayTasks.progress(tasks, day), day: day, pet: figure.name),
             kindTip: tip?.1.tip, kindCategory: tip.map { "\($0.0.emoji) \($0.0.title)" },
-            kindDone: TaskStore.kindDone(day))
+            kindDone: TaskStore.kindDone(day), stage: GrowthStorage.stage.rawValue)
     }
 
     // MARK: Aktionen der Uhr

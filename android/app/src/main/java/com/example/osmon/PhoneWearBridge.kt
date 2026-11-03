@@ -49,7 +49,8 @@ object PhoneWearBridge {
         return WearPayload(
             snap, System.currentTimeMillis(), fig.id, fig.name, accessory, form, day,
             DayTasks.forDay(tasks, day), content.motivation(DayTasks.progress(tasks, day), day, fig.name),
-            tip?.second?.tip, tip?.first?.let { "${it.emoji} ${it.title}" }, TaskStore.kindDone(ctx, day))
+            tip?.second?.tip, tip?.first?.let { "${it.emoji} ${it.title}" }, TaskStore.kindDone(ctx, day),
+            com.example.osmon.ui.GrowthStore.stage(ctx).name)
     }
 
     /** Aktion der Uhr ausführen. */

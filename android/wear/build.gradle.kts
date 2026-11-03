@@ -15,8 +15,9 @@ android {
         applicationId = "com.example.osmon"     // muss zur Handy-App passen (Data Layer)
         minSdk = 30
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        // Uhr-App: gleiche Paket-ID wie das Handy, daher eigener Bereich für versionCode (Google Play verlangt verschiedene)
+        versionCode = 100_000 + (System.getenv("OSMON_VERSION_CODE")?.toIntOrNull() ?: 1)
+        versionName = System.getenv("OSMON_VERSION_NAME") ?: "0.1.0"
     }
 
     sourceSets["main"].java.srcDirs(
@@ -26,8 +27,18 @@ android {
         "../app/src/main/java/com/example/osmon/wearsync"
     )
 
+    // Signierung für den Release nur, wenn der Keystore per Umgebung kommt (Workflow „Android Release“)
+    val ks = System.getenv("OSMON_KEYSTORE")
+    if (ks != null) signingConfigs.create("release") {
+        storeFile = file(ks)
+        storePassword = System.getenv("OSMON_KEYSTORE_PASSWORD")
+        keyAlias = System.getenv("OSMON_KEY_ALIAS")
+        keyPassword = System.getenv("OSMON_KEY_PASSWORD")
+    }
+
     buildTypes {
         release {
+            if (ks != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }

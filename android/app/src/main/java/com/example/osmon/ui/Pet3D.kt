@@ -107,7 +107,9 @@ private class Pet3DController(val web: WebView) {
 
     // Namen wie im Swift-Teil (pet3d.html kennt partyHat/santaHat/witchHat bzw. baby/child/teen/adult)
     private fun accName(a: Accessory) = when (a) {
-        Accessory.PARTY_HAT -> "partyHat"; Accessory.SANTA_HAT -> "santaHat"; Accessory.WITCH_HAT -> "witchHat"; else -> a.name
+        Accessory.PARTY_HAT -> "partyHat"; Accessory.SANTA_HAT -> "santaHat"; Accessory.WITCH_HAT -> "witchHat"
+        Accessory.BUNNY_EARS -> "bunnyEars"; Accessory.CROWN -> "crown"; Accessory.FLOWERS -> "flowers"
+        Accessory.LANTERN -> "lantern"; Accessory.JESTER -> "jester"
     }
     private fun stageName(s: String) = s.lowercase()
 }

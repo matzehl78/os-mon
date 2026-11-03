@@ -251,7 +251,8 @@ window.make3D = () => (() => {
 
     // Fest-Zubehör (für Werbe-Startbilder): auf dem Kopf zwischen den Antennen
     if (ACC) {
-      const g = new T.Group(); g.position.set(0, hy(ant.y) - 0.05, 0.02); g.scale.setScalar(ACC === "santa" ? 1.35 : 1.7); hg.add(g);
+      const SC = { santa: 1.35, bunny: 1.5, crown: 1.85, flowers: 1.8, jester: 1.45, lantern: 1 };
+      const g = new T.Group(); g.position.set(0, hy(ant.y) - 0.05, 0.02); g.scale.setScalar(SC[ACC] || 1.7); hg.add(g);
       const cone = (r, h, col) => { const m = new T.Mesh(new T.ConeGeometry(r, h, 40), phys(col)); return m; };
       const coneOutline = (m, r, h) => { const o = new T.Mesh(m.geometry, lineMat()); o.scale.set(1 + LINE_W / r, 1 + LINE_W / h, 1 + LINE_W / r); m.add(o); };
       if (ACC === "party") {
@@ -267,6 +268,69 @@ window.make3D = () => (() => {
         const brim = new T.Mesh(new T.CylinderGeometry(0.62, 0.62, 0.05, 48), phys(0x4a2c6e)); at(g, brim, 0, 0.04, 0);
         const c = cone(0.32, 0.9, 0x5e35b1); at(g, c, 0.03, 0.5, 0); c.rotation.z = -0.15; coneOutline(c, 0.32, 0.9);
         const band = new T.Mesh(new T.CylinderGeometry(0.3, 0.32, 0.1, 40), phys(0xff9800)); at(g, band, 0, 0.12, 0);
+      } else if (ACC === "bunny") {
+        // Hasenohren (Ostern): weiß, innen rosa, leicht nach außen geneigt
+        [-1, 1].forEach(sd => {
+          const ear = new T.Group(); ear.position.set(sd * 0.2, 0.02, 0); ear.rotation.z = -sd * 0.26; g.add(ear);
+          const o = sphere(1, phys(0xffffff), 32); o.scale.set(0.12, 0.42, 0.08); at(ear, o, 0, 0.4, 0); outline(o);
+          const i = sphere(1, phys(0xffa8c8, { roughness: 0.5 }), 24); i.scale.set(0.065, 0.32, 0.04); at(ear, i, 0, 0.4, 0.055);
+        });
+      } else if (ACC === "crown") {
+        // Krone (Geburtstag): goldener Reif mit fünf Zacken, Edelsteine, Perlen an den Spitzen
+        const gold = phys(0xffc107, { metalness: 0.55, roughness: 0.25, emissive: 0x7a5200, emissiveIntensity: 0.25 });
+        const ring = new T.Mesh(new T.CylinderGeometry(0.32, 0.34, 0.2, 48, 1, true), gold); ring.material.side = T.DoubleSide; at(g, ring, 0, 0.1, 0);
+        const rim = new T.Mesh(new T.TorusGeometry(0.335, 0.025, 8, 48), gold); rim.rotation.x = Math.PI / 2; at(g, rim, 0, 0.0, 0);
+        for (let k = 0; k < 5; k++) {
+          const a = k / 5 * Math.PI * 2 + Math.PI / 2, x = 0.32 * Math.cos(a), z = 0.32 * Math.sin(a), h = k === 0 ? 0.3 : 0.24;
+          const sp = new T.Mesh(new T.ConeGeometry(0.075, h, 20), gold); at(g, sp, x, 0.2 + h / 2, z);
+          const pearl = sphere(0.045, phys(0xfff59d)); at(g, pearl, x, 0.2 + h + 0.02, z); outline(pearl);
+        }
+        [[0, 0xe53935], [-0.65, 0x42a5f5], [0.65, 0x66bb6a]].forEach(([a, col]) => {
+          const gem = sphere(0.055, phys(col, { roughness: 0.1 })); gem.scale.set(1, 1, 0.6);
+          at(g, gem, 0.345 * Math.sin(a), 0.1, 0.345 * Math.cos(a)); gem.lookAt(0.9 * Math.sin(a), 0.1, 0.9 * Math.cos(a));
+        });
+      } else if (ACC === "flowers") {
+        // Blumenkranz (Frühling, Muttertag): grüner Reif mit Blüten rundum
+        const vine = new T.Mesh(new T.TorusGeometry(0.36, 0.04, 10, 56), phys(0x66bb6a, { roughness: 0.5 })); vine.rotation.x = Math.PI / 2; at(g, vine, 0, 0.04, 0);
+        const cols = [0xff80ab, 0xffeb3b, 0xb388ff, 0xffffff, 0xff8a65, 0x81d4fa];
+        cols.forEach((col, k) => {
+          const a = k / cols.length * Math.PI * 2 + Math.PI / 2, x = 0.36 * Math.cos(a), z = 0.36 * Math.sin(a);
+          const fl = new T.Group(); fl.position.set(x, 0.07, z); fl.lookAt(x * 3, 0.25, z * 3); g.add(fl);
+          for (let i = 0; i < 5; i++) {
+            const pa = i / 5 * Math.PI * 2, pt = sphere(0.055, phys(col, { roughness: 0.45 }), 16); pt.scale.set(1, 1, 0.45);
+            at(fl, pt, 0.07 * Math.cos(pa), 0.07 * Math.sin(pa), 0);
+          }
+          const c = sphere(0.04, phys(k === 1 ? 0xff9800 : 0xffd54f), 16); at(fl, c, 0, 0, 0.02);
+        });
+      } else if (ACC === "jester") {
+        // Narrenkappe (Fasching): zwei hängende Zipfel in Lila/Türkis mit goldenen Glöckchen
+        const band = new T.Mesh(new T.CylinderGeometry(0.33, 0.35, 0.12, 40), phys(0xffd54f)); at(g, band, 0, 0.06, 0);
+        [[-1, 0x7e57c2], [1, 0x26a69a]].forEach(([sd, col]) => {
+          const curve = new T.CatmullRomCurve3([new T.Vector3(sd * 0.05, 0.12, 0), new T.Vector3(sd * 0.3, 0.42, 0), new T.Vector3(sd * 0.62, 0.42, 0.02), new T.Vector3(sd * 0.78, 0.18, 0.04)]);
+          const N = 40, pos = [], idx = [];
+          const geo = new T.TubeGeometry(curve, N, 0.16, 16, false);
+          // Zipfel verjüngen: Radius entlang der Kurve von 0.2 auf 0.04
+          const p3 = geo.attributes.position, v = new T.Vector3();
+          for (let i = 0; i < p3.count; i++) {
+            const seg = Math.floor(i / 17), u = seg / N, c = curve.getPointAt(Math.min(1, u));
+            v.fromBufferAttribute(p3, i).sub(c).multiplyScalar((0.2 - 0.16 * u) / 0.16).add(c); p3.setXYZ(i, v.x, v.y, v.z);
+          }
+          geo.computeVertexNormals();
+          const m = new T.Mesh(geo, phys(col)); g.add(m);
+          const ol = new T.Mesh(geo, lineMat()); ol.scale.setScalar(1.03); m.add(ol);
+          const bell = sphere(0.075, phys(0xffd54f, { metalness: 0.4, roughness: 0.25 })); at(g, bell, sd * 0.8, 0.12, 0.04); outline(bell);
+        });
+      } else if (ACC === "lantern") {
+        // Laterne (St. Martin): an einem Stab neben der Figur, leuchtet warm
+        const L = new T.Group(); L.position.set(1.18, 0, 0.2); root.add(L);
+        const stick = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 2.2, 10), flat(0x6d4c41)); stick.rotation.z = 0.12; at(L, stick, 0.05, 1.2, 0);
+        const hook = new T.Mesh(new T.CylinderGeometry(0.015, 0.015, 0.32, 8), flat(lineHex)); hook.rotation.z = -1.0; at(L, hook, -0.06, 2.22, 0);
+        const lamp = new T.Group(); lamp.position.set(-0.18, 1.78, 0); L.add(lamp);
+        const body = sphere(0.26, phys(0xffb300, { emissive: 0xff8f00, emissiveIntensity: 0.75, transparent: true, opacity: 0.95 }), 32);
+        body.scale.set(1, 1.15, 1); lamp.add(body); outline(body);
+        [-0.28, 0.28].forEach(y => { const cap = new T.Mesh(new T.CylinderGeometry(0.13, 0.15, 0.06, 24), flat(0xc62828)); at(lamp, cap, 0, y, 0); });
+        const glow = new T.PointLight(0xffc04d, 0.9, 3); lamp.add(glow);
+        const halo = sphere(0.42, new T.MeshBasicMaterial({ color: 0xffd54f, transparent: true, opacity: 0.18, depthWrite: false })); lamp.add(halo);
       }
     }
 

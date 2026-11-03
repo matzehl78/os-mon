@@ -112,7 +112,8 @@ struct ParentView: View {
 
 private struct PinSetupView: View {
     let onDone: () -> Void
-    @State private var a = "", b = ""
+    @State private var a = ""
+    @State private var b = ""
     @State private var err: String?
 
     var body: some View {

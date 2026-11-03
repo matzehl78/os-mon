@@ -331,11 +331,25 @@ enum PetFigureRenderer {
                     with: .color(white))
         }
 
-        func heart(_ g: GraphicsContext) {
+        // Herz mit Abstand zum Mund (auch zum gähnenden, auch wenn Kopf/Gesicht beim Wachsen größer sind):
+        // erst höchstens 10 tiefer, den Rest durch Verkleinern bei fester Unterkante. Gleiche Regel wie PetFigureCore.kt.
+        let heartXYS: (x: CGFloat, y: CGFloat, s: CGFloat) = {
             let H = S.heart
+            var mb = ey + (my + 18 - ey) * L.face
+            if S.lumo { let hb = S.head.map { $0.cy + $0.ry } ?? (ey + 40); mb = hb + (mb - hb) * L.head }
+            let need = mb + 3 - (H.y - 0.82 * H.size)
+            guard need > 0 else { return (H.x, H.y, H.size) }
+            let down = min(10, need)
+            var y = H.y + down, s = H.size
+            if need > down { let bottom = y + 0.9 * s; s = max(H.size * 0.55, (bottom - (mb + 3)) / 1.72); y = bottom - 0.9 * s }
+            return (H.x, y, s)
+        }()
+
+        func heart(_ g: GraphicsContext) {
+            let H = heartXYS
             var h = g
             h.translateBy(x: H.x, y: H.y)
-            h.scaleBy(x: H.size, y: H.size)
+            h.scaleBy(x: H.s, y: H.s)
             let hp = SVGPath.parse(heartD)
             h.fill(hp, with: .color(line))
             var c = h; c.clip(to: hp)
@@ -346,7 +360,7 @@ enum PetFigureRenderer {
                            CGPoint(x: -0.14, y: 0.56), CGPoint(x: 0.26, y: -0.04), CGPoint(x: 0.02, y: -0.04)])
             bolt.closeSubpath()
             h.fill(bolt, with: .color(white))
-            h.stroke(hp, with: .color(line), lineWidth: sw / H.size)
+            h.stroke(hp, with: .color(line), lineWidth: sw / H.s)
         }
 
         func face(_ g: GraphicsContext) {
@@ -443,8 +457,8 @@ enum PetFigureRenderer {
                 g.stroke(m, with: .color(line), style: StrokeStyle(lineWidth: 2, lineJoin: .round))
                 g.fill(ellipse(cx, my + 9, 6, 3.5), with: .color(col(C.tongue)))
             } else if yawn || R == .sleepy || R == .morning {
-                g.fill(ellipse(cx, my + 7, 12, 15), with: .color(line))
-                g.fill(ellipse(cx, my + 15, 8, 5), with: .color(col(C.tongue)))
+                g.fill(ellipse(cx, my + 6, 10, 12), with: .color(line))       // Gähn-Mund (Unterkante my + 18)
+                g.fill(ellipse(cx, my + 12.5, 6.5, 4), with: .color(col(C.tongue)))
             } else if stress || R == .dizzy {
                 m.move(to: CGPoint(x: cx - 14, y: my + 5))
                 m.addQuadCurve(to: CGPoint(x: cx - 7, y: my + 5), control: CGPoint(x: cx - 10.5, y: my + 1))

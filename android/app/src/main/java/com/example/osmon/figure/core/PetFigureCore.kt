@@ -258,12 +258,25 @@ object PetFigureRenderer {
             oval(G.x, G.y, max(9f, r * 0.7f), max(5f, r * 0.38f), WHITE, 0.45f, rot = G.rot)
         }
 
-        fun heart() {
+        // Herz mit Abstand zum Mund (auch zum gähnenden, auch wenn Kopf/Gesicht beim Wachsen größer sind):
+        // erst höchstens 10 tiefer, den Rest durch Verkleinern bei fester Unterkante
+        val heartXYS: Triple<Float, Float, Float> = run {
             val H = S.heart
+            var mb = ey + (my + 18f - ey) * L.face                       // Unterkante Gähn-Mund
+            if (S.lumo) { val hb = S.head?.let { it.cy + it.ry } ?: (ey + 40f); mb = hb + (mb - hb) * L.head }
+            val need = mb + 3f - (H.y - 0.82f * H.size)
+            if (need <= 0f) return@run Triple(H.x, H.y, H.size)
+            val down = minOf(10f, need); var y = H.y + down; var s = H.size
+            if (need > down) { val bottom = y + 0.9f * s; val target = mb + 3f; s = maxOf(H.size * 0.55f, (bottom - target) / 1.72f); y = bottom - 0.9f * s }
+            Triple(H.x, y, s)
+        }
+
+        fun heart() {
+            val (hx, hy, hs) = heartXYS
             val hp = svg(HEART_D)
             c.save()
-            c.translate(H.x, H.y)
-            c.scale(H.size, H.size)
+            c.translate(hx, hy)
+            c.scale(hs, hs)
             c.drawPath(hp, fill(line))
             c.save()
             c.clipPath(hp)
@@ -275,7 +288,7 @@ object PetFigureRenderer {
                 lineTo(-0.14f, 0.56f); lineTo(0.26f, -0.04f); lineTo(0.02f, -0.04f); close()
             }
             c.drawPath(bolt, fill(WHITE))
-            c.drawPath(hp, stroke(line, sw / H.size))
+            c.drawPath(hp, stroke(line, sw / hs))
             c.restore()
         }
 
@@ -341,8 +354,8 @@ object PetFigureRenderer {
                     oval(cx, my + 9, 6f, 3.5f, C.tongue)
                 }
                 yawn || R == ReactionKind.SLEEPY || R == ReactionKind.MORNING -> {
-                    oval(cx, my + 7, 12f, 15f, line)
-                    oval(cx, my + 15, 8f, 5f, C.tongue)
+                    oval(cx, my + 6, 10f, 12f, line)                     // Gähn-Mund (Unterkante my + 18)
+                    oval(cx, my + 12.5f, 6.5f, 4f, C.tongue)
                 }
                 stress || R == ReactionKind.DIZZY -> {
                     m.moveTo(cx - 14, my + 5)

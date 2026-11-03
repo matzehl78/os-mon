@@ -180,7 +180,7 @@ fun GameDialog(figureName: String, stage: GrowthStage?, onClose: (Int?, String?)
 private data class Pop(val x: Float, val y: Float, val text: String, val at: Float)
 
 @Composable
-private fun GamePlay(game: MiniGame, stage: GrowthStage?, onEnd: (Int) -> Unit) {
+private fun androidx.compose.foundation.layout.ColumnScope.GamePlay(game: MiniGame, stage: GrowthStage?, onEnd: (Int) -> Unit) {
     val ctx = LocalContext.current
     val sim = remember { MiniGameSim(game, System.nanoTime()) }
     var frame by remember { mutableIntStateOf(0) }

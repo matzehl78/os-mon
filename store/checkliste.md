@@ -6,6 +6,8 @@
 - [ ] iOS: Team-ID in `ios/project.yml` (DEVELOPMENT_TEAM), App Group `group.<id>` anlegen
 - [ ] Datenschutzerklärung veröffentlichen (`store/datenschutz.html`, Platzhalter füllen), Link in beide Stores
 - [ ] Android: Upload-Keystore erzeugen und als GitHub-Secrets hinterlegen (siehe unten)
+- [ ] **Premium (Einmalkauf)** anlegen: Apple „Nicht verbrauchbar“ mit Produkt-ID `<id>.premium` (z. B. `de.deinedomain.osmon.premium`, set_ids.sh ersetzt `com.example.osmon`), Google „Einmaliges Produkt“ `osmon_premium`. Preis-Vorschlag 3,99 €. In App Store Connect zusätzlich „Familienfreigabe“ aktivieren.
+- [ ] Apple: Vertrag „Paid Apps“ und Bankdaten (sonst lädt StoreKit kein Produkt)
 
 ## 2. Besondere Berechtigungen (frühzeitig beantragen!)
 - [ ] **iOS Family Controls (Bildschirmzeit)**: Distribution-Entitlement bei Apple beantragen (Formular „Family Controls“). Ohne Freigabe nur Entwicklung möglich.
@@ -15,13 +17,14 @@
 - [ ] **Hintergrund (Android)**: Akku-Ausnahme nur auf Wunsch des Nutzers (so umgesetzt)
 
 ## 3. Kinder und Familien
-- [ ] Apple: Zielgruppe festlegen. Für die **Kids-Kategorie**: keine Links nach außen ohne Eltern-Schranke, keine Werbung, kein Tracking ✅ (Eltern-Bereich vorhanden)
+- [ ] Apple: Zielgruppe festlegen. Für die **Kids-Kategorie**: keine Links nach außen ohne Eltern-Schranke, keine Werbung, kein Tracking ✅ (Eltern-Bereich vorhanden), **Käufe nur hinter der Eltern-Schranke** ✅ (Premium nur im Eltern-Bereich mit PIN)
 - [ ] Google: **Families Policy** – Zielgruppe „Kinder und Erwachsene“, keine Werbe-SDKs ✅, Inhalte altersgerecht ✅
 - [ ] Datensicherheit (Google) / App-Datenschutz (Apple): **„Keine Daten erfasst“** – Daten verlassen das Gerät nicht (Uhr-Sync ist Übertragung zwischen eigenen Geräten)
 
 ## 4. Testen
 - [ ] TestFlight (iOS) mit 2–3 Familien, interner Test (Google Play)
-- [ ] Echte Geräte: Bildschirmzeit, Schritte, Widget, Sperrbildschirm, Uhr, 3D, Schütteln
+- [ ] Echte Geräte: Bildschirmzeit, Schritte, Widget, Sperrbildschirm, Uhr, 3D, Schütteln, Töne (Stumm-Schalter), Mini-Spiele
+- [ ] Kauf testen: iOS Sandbox-Konto bzw. StoreKit-Testumgebung, Google „Lizenztester“; Kauf, Wiederherstellen, Rückerstattung (Premium-Teile verschwinden wieder)
 - [ ] Barrierefreiheit: VoiceOver/TalkBack einmal komplett durchgehen
 
 ## 5. Einreichen

@@ -169,7 +169,7 @@ private fun PinField(value: String, label: String, onChange: (String) -> Unit) {
 fun ParentDialog(onClose: () -> Unit) {
     val ctx = LocalContext.current
     var version by remember { mutableIntStateOf(0) }
-    val refresh = { version++ }
+    val refresh: () -> Unit = { version++ }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {

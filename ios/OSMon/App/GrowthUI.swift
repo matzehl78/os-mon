@@ -123,7 +123,7 @@ struct GrowthBanner: View {
 
     private var text: String {
         if down { return "\(name) ist wieder \(growthArticle(stage)) geworden. Mit guter Pflege wächst es wieder." }
-        switch stage {
+        return switch stage {
         case .baby: "\(name) ist geschlüpft! Willkommen, kleines Baby."
         case .child: "\(name) ist jetzt ein Kind! Größer, mutiger, neugieriger."
         case .teen: "\(name) ist jetzt jugendlich! Fast schon groß."

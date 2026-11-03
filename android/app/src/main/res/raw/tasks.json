@@ -49,7 +49,7 @@
     "going": [
       "Super Anfang! Ich spür schon, wie mein Herz leuchtet.",
       "Weiter so, du bist in Fahrt!",
-      "Ein Haken mehr – {name} ist stolz auf dich!",
+      "Ein Haken mehr – ich bin stolz auf dich!",
       "Gut gemacht! Mach kurz Pause, wenn du sie brauchst."
     ],
     "half": [
@@ -61,7 +61,7 @@
     "all": [
       "Alles geschafft! Du bist ein Held. 🎉",
       "Alle Haken gesetzt! Jetzt hast du dir eine Pause verdient.",
-      "Fertig! {name} macht einen Freudensprung.",
+      "Fertig! Ich mach einen Freudensprung.",
       "Alles erledigt. Darauf kannst du stolz sein!"
     ]
   },

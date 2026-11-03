@@ -88,6 +88,7 @@ struct SettingsView: View {
     @StateObject private var screen = ScreenTimeManager()
     @Environment(\.dismiss) private var dismiss
     @State private var showIntro = false
+    @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
     @State private var showWallpaper = false
     @Environment(\.scenePhase) private var phase
     var onDataDeleted: () -> Void = {}
@@ -144,10 +145,12 @@ struct SettingsView: View {
     private var figureSection: some View {
         Section {
             PetFigurePicker().padding(.vertical, 4)
+            Toggle("3D-Wesen", isOn: $use3D)
+                .onChange(of: use3D) { _, on in if on { STShared.defaults.set(false, forKey: Pet3D.failedKey) } }
         } header: {
             Text("Figur")
         } footer: {
-            Text("Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit.")
+            Text("Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen; Widget, Sperrbildschirm und Uhr bleiben 2D.")
         }
     }
 

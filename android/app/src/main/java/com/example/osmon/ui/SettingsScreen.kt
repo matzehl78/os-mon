@@ -246,8 +246,13 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             Text("Einstellungen", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
 
-        Card("Figur", "Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit.") {
+        Card("Figur", "Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen; Widget, Hintergrundbild und Uhr bleiben 2D.") {
             PetFigurePicker()
+            var use3D by remember { mutableStateOf(PetSync.prefs(ctx).getBoolean(Pet3D.KEY, true)) }
+            ToggleRow("3D-Wesen", use3D) {
+                use3D = it
+                PetSync.prefs(ctx).edit().putBoolean(Pet3D.KEY, it).apply { if (it) putBoolean(Pet3D.FAILED, false) }.apply()
+            }
         }
 
         Card("Hintergrund", "Weitere Hintergründe schaltest du mit gesunden Gewohnheiten frei: Bewegung, Fokus-Pausen, weniger Bildschirm. Freigeschaltet bleibt freigeschaltet.") {

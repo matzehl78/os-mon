@@ -266,6 +266,8 @@ struct HomeContent: View {
     @State private var stageFrame: CGRect = .zero
     @State private var headerFrame: CGRect = .zero
     @State private var eggShakeAt: Date? = nil
+    @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
+    @AppStorage(Pet3D.failedKey, store: STShared.defaults) private var failed3D = false
     @StateObject private var shake = ShakeMonitor()
     @Environment(\.scenePhase) private var scenePhase
     @State private var topInset: CGFloat = 0
@@ -406,7 +408,9 @@ struct HomeContent: View {
     /// Das Wesen (antippbar) mit Partikeln.
     @ViewBuilder
     private var pet: some View {
-        if let g = state.growth, g.stage == .egg {
+        if use3D && !failed3D {
+            pet3D
+        } else if let g = state.growth, g.stage == .egg {
             PetEggView(cracks: Growth.cracks(g.eggTaps), shakeAt: eggShakeAt)
                 .frame(width: hasScene ? 260 : 220, height: hasScene ? 260 : 220)
                 .contentShape(Rectangle())
@@ -422,6 +426,30 @@ struct HomeContent: View {
         } else {
             petFigure
         }
+    }
+
+    /// Das Wesen in 3D (Pet3DView): drehbar mit dem Finger, Antippen wie in 2D.
+    private var pet3D: some View {
+        let g = state.growth
+        let egg = g?.stage == .egg
+        let st = Pet3DState(figureID: figureID, accessory: state.festival?.accessory, mood: snap.mood, overlays: snap.overlays,
+                            energy: snap.stats.e, rest: snap.stats.r, form: state.evolution?.form, branch: state.evolution?.branch,
+                            stage: g?.stage, eggCracks: egg ? Growth.cracks(g?.eggTaps ?? 0) : nil, platform: !hasScene)
+        return Pet3DView(state: st, reaction: reaction, eggShakeAt: eggShakeAt) {
+            if egg {
+                eggShakeAt = .now
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                onTapEgg()
+            } else { tapPet() }
+        }
+        .frame(width: hasScene ? 300 : 250, height: hasScene ? 300 : 250)
+        .overlay { if let r = reaction, !egg { ReactionParticles(reaction: r) } }
+        .accessibilityElement()
+        .accessibilityLabel(egg ? "Ei" : "Dein Wesen: \(snap.mood.title)")
+        .accessibilityHint(egg ? "Antippen, damit es schlüpft" : "Antippen für eine Reaktion, ziehen zum Drehen")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { if egg { onTapEgg() } else { tapPet() } }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
     }
 
     private var petFigure: some View {

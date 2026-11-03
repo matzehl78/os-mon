@@ -19,6 +19,8 @@ enum DemoMode {
         d.set(args.string(forKey: "OSMonFigure") ?? "lumo", forKey: PetFigureStore.key)
         d.set(["raumstation", "zauberwald", "unterwasser", "suess", "mondbasis", "zen", "studio"], forKey: SceneStore.unlockedKey)
         if flag("OSMonTasks") || screen == "tasks" || screen == "kindness" { TaskDemo.seed() } else { TaskStore.save([]) }
+        d.set(flag("OSMon3D"), forKey: Pet3D.key)                     // 3D nur mit -OSMon3D YES (alte Bilder bleiben 2D)
+        d.set(false, forKey: Pet3D.failedKey)
     }
 
     static var mood: PetMood { PetMood(rawValue: args.string(forKey: "OSMonMood") ?? "") ?? .radiant }

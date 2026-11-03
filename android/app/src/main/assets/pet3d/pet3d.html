@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- pet3d.html: Das Wesen in 3D für die App (iOS WKWebView, Android WebView). Gleicher Renderer wie Werbe- und
+     Wachstumsfilm (three3d.js, three.js r128). Steuerung von der App über window.OSPet.*, Rückmeldungen:
+     iOS webkit.messageHandlers.pet.postMessage(...), Android OSPetBridge.post(...): "ready" | "error" | "tap". -->
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<style>html,body{margin:0;height:100%;background:transparent;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+canvas{width:100%;height:100%;display:block;touch-action:none}</style></head>
+<body><canvas id="pet"></canvas>
+<script src="three.min.js"></script><script src="figs.js"></script><script src="three3d.js"></script>
+<script>
+(function () {
+  const post = m => {
+    try { if (window.webkit && webkit.messageHandlers.pet) webkit.messageHandlers.pet.postMessage(m); } catch (e) {}
+    try { if (window.OSPetBridge) OSPetBridge.post(m); } catch (e) {}
+  };
+  const cv = document.getElementById("pet");
+  const inst = window.make3D();
+  if (!inst.init(cv)) { post("error"); return; }
+  const ACC = { partyHat: "party", santaHat: "santa", witchHat: "witch" };
+  let figKey = "", moodColor = "#1c9a9a";
+  // Antippen (kurz, ohne Ziehen) an die App melden; Ziehen dreht das Wesen
+  let down = null;
+  cv.addEventListener("pointerdown", e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+  cv.addEventListener("pointerup", e => {
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 10 && performance.now() - down.t < 450) post("tap");
+    down = null;
+  });
+  window.OSPet = {
+    /** Figur und Fest-Zubehör (accessory = Accessory-Name aus der App) */
+    setFigure(id, accessory) {
+      const key = id + "|" + (accessory || "");
+      if (key === figKey) return; figKey = key;
+      const F = FIGS.find(f => f.id === id) || FIGS[0], col = figColors(F); col.irisDark = mixHex(F.iris, "#1b1e4b", 0.3);
+      inst.setFigure(F, SHAPES[F.shape], col, ACC[accessory] || null);
+    },
+    /** Zustand: { mood, ov:[...], energy, rest, charging, petted, stage, egg (Risse oder null), shake, color, platform } */
+    update(p) {
+      inst.setStage(p.stage && p.stage !== "adult" && p.stage !== "egg" ? p.stage : null);
+      inst.setEgg(p.egg == null ? null : p.egg, p.shake || 0);
+      inst.setPlatform(!!p.platform);
+      if (p.color) moodColor = p.color;
+      inst.update({ mood: p.mood, ov: p.ov || [], energy: p.energy, rest: p.rest, charging: !!p.charging, petted: !!p.petted,
+        form: p.form || null, branch: p.branch || null, react: p.react || null }, moodColor);
+    },
+    /** Reaktion auf Antippen (Bewegung im Raum); Gesicht kommt über update({react}) */
+    react(type, durMs) { inst.react(type, durMs); },
+    start() { inst.start(); },
+    stop() { inst.stop(); }
+  };
+  OSPet.setFigure("lumo");
+  OSPet.update({ mood: "content", energy: 80, rest: 80 });
+  inst.start();
+  document.addEventListener("visibilitychange", () => document.hidden ? inst.stop() : inst.start());
+  post("ready");
+})();
+</script></body></html>

@@ -558,7 +558,27 @@ fun HomeContent(
                 contentAlignment = Alignment.Center
             ) {
                 val g = state.growth
-                if (g?.stage == GrowthStage.EGG) {
+                val ctx3d = LocalContext.current
+                if (Pet3D.enabled(ctx3d)) {
+                    // 3D: drehbar mit dem Finger, Antippen wie in 2D (Ei: Risse, sonst Reaktion)
+                    val egg = g?.stage == GrowthStage.EGG
+                    var shakeAt by remember { mutableStateOf<Long?>(null) }
+                    Pet3DView(
+                        Pet3DState(figure.id, state.festival?.accessory, snap.mood, snap.overlays, snap.stats.e, snap.stats.r,
+                            state.evolution?.form, state.evolution?.branch, g?.stage,
+                            if (egg) Growth.cracks(g?.eggTaps ?? 0) else null, platform = !hasScene),
+                        Modifier.size(if (hasScene) 300.dp else 250.dp).semantics {
+                            contentDescription = if (egg) "Ei. Antippen, damit es schlüpft." else "Dein Wesen: ${moodTitle(snap.mood)}. Antippen für eine Reaktion, ziehen zum Drehen."
+                        },
+                        reaction = if (egg) null else reaction, eggShakeAtMs = shakeAt
+                    ) {
+                        if (egg) {
+                            shakeAt = SystemClock.uptimeMillis()
+                            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                            onTapEgg()
+                        } else onTapPet()
+                    }
+                } else if (g?.stage == GrowthStage.EGG) {
                     var shakeAt by remember { mutableStateOf<Long?>(null) }
                     EggCanvas(figure, g.eggTaps.let { Growth.cracks(it) }, shakeAt,
                         Modifier.size(if (hasScene) 260.dp else 220.dp)

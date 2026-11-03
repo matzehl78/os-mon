@@ -522,11 +522,12 @@ struct HomeContent: View {
             StatusRing(title: "Wohlbefinden", symbol: "heart.fill", value: snap.wellbeing,
                        color: snap.mood.color, size: 72)
             VStack(alignment: .leading, spacing: 2) {
-                Text(snap.mood.title).font(.title2.bold())
+                // Entwicklungsform als Abzeichen neben der Stimmung (die Zeile darunter bleibt kurz)
+                Text(snap.mood.title + (state.evolution.map { " " + $0.form.badge } ?? "")).font(.title2.bold())
                 // Figurenname, Wachstumsstufe und Alter; die Entwicklungsform steht dahinter
                 let name = PetFigure.byID(figureID).name
                 // Entwicklungsform nur als Abzeichen (passt immer in die Zeile)
-                Text((state.growth.map { growthLabel(name, $0) } ?? name) + (state.evolution.map { " " + $0.form.badge } ?? ""))
+                Text(state.growth.map { growthLabel(name, $0) } ?? name)
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.75)
                 if let g = state.growth { GrowthProgressView(g: g) }
             }

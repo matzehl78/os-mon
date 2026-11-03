@@ -526,13 +526,14 @@ fun HomeContent(
                     StatusRing("Wohlbefinden", "❤️", snap.wellbeing, tint, diameter = 72.dp, onScene = hasScene)
                     Spacer(Modifier.width(14.dp))
                     Column {
-                        Text(moodTitle(snap.mood), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        // Entwicklungsform als Abzeichen neben der Stimmung (die Zeile darunter bleibt kurz)
+                        Text(moodTitle(snap.mood) + (state.evolution?.let { " ${formBadge(it.form)}" } ?: ""),
+                            style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         val evo = state.evolution
                         Text(
                             // Figurenname bleibt sichtbar; die Entwicklungsform steht dahinter
                             // Entwicklungsform nur als Abzeichen (passt immer in die Zeile)
-                            (state.growth?.let { growthLabel(figure.name, it) } ?: figure.name) +
-                                (evo?.let { " ${formBadge(it.form)}" } ?: ""),
+                            state.growth?.let { growthLabel(figure.name, it) } ?: figure.name,
                             style = MaterialTheme.typography.bodyMedium, maxLines = 1,
                             color = if (hasScene) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
                         )

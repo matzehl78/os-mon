@@ -246,6 +246,13 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             Text("Einstellungen", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
 
+        // Eltern-Bereich (PIN) – sperrt Ziele, Schlafenszeit und Daten löschen
+        var showParent by remember { mutableStateOf(false) }
+        var parentVersion by remember { mutableIntStateOf(0) }
+        ParentEntry { showParent = true }
+        if (showParent) ParentDialog { showParent = false; parentVersion++ }
+        val locked = remember(parentVersion) { ParentStore.settingsLocked(ctx) }
+
         Card("Figur", "Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen; Widget, Hintergrundbild und Uhr bleiben 2D.") {
             PetFigurePicker()
             var use3D by remember { mutableStateOf(PetSync.prefs(ctx).getBoolean(Pet3D.KEY, true)) }
@@ -278,7 +285,7 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             TextButton(onClick = onShowIntro) { Text("▶  Einführungsfilm ansehen") }
         }
 
-        Card("Abend und Morgen", "30 Minuten vor der Schlafenszeit wird dein Wesen müde und lädt zur Gute-Nacht-Routine ein. Morgens gibt es einen kurzen Bericht über die Nacht und einen Tipp für den Tag.") {
+        if (locked) LockedByParent("Abend und Morgen") { showParent = true } else Card("Abend und Morgen", "30 Minuten vor der Schlafenszeit wird dein Wesen müde und lädt zur Gute-Nacht-Routine ein. Morgens gibt es einen kurzen Bericht über die Nacht und einen Tipp für den Tag.") {
             SleepSettings()
         }
 
@@ -379,7 +386,7 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             }
         }
 
-        Card("Ziele", "Bestimmen, ab wann dein Wesen gestresst wird bzw. voller Energie ist.") {
+        if (locked) LockedByParent("Ziele") { showParent = true } else Card("Ziele", "Bestimmen, ab wann dein Wesen gestresst wird bzw. voller Energie ist.") {
             StepRow("Bildschirmzeit am Tag", hoursText(screenGoal),
                 canDec = screenGoal > PetSync.SCREEN_GOAL_RANGE.first, canInc = screenGoal < PetSync.SCREEN_GOAL_RANGE.last,
                 onDec = { screenGoal -= 15; PetSync.setGoals(ctx, screenGoal, stepGoal); refreshPet() },
@@ -402,7 +409,7 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
         Card(null, "Der Export enthält alles, was OS-Mon über dich gespeichert hat, in lesbarer Form.") {
             OutlinedButton(onClick = { exportLauncher.launch("OS-Mon-Export-${LocalDate.now()}.json") },
                 enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Daten exportieren (JSON)") }
-            OutlinedButton(onClick = { confirmDelete = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            if (!locked) OutlinedButton(onClick = { confirmDelete = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                 Text("Alle Daten löschen", color = MaterialTheme.colorScheme.error)
             }
             message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }

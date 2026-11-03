@@ -46,7 +46,7 @@ data class WearPayload(
         put("tasks", JSONArray().apply {
             tasks.forEach { t ->
                 put(JSONObject().put("id", t.id).put("title", t.title).put("emoji", t.emoji).put("repeat", t.repeat.name)
-                    .put("created", t.createdDay).put("done", JSONArray(t.doneDays.sorted())))
+                    .put("created", t.createdDay).put("done", JSONArray(t.doneDays.sorted())).put("parent", t.fromParent))
             }
         })
         put("motivation", motivation)
@@ -77,7 +77,7 @@ data class WearPayload(
                 val d = t.getJSONArray("done")
                 DayTask(t.getString("id"), t.getString("title"), t.optString("emoji", "⭐"),
                     runCatching { TaskRepeat.valueOf(t.getString("repeat")) }.getOrDefault(TaskRepeat.ONCE),
-                    t.getLong("created"), (0 until d.length()).map { d.getLong(it) }.toSet())
+                    t.getLong("created"), (0 until d.length()).map { d.getLong(it) }.toSet(), t.optBoolean("parent"))
             }
             return WearPayload(
                 snap, o.getLong("updatedAt"), o.getString("figure"), o.getString("pet"),

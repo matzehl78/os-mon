@@ -88,6 +88,9 @@ struct SettingsView: View {
     @StateObject private var screen = ScreenTimeManager()
     @Environment(\.dismiss) private var dismiss
     @State private var showIntro = false
+    @State private var showParent = false
+    @State private var parentVersion = 0
+    private var locked: Bool { _ = parentVersion; return ParentStore.settingsLocked }
     @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
     @State private var showWallpaper = false
     @Environment(\.scenePhase) private var phase
@@ -112,17 +115,19 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                parentSection
                 figureSection
                 sceneSection
                 introSection
                 lockScreenSection
-                SleepSettingsSection()
+                if locked { Section("Abend und Morgen") { LockedByParentRow(title: "Abend und Morgen") { showParent = true } } }
+                else { SleepSettingsSection() }
                 FestivalSettingsSection()
                 sensorSection
                 screenTimeSection
                 stepsSection
                 pushSection
-                goalSection
+                if locked { Section("Ziele") { LockedByParentRow(title: "Ziele") { showParent = true } } } else { goalSection }
                 storageSection
                 dataSection
             }
@@ -152,6 +157,18 @@ struct SettingsView: View {
         } footer: {
             Text("Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen; Widget, Sperrbildschirm und Uhr bleiben 2D.")
         }
+    }
+
+    /// Eltern-Bereich (PIN) – sperrt Ziele, Schlafenszeit und Daten löschen.
+    private var parentSection: some View {
+        Section {
+            Button { showParent = true } label: {
+                Label(ParentStore.hasPin ? "Eltern-Bereich (mit PIN)" : "Eltern-Bereich einrichten", systemImage: "figure.2.and.child.holdinghands")
+            }
+        } footer: {
+            Text("PIN festlegen, Aufgaben fürs Kind stellen, die Woche ansehen und Einstellungen sperren.")
+        }
+        .sheet(isPresented: $showParent, onDismiss: { parentVersion += 1 }) { ParentView() }
     }
 
     private var introSection: some View {
@@ -306,8 +323,10 @@ struct SettingsView: View {
             if let exportURL {
                 ShareLink(item: exportURL) { Label("Daten exportieren (JSON)", systemImage: "square.and.arrow.up") }
             }
-            Button(role: .destructive) { confirmDelete = true } label: {
-                Label("Alle Daten löschen", systemImage: "trash")
+            if !locked {
+                Button(role: .destructive) { confirmDelete = true } label: {
+                    Label("Alle Daten löschen", systemImage: "trash")
+                }
             }
             if let errorText { Text(errorText).font(.footnote).foregroundStyle(.red) }
         } footer: {

@@ -209,6 +209,7 @@ private struct TaskRow: View {
 
     private var subtitle: String? {
         if DayTasks.isCarried(task, day) { return "von gestern" }
+        if task.isFromParent { return "👪 von den Eltern" }
         switch task.repeatRule {
         case .daily: return "täglich"
         case .weekdays: return "Mo–Fr"
@@ -337,14 +338,14 @@ struct TasksManageView: View {
                 if !list.isEmpty {
                     Section("Heute") {
                         ForEach(list) { TaskRow(task: $0, day: day, onToggle: onToggle) }
-                            .onDelete { idx in idx.map { list[$0] }.forEach(model.remove) }
+                            .onDelete { idx in idx.map { list[$0] }.filter { !$0.isFromParent }.forEach(model.remove) }
                     }
                 }
                 let later = model.tasks.filter { !DayTasks.isDue($0, day) && $0.repeatRule != .once }
                 if !later.isEmpty {
                     Section("An anderen Tagen") {
                         ForEach(later) { TaskRow(task: $0, day: day, onToggle: { _ in }) }
-                            .onDelete { idx in idx.map { later[$0] }.forEach(model.remove) }
+                            .onDelete { idx in idx.map { later[$0] }.filter { !$0.isFromParent }.forEach(model.remove) }
                     }
                 }
                 Section {

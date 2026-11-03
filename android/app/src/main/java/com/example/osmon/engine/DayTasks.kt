@@ -14,7 +14,8 @@ data class DayTask(
     val emoji: String = "⭐",
     val repeat: TaskRepeat = TaskRepeat.ONCE,
     val createdDay: Long,
-    val doneDays: Set<Long> = emptySet()
+    val doneDays: Set<Long> = emptySet(),
+    val fromParent: Boolean = false          // von den Eltern gestellt (Eltern-Bereich): Kind kann sie nicht löschen
 )
 
 /** Wie weit der Tag ist – bestimmt, womit das Wesen motiviert. */

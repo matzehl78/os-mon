@@ -100,6 +100,7 @@ jobs:
           shot 48_3d_fasching_rauti     light -OSMonDemo home -OSMonScene suess       -OSMonFigure rauti -OSMonMood radiant -OSMon3D YES -OSMonFestival carnival -OSMonSeason winter
           shot 49_erfolg_banner         light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure sunni -OSMonMood radiant -OSMonStage child -OSMonAlbum YES -OSMon3D YES
           shot 50_sammelalbum           light -OSMonDemo album
+          shot 51_eltern_bereich        light -OSMonDemo parent
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

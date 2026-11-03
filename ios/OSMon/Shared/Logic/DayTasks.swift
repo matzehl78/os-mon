@@ -17,6 +17,8 @@ struct DayTask: Codable, Equatable, Identifiable {
     var repeatRule: TaskRepeat = .once
     var createdDay: Int
     var doneDays: Set<Int> = []
+    var fromParent: Bool? = nil              // von den Eltern gestellt (Eltern-Bereich): Kind kann sie nicht löschen
+    var isFromParent: Bool { fromParent ?? false }
 }
 
 enum TaskStage { case empty, start, going, half, all }

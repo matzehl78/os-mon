@@ -125,7 +125,7 @@ object TaskStore {
                 val d = o.getJSONArray("done")
                 DayTask(o.getString("id"), o.getString("title"), o.optString("emoji", "⭐"),
                     runCatching { TaskRepeat.valueOf(o.getString("repeat")) }.getOrDefault(TaskRepeat.ONCE),
-                    o.getLong("created"), (0 until d.length()).map { d.getLong(it) }.toSet())
+                    o.getLong("created"), (0 until d.length()).map { d.getLong(it) }.toSet(), o.optBoolean("parent"))
             }
         }.getOrDefault(emptyList()).let { DayTasks.cleanup(it, today()) }
     }
@@ -134,7 +134,7 @@ object TaskStore {
         val a = JSONArray()
         list.forEach { t ->
             a.put(JSONObject().put("id", t.id).put("title", t.title).put("emoji", t.emoji).put("repeat", t.repeat.name)
-                .put("created", t.createdDay).put("done", JSONArray(t.doneDays.sorted())))
+                .put("created", t.createdDay).put("done", JSONArray(t.doneDays.sorted())).put("parent", t.fromParent))
         }
         p(ctx).edit().putString(KEY, a.toString()).apply()
     }
@@ -271,6 +271,7 @@ private fun TaskRow(t: DayTask, day: Long, onToggle: (DayTask) -> Unit, onDelete
                 color = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
             val sub = when {
                 DayTasks.isCarried(t, day) -> "von gestern"
+                t.fromParent -> "👪 von den Eltern"
                 t.repeat == TaskRepeat.DAILY -> "täglich"
                 t.repeat == TaskRepeat.WEEKDAYS -> "Mo–Fr"
                 t.repeat == TaskRepeat.WEEKEND -> "am Wochenende"
@@ -375,13 +376,13 @@ private fun TasksDialog(model: TaskModel, content: TaskContent, startWithAdd: Bo
         val list = DayTasks.forDay(model.tasks, day)
         if (list.isNotEmpty()) {
             Text("Heute", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            list.forEach { TaskRow(it, day, onToggle, onDelete = model::remove) }
+            list.forEach { TaskRow(it, day, onToggle, onDelete = if (it.fromParent) null else model::remove) }
         }
         // Wiederkehrende, die heute nicht dran sind (z. B. Wochenende)
         val later = model.tasks.filter { !DayTasks.isDue(it, day) && it.repeat != TaskRepeat.ONCE }
         if (later.isNotEmpty()) {
             Text("An anderen Tagen", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            later.forEach { TaskRow(it, day, {}, onDelete = model::remove) }
+            later.forEach { TaskRow(it, day, {}, onDelete = if (it.fromParent) null else model::remove) }
         }
 
         // Ideen

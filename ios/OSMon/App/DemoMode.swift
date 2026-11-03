@@ -19,6 +19,10 @@ enum DemoMode {
         d.set(args.string(forKey: "OSMonFigure") ?? "lumo", forKey: PetFigureStore.key)
         d.set(["raumstation", "zauberwald", "unterwasser", "suess", "mondbasis", "zen", "studio"], forKey: SceneStore.unlockedKey)
         if flag("OSMonTasks") || screen == "tasks" || screen == "kindness" { TaskDemo.seed() } else { TaskStore.save([]) }
+        if screen == "parent" {                                      // Eltern-Bereich: PIN gesetzt und entsperrt, eine Eltern-Aufgabe
+            ParentStore.setPin("0429")
+            ParentStore.addTask("Zähne putzen", rule: .daily)
+        } else { ParentStore.removePin() }
         d.set(flag("OSMon3D"), forKey: Pet3D.key)                     // 3D nur mit -OSMon3D YES (alte Bilder bleiben 2D)
         d.set(false, forKey: Pet3D.failedKey)
     }
@@ -90,6 +94,7 @@ struct DemoRoot: View {
         case "logo": LogoSplashView {}
         case "wallpaper": WallpaperPreview {}
         case "album": AlbumView(album: DemoMode.album(pending: false))
+        case "parent": ParentView()
         case "tasks": TasksManageView(model: TaskModel(), content: .shared, onToggle: { _ in })
         case "kindness": KindnessListView(model: TaskModel(), content: .shared)
         case "bedtime": BedtimeView {}

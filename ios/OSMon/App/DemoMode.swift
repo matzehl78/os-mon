@@ -18,6 +18,7 @@ enum DemoMode {
         d.set(args.string(forKey: "OSMonScene") ?? "neonstadt", forKey: SceneStore.key)
         d.set(args.string(forKey: "OSMonFigure") ?? "lumo", forKey: PetFigureStore.key)
         d.set(["raumstation", "zauberwald", "unterwasser", "suess", "mondbasis", "zen", "studio"], forKey: SceneStore.unlockedKey)
+        if flag("OSMonTasks") || screen == "tasks" || screen == "kindness" { TaskDemo.seed() } else { TaskStore.save([]) }
     }
 
     static var mood: PetMood { PetMood(rawValue: args.string(forKey: "OSMonMood") ?? "") ?? .radiant }
@@ -64,6 +65,8 @@ struct DemoRoot: View {
         case "onboarding": OnboardingView {}
         case "logo": LogoSplashView {}
         case "wallpaper": WallpaperPreview {}
+        case "tasks": TasksManageView(model: TaskModel(), content: .shared, onToggle: { _ in })
+        case "kindness": KindnessListView(model: TaskModel(), content: .shared)
         case "bedtime": BedtimeView {}
         case "story": if let st = BedtimeContent.shared.stories.first { StoryView(story: st, reader: StoryReader()) }
         case "songs": SongListView(songs: BedtimeContent.shared.songs, player: SongPlayer())

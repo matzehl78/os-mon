@@ -272,6 +272,7 @@ struct HomeContent: View {
                 }
                 if let r = state.review { WeeklyReviewCard(review: r, onDismiss: onDismissReview).id("review") }
                 if !state.quests.isEmpty { questList }
+                TasksSection(onCheer: cheer).id("tasks")
                 Text("Zuletzt aktualisiert: \(state.updatedAt.formatted(.relative(presentation: .named)))")
                     .font(.caption2).foregroundStyle(.secondary)
             }
@@ -379,6 +380,12 @@ struct HomeContent: View {
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Antippen für eine Reaktion")
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
+    }
+
+    /// Aufgabe abgehakt / Miteinander-Tipp ausprobiert: das Wesen freut sich mit (alles geschafft = Drehung + Konfetti).
+    private func cheer(_ all: Bool, _ line: String) {
+        reaction = ActiveReaction(kind: all ? .spin : .giggle, start: .now, say: line)
+        if all { celebrateAt = .now }
     }
 
     private func celebrate() {

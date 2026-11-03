@@ -573,6 +573,13 @@ fun HomeContent(
                 }
             }
 
+            // Eigene Aufgaben mit Motivation und Miteinander-Tipp (DayTasksUI.kt); das Wesen freut sich mit
+            TasksSection(onCheer = { all, line ->
+                val now = SystemClock.uptimeMillis()
+                reaction = ActiveReaction(if (all) ReactionKind.SPIN else ReactionKind.GIGGLE, now, line)
+                if (all) celebrateAt = System.currentTimeMillis()
+            })
+
             if (state.updatedAtMs > 0) {
                 val rel = DateUtils.getRelativeTimeSpanString(
                     state.updatedAtMs, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS

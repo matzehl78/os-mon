@@ -81,6 +81,9 @@ jobs:
           shot 29_advent_minto          dark  -OSMonDemo home -OSMonScene zimmer      -OSMonFigure minto    -OSMonMood content -OSMonFestival advent -OSMonSeason winter
           shot 30_silvester_rauti       dark  -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure rauti    -OSMonMood radiant -OSMonFestival silvester -OSMonSeason winter
           shot 31_hintergrundbild_lila  light -OSMonDemo wallpaper -OSMonScene zauberwald -OSMonFigure lila -OSMonMood radiant
+          shot 32_aufgaben_lumo         light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lumo -OSMonMood radiant -OSMonTasks YES -OSMonScroll tasks
+          shot 33_aufgaben_verwalten    light -OSMonDemo tasks -OSMonFigure lumo
+          shot 34_miteinander           light -OSMonDemo kindness -OSMonFigure lumo
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

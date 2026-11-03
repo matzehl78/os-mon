@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "suggestions": [
+    { "group": "Morgens", "items": [
+      { "emoji": "🪥", "title": "Zähne putzen" },
+      { "emoji": "🛏️", "title": "Bett machen" },
+      { "emoji": "🥣", "title": "In Ruhe frühstücken" },
+      { "emoji": "🎒", "title": "Tasche packen" }
+    ]},
+    { "group": "Schule & Arbeit", "items": [
+      { "emoji": "📚", "title": "Hausaufgaben machen" },
+      { "emoji": "📖", "title": "20 Minuten lesen" },
+      { "emoji": "✏️", "title": "Für die Probe lernen" },
+      { "emoji": "📧", "title": "Wichtige Mail beantworten" }
+    ]},
+    { "group": "Zuhause", "items": [
+      { "emoji": "🧹", "title": "Zimmer aufräumen" },
+      { "emoji": "🍽️", "title": "Tisch decken" },
+      { "emoji": "🪴", "title": "Pflanzen gießen" },
+      { "emoji": "🐾", "title": "Haustier füttern" },
+      { "emoji": "🗑️", "title": "Müll rausbringen" }
+    ]},
+    { "group": "Gesund bleiben", "items": [
+      { "emoji": "💧", "title": "Genug Wasser trinken" },
+      { "emoji": "🍎", "title": "Obst oder Gemüse essen" },
+      { "emoji": "🌳", "title": "Eine Stunde nach draußen" },
+      { "emoji": "🧘", "title": "Fünf Minuten durchatmen" },
+      { "emoji": "📵", "title": "Eine Stunde ohne Handy" }
+    ]},
+    { "group": "Miteinander", "items": [
+      { "emoji": "📞", "title": "Oma oder Opa anrufen" },
+      { "emoji": "🎲", "title": "Mit der Familie spielen" },
+      { "emoji": "💛", "title": "Jemandem helfen" },
+      { "emoji": "🙏", "title": "Danke sagen" }
+    ]}
+  ],
+  "motivation": {
+    "empty": [
+      "Was hast du heute vor? Schreib es auf, dann denke ich mit dir daran.",
+      "Eine kleine Aufgabe für heute? Ich feuere dich an!",
+      "Heute noch nichts geplant. Wie wär's mit etwas, das dir guttut?"
+    ],
+    "start": [
+      "Los geht's! Fang mit der kleinsten Aufgabe an, der Rest kommt von allein.",
+      "Ich glaub an dich! Eine Sache nach der anderen.",
+      "Der erste Haken ist der wichtigste. Welcher wird es?",
+      "Kleiner Tipp: Handy kurz weg, dann geht's schneller."
+    ],
+    "going": [
+      "Super Anfang! Ich spür schon, wie mein Herz leuchtet.",
+      "Weiter so, du bist in Fahrt!",
+      "Ein Haken mehr – {name} ist stolz auf dich!",
+      "Gut gemacht! Mach kurz Pause, wenn du sie brauchst."
+    ],
+    "half": [
+      "Halbzeit! Den Rest schaffst du locker.",
+      "Mehr als die Hälfte! Ich tanz schon ein bisschen.",
+      "Wow, schon so viel! Nur noch ein kleines Stück.",
+      "Du bist richtig gut heute. Weiter so!"
+    ],
+    "all": [
+      "Alles geschafft! Du bist ein Held. 🎉",
+      "Alle Haken gesetzt! Jetzt hast du dir eine Pause verdient.",
+      "Fertig! {name} macht einen Freudensprung.",
+      "Alles erledigt. Darauf kannst du stolz sein!"
+    ]
+  },
+  "done": [
+    "Super, „{task}“ ist erledigt!",
+    "Haken dran! Ich freu mich mit dir.",
+    "Klasse gemacht!",
+    "Yay! Eine Sache weniger.",
+    "Stark! Weiter so."
+  ],
+  "kindness": [
+    { "id": "familie", "emoji": "🏠", "title": "Zuhause & Familie", "tips": [
+      { "tip": "Beim Essen bleibt das Handy weg. Gespräche schmecken besser.", "task": "Essen ohne Handy" },
+      { "tip": "Frag heute jemanden aus deiner Familie, wie sein Tag war – und hör richtig zu.", "task": "Nach dem Tag fragen" },
+      { "tip": "Hilf ungefragt mit: Tisch abräumen, Spülmaschine ausräumen, Wäsche aufhängen.", "task": "Ungefragt helfen" },
+      { "tip": "Sag „Bitte“ und „Danke“ – auch zu Hause, auch bei Kleinigkeiten.", "task": "Bitte und Danke sagen" },
+      { "tip": "Wenn du wütend bist: erst dreimal tief durchatmen, dann reden.", "task": "Erst atmen, dann reden" },
+      { "tip": "Klopf an, bevor du ein Zimmer betrittst. Jeder braucht mal Ruhe.", "task": "Anklopfen" }
+    ]},
+    { "id": "freunde", "emoji": "🤝", "title": "Freunde", "tips": [
+      { "tip": "Lass andere ausreden. Wer zuhört, versteht mehr.", "task": "Ausreden lassen" },
+      { "tip": "Lade jemanden zum Mitspielen ein, der gerade allein ist.", "task": "Jemanden einladen" },
+      { "tip": "Mach heute jemandem ein ehrliches Kompliment.", "task": "Ein Kompliment machen" },
+      { "tip": "Halte Versprechen. Wenn es nicht klappt, sag rechtzeitig Bescheid.", "task": "Versprechen halten" },
+      { "tip": "Ein Geheimnis, das dir jemand anvertraut, bleibt bei dir – außer jemand ist in Gefahr.", "task": "Vertrauen schützen" },
+      { "tip": "Freu dich mit, wenn ein Freund etwas gut gemacht hat.", "task": "Mitfreuen" }
+    ]},
+    { "id": "schule", "emoji": "🏫", "title": "Schule & Arbeit", "tips": [
+      { "tip": "Grüße freundlich – an der Tür, im Bus, im Flur.", "task": "Freundlich grüßen" },
+      { "tip": "Wenn jemand etwas nicht versteht, erklär es geduldig, statt zu lachen.", "task": "Geduldig erklären" },
+      { "tip": "Sei pünktlich. Das zeigt: Die Zeit der anderen ist dir wichtig.", "task": "Pünktlich sein" },
+      { "tip": "Gib zu, wenn du einen Fehler gemacht hast. Das ist mutig.", "task": "Fehler zugeben" },
+      { "tip": "Teile, was du hast: einen Stift, eine Idee, deine Hilfe.", "task": "Etwas teilen" },
+      { "tip": "Wenn jemand gemobbt wird: Hol Hilfe und steh der Person bei.", "task": "Für andere einstehen" }
+    ]},
+    { "id": "online", "emoji": "📱", "title": "Online & Handy", "tips": [
+      { "tip": "Schreib online nur, was du auch ins Gesicht sagen würdest.", "task": "Freundlich schreiben" },
+      { "tip": "Frag nach, bevor du ein Foto von jemandem teilst.", "task": "Erst fragen, dann teilen" },
+      { "tip": "Wenn jemand mit dir redet: Handy weglegen und anschauen.", "task": "Handy weg beim Reden" },
+      { "tip": "Lies eine Nachricht zweimal, bevor du im Ärger antwortest.", "task": "Zweimal lesen" },
+      { "tip": "Lautsprecher aus in Bus, Bahn und Wartezimmer – Kopfhörer rein.", "task": "Kopfhörer nutzen" },
+      { "tip": "Antworte, wenn dir jemand schreibt – auch nur kurz: „Melde mich später.“", "task": "Kurz zurückschreiben" }
+    ]},
+    { "id": "unterwegs", "emoji": "🚌", "title": "Unterwegs", "tips": [
+      { "tip": "Biete älteren Menschen oder Schwangeren deinen Sitzplatz an.", "task": "Platz anbieten" },
+      { "tip": "Halte die Tür für die Person hinter dir auf.", "task": "Tür aufhalten" },
+      { "tip": "Erst aussteigen lassen, dann einsteigen.", "task": "Aussteigen lassen" },
+      { "tip": "Müll gehört in den Mülleimer – auch wenn keiner hinschaut.", "task": "Müll mitnehmen" },
+      { "tip": "Schau beim Gehen nach vorn, nicht aufs Handy. So rempelst du niemanden an.", "task": "Beim Gehen aufschauen" },
+      { "tip": "Bedank dich beim Busfahrer oder an der Kasse.", "task": "Danke an der Kasse" }
+    ]},
+    { "id": "streit", "emoji": "🕊️", "title": "Streit lösen", "tips": [
+      { "tip": "Sag, wie du dich fühlst („Ich bin traurig, weil …“), statt Vorwürfe zu machen.", "task": "Ich-Sätze nutzen" },
+      { "tip": "Hör dir auch die andere Seite an, bevor du entscheidest, wer recht hat.", "task": "Beide Seiten hören" },
+      { "tip": "Eine ehrliche Entschuldigung besteht aus drei Teilen: Was war falsch, es tut mir leid, so mache ich es wieder gut.", "task": "Ehrlich entschuldigen" },
+      { "tip": "Nimm eine Entschuldigung an. Nachtragen macht beide traurig.", "task": "Verzeihen" },
+      { "tip": "Wenn es zu hitzig wird: Pause machen und später weiterreden.", "task": "Pause im Streit" },
+      { "tip": "Sucht gemeinsam eine Lösung, mit der beide leben können.", "task": "Gemeinsame Lösung" }
+    ]}
+  ]
+}

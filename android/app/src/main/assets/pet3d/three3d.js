@@ -210,8 +210,19 @@ window.make3D = () => (() => {
     const hg = p.headGroup, hy = y => y - p.pivotY;
 
     // Akku-Herz
-    p.heartMesh = new T.Mesh(new T.PlaneGeometry(heartPos.size, heartPos.size),
-      new T.MeshStandardMaterial({ map: heartTex, transparent: true, roughness: 0.3 }));
+    // Als gewölbter Aufkleber: jeder Punkt folgt der Körperoberfläche (sonst steckt das Herz bei runden Figuren halb im Bauch)
+    const bodyZ = SH.lumo ? (x, y) => 0.58 * Math.sqrt(Math.max(0, 1 - (x / 0.66) ** 2 - ((y - 0.66) / 0.62) ** 2)) : fz;
+    heartPos.z = bodyZ(heartPos.x, heartPos.y) + 0.03;
+    const hGeo = new T.PlaneGeometry(heartPos.size, heartPos.size, 24, 24), hp = hGeo.attributes.position;
+    for (let i = 0; i < hp.count; i++) {
+      const wx = heartPos.x + hp.getX(i), wy = heartPos.y + hp.getY(i);
+      hp.setZ(i, Math.max(bodyZ(wx, wy), heartPos.z - 0.25) + 0.03 - heartPos.z);
+    }
+    hGeo.computeVertexNormals();
+    p.heartMesh = new T.Mesh(hGeo, new T.MeshStandardMaterial({ map: heartTex, transparent: true, roughness: 0.3,
+      emissive: 0xffffff, emissiveMap: heartTex, emissiveIntensity: 0.55,          // leuchtet selbst, auch an der Unterseite
+      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    p.heartMesh.renderOrder = 1;
     at(bg, p.heartMesh, heartPos.x, heartPos.y, heartPos.z);
     p.heartZ = heartPos.z;
 

@@ -26,6 +26,12 @@ enum DemoMode {
     static var mood: PetMood { PetMood(rawValue: args.string(forKey: "OSMonMood") ?? "") ?? .radiant }
     static func flag(_ key: String) -> Bool { args.bool(forKey: key) }
 
+    static func album(pending: Bool) -> AlbumInfo {
+        let m: [Metric: Int] = [.stage: 2, .tasks: 23, .streak: 4, .kind: 6, .goodnight: 9, .festivals: 2, .scenes: 4, .days: 31]
+        let un = Set(Achievements.all.filter { Achievements.isReached($0, m) }.map(\.id))
+        return AlbumInfo(metrics: m, unlocked: un, pending: pending ? [Achievements.byID("streak3")!] : [])
+    }
+
     static func state() -> HomeState {
         let m = mood
         var s = HomeState.sample(m, overlays: m == .tired ? [.yawning] : [],
@@ -69,6 +75,8 @@ enum DemoMode {
                                   ageDays: g.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft,
                                   roughToday: args.integer(forKey: "OSMonRough"))
         }
+        // Sammelalbum: -OSMonAlbum YES (Banner + Zähler)
+        if flag("OSMonAlbum") { s.album = DemoMode.album(pending: true) }
         return s
     }
 }
@@ -81,6 +89,7 @@ struct DemoRoot: View {
         case "onboarding": OnboardingView {}
         case "logo": LogoSplashView {}
         case "wallpaper": WallpaperPreview {}
+        case "album": AlbumView(album: DemoMode.album(pending: false))
         case "tasks": TasksManageView(model: TaskModel(), content: .shared, onToggle: { _ in })
         case "kindness": KindnessListView(model: TaskModel(), content: .shared)
         case "bedtime": BedtimeView {}

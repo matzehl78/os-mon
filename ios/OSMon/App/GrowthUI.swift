@@ -76,7 +76,14 @@ enum GrowthStore {
     }
 
     static func ackStage() {
-        var s = load(); s.pendingStage = nil; s.pendingDown = nil; GrowthStorage.save(s)
+        var s = load()
+        // Sammelalbum „Wieder aufgepäppelt“: nach einem Rückfall wieder eine Stufe gewachsen
+        if s.pendingStage != nil {
+            let d = STShared.defaults
+            if s.pendingDown == true { d.set(true, forKey: "growth.dropped") }
+            else if d.bool(forKey: "growth.dropped") { d.set(false, forKey: "growth.dropped"); AchievementStore.addComeback() }
+        }
+        s.pendingStage = nil; s.pendingDown = nil; GrowthStorage.save(s)
     }
 }
 
@@ -90,20 +97,11 @@ func growthLabel(_ name: String, _ g: GrowthInfo) -> String {
     g.stage == .egg ? "\(name) · Ei" : "\(name) · \(g.stage.title) · Tag \(g.ageDays + 1)"
 }
 
+/// Fortschritt zur nächsten Stufe (in der Kopfzeile). Warnungen stehen darunter in GrowthAlertsView.
 struct GrowthProgressView: View {
     let g: GrowthInfo
     var body: some View {
-        if g.roughToday > 0 && g.stage != .egg {
-            Text(g.roughToday >= Growth.roughLimit ? "😣 Heute zu grob behandelt – der Tag zählt als schlecht."
-                 : "😣 Heute \(g.roughToday)× grob behandelt – ab \(Growth.roughLimit)× zählt der Tag als schlecht.")
-                .font(.caption2).foregroundStyle(.pink).padding(.top, 2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        if let r = g.risk {
-            Text("⚠️ Vorsicht: Noch \(r.badDaysLeft) schlechte \(r.badDaysLeft == 1 ? "Tag" : "Tage"), dann wird dein Wesen wieder \(growthArticle(r.to))")
-                .font(.caption2).foregroundStyle(.orange).padding(.top, 2)
-                .fixedSize(horizontal: false, vertical: true)
-        } else if let p = g.progress, let left = g.daysLeft, let next = g.stage.next {
+        if let p = g.progress, let left = g.daysLeft, let next = g.stage.next {
             VStack(alignment: .leading, spacing: 2) {
                 ProgressView(value: p).tint(.green)
                 Text("Noch \(left) gute \(left == 1 ? "Tag" : "Tage") bis \(next.title)")
@@ -111,6 +109,39 @@ struct GrowthProgressView: View {
             }
             .padding(.top, 2)
             .accessibilityElement(children: .combine)
+        }
+    }
+}
+
+/// Warnungen als eigene Zeile unter der Kopfzeile: grob behandelt, Rückfall droht.
+struct GrowthAlertsView: View {
+    let g: GrowthInfo
+
+    static func has(_ g: GrowthInfo?) -> Bool {
+        guard let g, g.stage != .egg else { return false }
+        return g.roughToday > 0 || g.risk != nil
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if g.roughToday > 0 {
+                row("hand.raised.fill", .pink, g.roughToday >= Growth.roughLimit
+                    ? "Heute zu grob behandelt – der Tag zählt als schlecht."
+                    : "Heute \(g.roughToday)× grob behandelt. Ab \(Growth.roughLimit)× zählt der Tag als schlecht.")
+            }
+            if let r = g.risk {
+                row("exclamationmark.triangle.fill", .orange,
+                    "Noch \(r.badDaysLeft) schlechte \(r.badDaysLeft == 1 ? "Tag" : "Tage"), dann wird dein Wesen wieder \(growthArticle(r.to)).")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func row(_ symbol: String, _ color: Color, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: symbol).foregroundStyle(color)
+            Text(text).font(.footnote).fixedSize(horizontal: false, vertical: true)
         }
     }
 }

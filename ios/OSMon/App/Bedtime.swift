@@ -72,7 +72,10 @@ enum SleepStore {
     static func phase(_ now: Date = .now) -> DayPhase { NightRoutine.phase(minuteOfDay(now), config) }
     static func nightDay(_ now: Date = .now) -> Int { NightRoutine.nightDay(EpochDay.of(now), minuteOfDay(now), config) }
 
-    static func markGoodnight(_ now: Date = .now) { d.set(now, forKey: "pet.night.goodnight.\(nightDay(now))") }
+    static func markGoodnight(_ now: Date = .now) {
+        d.set(now, forKey: "pet.night.goodnight.\(nightDay(now))")
+        AchievementStore.addGoodnight(night: nightDay(now))             // Sammelalbum
+    }
     static func saidGoodnight(night: Int) -> Bool { d.object(forKey: "pet.night.goodnight.\(night)") != nil }
 
     /// Beim Öffnen der App aufrufen: zählt Öffnungen nach dem Gute-Nacht-Sagen bis zum Aufstehen.

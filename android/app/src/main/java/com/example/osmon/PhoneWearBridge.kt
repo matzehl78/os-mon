@@ -59,6 +59,7 @@ object PhoneWearBridge {
         when {
             action.startsWith(WearPayload.ACTION_TOGGLE + ":") -> {
                 val id = action.substringAfter(":")
+                TaskStore.load(ctx).firstOrNull { it.id == id }?.let { if (!DayTasks.isDone(it, day)) com.example.osmon.ui.AchievementStore.addTask(ctx) }
                 TaskStore.save(ctx, TaskStore.load(ctx).map { if (it.id == id) DayTasks.toggle(it, day) else it })
                 TaskEvents.changed()
             }

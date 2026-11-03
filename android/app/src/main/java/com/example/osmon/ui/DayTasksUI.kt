@@ -174,6 +174,7 @@ class TaskModel(private val ctx: Context) {
     /** true, wenn damit alles erledigt ist. */
     fun toggle(t: DayTask): Boolean {
         val wasDone = DayTasks.isDone(t, day)
+        if (!wasDone) AchievementStore.addTask(ctx)          // Sammelalbum
         update(tasks.map { if (it.id == t.id) DayTasks.toggle(it, day) else it })
         return !wasDone && DayTasks.progress(tasks, day).stage == TaskStage.ALL
     }

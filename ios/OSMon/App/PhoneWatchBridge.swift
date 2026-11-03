@@ -59,6 +59,7 @@ final class PhoneWatchBridge: NSObject, WCSessionDelegate {
             switch msg[WatchAction.kind] as? String {
             case WatchAction.toggleTask:
                 guard let id = msg["id"] as? String else { return }
+                if let t = TaskStore.load().first(where: { $0.id == id }), !DayTasks.isDone(t, day) { AchievementStore.addTask() }
                 let l = TaskStore.load().map { $0.id == id ? DayTasks.toggle($0, day) : $0 }
                 TaskStore.save(l)
                 NotificationCenter.default.post(name: .osmonTasksChanged, object: nil)

@@ -61,6 +61,7 @@ struct HomeState {
     var season: Season = .autumn               // Jahreszeit (Tönung, Deko, Teilchen)
     var seasonsOn = true
     var growth: GrowthInfo? = nil              // Ei … Erwachsen (GrowthUI.swift); nil = Vorschau
+    var album: AlbumInfo? = nil                // Sammelalbum (AchievementsUI.swift)
 
     static let empty = HomeState(
         snapshot: PetSnapshot(stats: PetStats(e: 100, r: 100, f: 100, v: 100, a: 70),
@@ -87,6 +88,8 @@ final class HomeViewModel: ObservableObject {
 
         let readyAt = PetSync.patReadyAt(now: now)
         let prog = ProgressData.refresh(today: EpochDay.of(now))
+        let growth = GrowthStore.refresh()
+        let album = AchievementStore.refresh(growth: growth, scenesUnlocked: prog.status.filter { $0.unlocked && $0.sceneID != "none" }.count)
         var newScenes = state.newScenes
         for s in prog.newlyUnlocked where !newScenes.contains(s) { newScenes.append(s) }
         state = HomeState(
@@ -109,7 +112,8 @@ final class HomeViewModel: ObservableObject {
             festivalCard: FestivalStore.today(now) != nil && !FestivalStore.cardHidden(EpochDay.of(now)),
             season: SceneTheme.season(day: EpochDay.of(now)),
             seasonsOn: FestivalStore.seasons,
-            growth: GrowthStore.refresh())
+            growth: growth,
+            album: album)
 
         PhoneWatchBridge.shared.push(snapshot: t.snapshot, accessory: state.festival?.accessory,
                                      form: evo.current?.form, updateExtras: true)
@@ -120,6 +124,11 @@ final class HomeViewModel: ObservableObject {
 
     /// Grob behandelt (wildes Antippen, Schütteln).
     func rough() { state.growth = GrowthStore.addRough() }
+
+    func ackAchievement() {
+        AchievementStore.ackFirst()
+        state.album = AchievementStore.info()
+    }
 
     func ackGrowth() {
         GrowthStore.ackStage()
@@ -224,7 +233,8 @@ struct HomeScreen: View {
             onHideFestival: { model.hideFestivalCard() },
             onTapEgg: { model.tapEgg() },
             onAckGrowth: { model.ackGrowth() },
-            onRough: { model.rough() })
+            onRough: { model.rough() },
+            onAckAchievement: { model.ackAchievement() })
             .fullScreenCover(isPresented: $showBedtime, onDismiss: { model.refresh() }) { BedtimeView { showBedtime = false } }
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
@@ -254,6 +264,7 @@ struct HomeContent: View {
     var onTapEgg: () -> Void = {}
     var onAckGrowth: () -> Void = {}
     var onRough: () -> Void = {}
+    var onAckAchievement: () -> Void = {}
     var demoScrollTo: String? = nil               // nur Screenshots: z. B. "review"
 
     private var snap: PetSnapshot { state.snapshot }
@@ -266,6 +277,7 @@ struct HomeContent: View {
     @State private var stageFrame: CGRect = .zero
     @State private var headerFrame: CGRect = .zero
     @State private var eggShakeAt: Date? = nil
+    @State private var showAlbum = false
     @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
     @AppStorage(Pet3D.failedKey, store: STShared.defaults) private var failed3D = false
     @StateObject private var shake = ShakeMonitor()
@@ -283,6 +295,7 @@ struct HomeContent: View {
             VStack(spacing: hasScene ? 14 : 20) {
                 glass(header)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { headerFrame = $0 }
+                if GrowthAlertsView.has(state.growth), let g = state.growth { glass(GrowthAlertsView(g: g)) }
                 VStack(spacing: 8) {
                     speechBubble
                     pet
@@ -290,8 +303,9 @@ struct HomeContent: View {
                 glass(rings)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { ringsFrame = $0 }
                 actions
+                if let a = state.album { AlbumButton(album: a) { showAlbum = true } }
                 if let f = state.festival, state.festivalCard {
-                    FestivalCard(festival: f, onCelebrate: celebrate, onHide: onHideFestival).id("festival")
+                    FestivalCard(festival: f, onCelebrate: { AchievementStore.addFestival(f.id.rawValue); celebrate() }, onHide: onHideFestival).id("festival")
                 }
                 if let m = state.morning { MorningCard(info: m, onDismiss: onDismissMorning).id("morning") }
                 if state.sleepPhase == .windDown || state.sleepPhase == .night {
@@ -350,8 +364,11 @@ struct HomeContent: View {
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
         // Hinweise (Entwicklung, neuer Hintergrund) unten als Einblendung: verschieben Kopfzeile und Wesen nicht
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if state.evolutionEvent != nil || !state.newScenes.isEmpty || state.growth?.pending != nil {
+            if state.evolutionEvent != nil || !state.newScenes.isEmpty || state.growth?.pending != nil || !(state.album?.pending.isEmpty ?? true) {
                 VStack(spacing: 8) {
+                    if let a = state.album?.pending.first {
+                        AchievementBanner(achievement: a, onOpen: { showAlbum = true; onAckAchievement() }, onAck: onAckAchievement)
+                    }
                     if let st = state.growth?.pending {
                         let down = state.growth?.pendingDown ?? false
                         GrowthBanner(name: PetFigure.byID(figureID).name, stage: st, down: down, onAck: onAckGrowth)
@@ -365,6 +382,7 @@ struct HomeContent: View {
             }
         }
         .animation(.spring(duration: 0.35), value: state.newScenes.isEmpty)
+        .sheet(isPresented: $showAlbum) { if let a = state.album { AlbumView(album: a) } }
         // Grob: kräftig schütteln (nach dem Schlüpfen, nur solange sichtbar)
         .onAppear { startShake() }
         .onDisappear { shake.stop() }
@@ -507,7 +525,8 @@ struct HomeContent: View {
                 Text(snap.mood.title).font(.title2.bold())
                 // Figurenname, Wachstumsstufe und Alter; die Entwicklungsform steht dahinter
                 let name = PetFigure.byID(figureID).name
-                Text((state.growth.map { growthLabel(name, $0) } ?? name) + (state.evolution.map { " · " + $0.form.title } ?? ""))
+                // Entwicklungsform nur als Abzeichen (passt immer in die Zeile)
+                Text((state.growth.map { growthLabel(name, $0) } ?? name) + (state.evolution.map { " " + $0.form.badge } ?? ""))
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.75)
                 if let g = state.growth { GrowthProgressView(g: g) }
             }

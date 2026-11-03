@@ -206,7 +206,8 @@ data class HomeState(
     val festivalCard: Boolean = false,        // Karte „Feiern“ sichtbar
     val season: Season = Season.AUTUMN,       // Jahreszeit (Tönung, Deko, Teilchen)
     val seasonsOn: Boolean = true,
-    val growth: GrowthInfo? = null            // Ei … Erwachsen (GrowthUI.kt); null = Vorschau
+    val growth: GrowthInfo? = null,           // Ei … Erwachsen (GrowthUI.kt); null = Vorschau
+    val album: AlbumInfo? = null              // Sammelalbum (AchievementsUI.kt)
 ) {
     companion object {
         val Empty = HomeState(
@@ -280,6 +281,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     /** Grob behandelt (wildes Antippen, Schütteln). */
     fun rough() { _state.value = _state.value.copy(growth = GrowthStore.addRough(ctx)) }
 
+    fun ackAchievement() {
+        AchievementStore.ackFirst(ctx)
+        _state.value = _state.value.copy(album = AchievementStore.info(ctx))
+    }
+
     fun ackGrowth() {
         GrowthStore.ackStage(ctx)
         _state.value = _state.value.copy(growth = GrowthStore.info(ctx))
@@ -308,6 +314,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         val t = PetSync.tick(ctx, now)                               // speichert Snapshot + Tageslog
         val readyAt = PetSync.patReadyAt(ctx, now)
         val prog = ProgressData.refresh(ctx)
+        val growth = GrowthStore.refresh(ctx)
+        val album = AchievementStore.refresh(ctx, growth, prog.status.count { it.unlocked && it.sceneId != "none" })
         val prev = _state.value
         _state.value = HomeState(
             snapshot = t.snapshot,
@@ -329,7 +337,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             festivalCard = FestivalStore.today(ctx) != null && !FestivalStore.cardHidden(ctx),
             season = SceneTheme.season(LocalDate.now().toEpochDay()),
             seasonsOn = FestivalStore.seasons(ctx),
-            growth = GrowthStore.refresh(ctx)
+            growth = growth,
+            album = album
         )
         PetSync.updateWidgetIfNeeded(ctx, t.snapshot, force = forceWidget)
         PhoneWearBridge.push(ctx, t.snapshot, _state.value.festival?.accessory, evo.current?.form, updateExtras = true)
@@ -389,7 +398,8 @@ fun HomeScreen(
         onHideFestival = vm::hideFestivalCard,
         onTapEgg = vm::tapEgg,
         onAckGrowth = vm::ackGrowth,
-        onRough = vm::rough
+        onRough = vm::rough,
+        onAckAchievement = vm::ackAchievement
     )
 }
 
@@ -413,6 +423,7 @@ fun HomeContent(
     onTapEgg: () -> Unit = {},
     onAckGrowth: () -> Unit = {},
     onRough: () -> Unit = {},
+    onAckAchievement: () -> Unit = {},
     scene: Scene = rememberCurrentScene()
 ) {
     val snap = state.snapshot
@@ -427,6 +438,9 @@ fun HomeContent(
     var ringsBottom by remember { mutableFloatStateOf(0f) }
     var ringsH by remember { mutableFloatStateOf(0f) }
     var headerBottom by remember { mutableFloatStateOf(0f) }
+
+    var showAlbum by remember { mutableStateOf(false) }
+    if (showAlbum) state.album?.let { AlbumDialog(it) { showAlbum = false } }
 
     // Antippen
     val picker = remember { ReactionPicker() }
@@ -516,8 +530,9 @@ fun HomeContent(
                         val evo = state.evolution
                         Text(
                             // Figurenname bleibt sichtbar; die Entwicklungsform steht dahinter
+                            // Entwicklungsform nur als Abzeichen (passt immer in die Zeile)
                             (state.growth?.let { growthLabel(figure.name, it) } ?: figure.name) +
-                                (evo?.let { " · ${formTitle(it.form)}" } ?: ""),
+                                (evo?.let { " ${formBadge(it.form)}" } ?: ""),
                             style = MaterialTheme.typography.bodyMedium, maxLines = 1,
                             color = if (hasScene) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -532,6 +547,9 @@ fun HomeContent(
                 }
             }
             }
+
+            // Warnungen (grob behandelt, Rückfall droht) als eigene Zeile
+            state.growth?.takeIf { hasGrowthAlerts(it) }?.let { Glass(hasScene) { GrowthAlerts(it, hasScene) } }
 
             // Sprechblase über der Figur: Reaktionstext 2,6 s, sonst Stimmungssatz
             val now by produceState(SystemClock.uptimeMillis(), reaction) {
@@ -626,8 +644,12 @@ fun HomeContent(
             }
 
             Actions(state, onPat, onStartFocus, onCancelFocus)
+            state.album?.let { AlbumButton(it) { showAlbum = true } }
 
-            state.festival?.takeIf { state.festivalCard }?.let { FestivalCard(it, onCelebrate, onHideFestival) }
+            state.festival?.takeIf { state.festivalCard }?.let { f ->
+                val ctxF = LocalContext.current
+                FestivalCard(f, { AchievementStore.addFestival(ctxF, f.id.name); onCelebrate() }, onHideFestival)
+            }
             state.morning?.let { MorningCard(it, onDismissMorning) }
             if (state.sleepPhase == DayPhase.WIND_DOWN || state.sleepPhase == DayPhase.NIGHT) BedtimePromptCard(state.sleepPhase, onOpenBedtime)
             state.review?.let { WeeklyReviewCard(it, onDismissReview) }
@@ -654,7 +676,8 @@ fun HomeContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             // Platz, damit die Einblendung unten nichts verdeckt
-            if (state.evolutionEvent != null || state.newScenes.isNotEmpty() || state.growth?.pending != null) Spacer(Modifier.height(96.dp))
+            if (state.evolutionEvent != null || state.newScenes.isNotEmpty() || state.growth?.pending != null ||
+                state.album?.pending?.isNotEmpty() == true) Spacer(Modifier.height(96.dp))
         }
     }
 
@@ -667,6 +690,11 @@ fun HomeContent(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        state.album?.pending?.firstOrNull()?.let { a ->
+            Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) {
+                AchievementBanner(a, onOpen = { showAlbum = true; onAckAchievement() }, onAck = onAckAchievement)
+            }
+        }
         state.growth?.pending?.let { st ->
             val down = state.growth?.pendingDown == true
             LaunchedEffect(st) { if (!down) onCelebrate() }    // Konfetti + Drehung beim Aufstieg (nicht beim Rückfall)

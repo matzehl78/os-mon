@@ -106,6 +106,7 @@ final class TaskModel {
     /// true, wenn damit alles erledigt ist.
     func toggle(_ t: DayTask) -> Bool {
         let wasDone = DayTasks.isDone(t, day)
+        if !wasDone { AchievementStore.addTask() }            // Sammelalbum
         update(tasks.map { $0.id == t.id ? DayTasks.toggle($0, day) : $0 })
         return !wasDone && DayTasks.progress(tasks, day).stage == .all
     }

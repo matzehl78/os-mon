@@ -166,7 +166,10 @@ object SleepStore {
     fun phase(ctx: Context) = NightRoutine.phase(minuteOfDay(), config(ctx))
     fun nightDay(ctx: Context) = NightRoutine.nightDay(LocalDate.now().toEpochDay(), minuteOfDay(), config(ctx))
 
-    fun markGoodnight(ctx: Context) { p(ctx).edit().putLong("night.goodnight.${nightDay(ctx)}", System.currentTimeMillis()).apply() }
+    fun markGoodnight(ctx: Context) {
+        p(ctx).edit().putLong("night.goodnight.${nightDay(ctx)}", System.currentTimeMillis()).apply()
+        AchievementStore.addGoodnight(ctx, nightDay(ctx))                 // Sammelalbum
+    }
     fun saidGoodnight(ctx: Context, night: Long) = p(ctx).contains("night.goodnight.$night")
 
     /** Beim Öffnen der App aufrufen: zählt Öffnungen nach dem Gute-Nacht-Sagen bis zum Aufstehen (5 Min = ein Öffnen). */

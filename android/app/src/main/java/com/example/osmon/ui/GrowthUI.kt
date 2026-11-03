@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.osmon.DayLog
 import com.example.osmon.EvolutionStore
@@ -137,7 +138,15 @@ object GrowthStore {
         return info(ctx, s)
     }
 
-    fun ackStage(ctx: Context) { save(ctx, load(ctx).copy(pendingStage = null, pendingDown = false)) }
+    fun ackStage(ctx: Context) {
+        val s = load(ctx)
+        // Sammelalbum „Wieder aufgepäppelt“: nach einem Rückfall wieder eine Stufe gewachsen
+        if (s.pendingStage != null) {
+            if (s.pendingDown) p(ctx).edit().putBoolean("growth.dropped", true).apply()
+            else if (p(ctx).getBoolean("growth.dropped", false)) { p(ctx).edit().putBoolean("growth.dropped", false).apply(); AchievementStore.addComeback(ctx) }
+        }
+        save(ctx, s.copy(pendingStage = null, pendingDown = false))
+    }
 
     /** Stufe für Widget, Hintergrundbild und Uhr (ohne Nachtragen). */
     fun stage(ctx: Context): GrowthStage = Growth.stage(load(ctx))
@@ -163,16 +172,6 @@ fun EggCanvas(figure: PetFigure, cracks: Int, shakeAtMs: Long?, modifier: Modifi
 /** Zeile unter dem Namen: Fortschritt bis zur nächsten Stufe, oder Warnung vor dem Rückfall. */
 @Composable
 fun GrowthProgress(g: GrowthInfo, onScene: Boolean) {
-    if (g.roughToday > 0 && g.stage != GrowthStage.EGG) {
-        Text(if (g.roughToday >= Growth.ROUGH_LIMIT) "😣 Heute zu grob behandelt – der Tag zählt als schlecht."
-            else "😣 Heute ${g.roughToday}× grob behandelt – ab ${Growth.ROUGH_LIMIT}× zählt der Tag als schlecht.",
-            style = MaterialTheme.typography.labelSmall, color = Color(0xFFD9667A), modifier = Modifier.padding(top = 4.dp))
-    }
-    g.risk?.let { r ->
-        Text("⚠️ Vorsicht: Noch ${r.badDaysLeft} schlechte ${if (r.badDaysLeft == 1) "Tag" else "Tage"}, dann wird dein Wesen wieder ${article(r.to)}",
-            style = MaterialTheme.typography.labelSmall, color = Color(0xFFE08A1E), modifier = Modifier.padding(top = 4.dp))
-        return
-    }
     val p = g.progress ?: return
     val next = g.stage.next ?: return
     Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
@@ -181,6 +180,30 @@ fun GrowthProgress(g: GrowthInfo, onScene: Boolean) {
         Text("Noch ${p.second} gute ${if (p.second == 1) "Tag" else "Tage"} bis ${next.title}",
             style = MaterialTheme.typography.labelSmall,
             color = if (onScene) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Gibt es Warnungen (grob behandelt, Rückfall droht)? */
+fun hasGrowthAlerts(g: GrowthInfo?) = g != null && g.stage != GrowthStage.EGG && (g.roughToday > 0 || g.risk != null)
+
+/** Warnungen als eigene Zeile unter der Kopfzeile. */
+@Composable
+fun GrowthAlerts(g: GrowthInfo, onScene: Boolean) {
+    val textColor = if (onScene) Color.White else MaterialTheme.colorScheme.onSurface
+    Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (g.roughToday > 0) Row {
+            Text("✋", color = Color(0xFFD9667A)); Spacer(Modifier.width(8.dp))
+            Text(if (g.roughToday >= Growth.ROUGH_LIMIT) "Heute zu grob behandelt – der Tag zählt als schlecht."
+                else "Heute ${g.roughToday}× grob behandelt. Ab ${Growth.ROUGH_LIMIT}× zählt der Tag als schlecht.",
+                style = MaterialTheme.typography.bodySmall, color = textColor)
+        }
+        g.risk?.let { r ->
+            Row {
+                Text("⚠️"); Spacer(Modifier.width(8.dp))
+                Text("Noch ${r.badDaysLeft} schlechte ${if (r.badDaysLeft == 1) "Tag" else "Tage"}, dann wird dein Wesen wieder ${article(r.to)}.",
+                    style = MaterialTheme.typography.bodySmall, color = textColor)
+            }
+        }
     }
 }
 

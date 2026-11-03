@@ -344,8 +344,9 @@ struct HomeContent: View {
             if state.evolutionEvent != nil || !state.newScenes.isEmpty || state.growth?.pending != nil {
                 VStack(spacing: 8) {
                     if let st = state.growth?.pending {
-                        GrowthBanner(name: PetFigure.byID(figureID).name, stage: st, onAck: onAckGrowth)
-                            .onAppear { celebrate() }          // Konfetti + Drehung beim Aufstieg
+                        let down = state.growth?.pendingDown ?? false
+                        GrowthBanner(name: PetFigure.byID(figureID).name, stage: st, down: down, onAck: onAckGrowth)
+                            .onAppear { if !down { celebrate() } }   // Konfetti + Drehung beim Aufstieg, nicht beim Rückfall
                     }
                     if let event = state.evolutionEvent { EvolutionBanner(event: event, onAck: onAckEvolution) }
                     if !state.newScenes.isEmpty { SceneUnlockBanner(scenes: state.newScenes, onUse: onUseScene, onDismiss: onAckScenes) }

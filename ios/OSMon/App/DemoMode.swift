@@ -58,7 +58,10 @@ enum DemoMode {
             let today = EpochDay.of(.now)
             let good = st == .egg ? 0 : st == .adult ? 90 : st.minDays + (st.next.map { ($0.minDays - st.minDays) / 2 } ?? 0)
             var g = GrowthState(hatched: st != .egg, goodDays: good, lastDay: today - 1, hatchedDay: st == .egg ? nil : today - good - 3)
+            g.stage = st
             if flag("OSMonGrowUp") { g.pendingStage = st }
+            if flag("OSMonDown") { g.pendingStage = st; g.pendingDown = true }       // Rückfall-Banner
+            if flag("OSMonRisk") { g.goodDays = st.minDays - 2 }                   // Warnung vor dem Rückfall
             let p = Growth.progress(g)
             s.growth = GrowthInfo(state: g, stage: st, eggTaps: args.integer(forKey: "OSMonEggTaps"),
                                   ageDays: g.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft)

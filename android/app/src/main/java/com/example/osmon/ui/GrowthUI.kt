@@ -55,6 +55,8 @@ data class GrowthInfo(
     val progress: Pair<Float, Int>?           // (Anteil, fehlende gute Tage) bis zur nächsten Stufe
 ) {
     val pending: GrowthStage? get() = state.pendingStage
+    val pendingDown: Boolean get() = state.pendingDown
+    val risk get() = Growth.risk(state)
 }
 
 object GrowthStore {
@@ -67,9 +69,10 @@ object GrowthStore {
         p(ctx).getString(KEY, null)?.let { raw ->
             runCatching {
                 val o = JSONObject(raw)
+                fun st(k: String) = o.optString(k).takeIf { it.isNotEmpty() }?.let { runCatching { GrowthStage.valueOf(it) }.getOrNull() }
                 return GrowthState(o.getBoolean("hatched"), o.getInt("good"), o.getLong("last"),
                     if (o.has("hatchedDay")) o.getLong("hatchedDay") else null,
-                    o.optString("pending").takeIf { it.isNotEmpty() }?.let { runCatching { GrowthStage.valueOf(it) }.getOrNull() })
+                    st("pending"), st("stage"), o.optBoolean("down"))
             }
         }
         // Erster Aufruf: wer OS-Mon schon hatte, ist geschlüpft (nichts geht verloren); sonst liegt ein Ei da.
@@ -92,6 +95,8 @@ object GrowthStore {
         val o = JSONObject().put("hatched", s.hatched).put("good", s.goodDays).put("last", s.lastDay)
         s.hatchedDay?.let { o.put("hatchedDay", it) }
         s.pendingStage?.let { o.put("pending", it.name) }
+        s.stage?.let { o.put("stage", it.name) }
+        if (s.pendingDown) o.put("down", true)
         p(ctx).edit().putString(KEY, o.toString()).apply()
     }
 
@@ -121,7 +126,7 @@ object GrowthStore {
         return info(ctx, s)
     }
 
-    fun ackStage(ctx: Context) { save(ctx, load(ctx).copy(pendingStage = null)) }
+    fun ackStage(ctx: Context) { save(ctx, load(ctx).copy(pendingStage = null, pendingDown = false)) }
 
     /** Stufe für Widget, Hintergrundbild und Uhr (ohne Nachtragen). */
     fun stage(ctx: Context): GrowthStage = Growth.stage(load(ctx))
@@ -144,9 +149,14 @@ fun EggCanvas(figure: PetFigure, cracks: Int, shakeAtMs: Long?, modifier: Modifi
     }
 }
 
-/** Zeile unter dem Namen: Fortschritt bis zur nächsten Stufe. */
+/** Zeile unter dem Namen: Fortschritt bis zur nächsten Stufe, oder Warnung vor dem Rückfall. */
 @Composable
 fun GrowthProgress(g: GrowthInfo, onScene: Boolean) {
+    g.risk?.let { r ->
+        Text("⚠️ Vorsicht: Noch ${r.badDaysLeft} schlechte ${if (r.badDaysLeft == 1) "Tag" else "Tage"}, dann wird dein Wesen wieder ${article(r.to)}",
+            style = MaterialTheme.typography.labelSmall, color = Color(0xFFE08A1E), modifier = Modifier.padding(top = 4.dp))
+        return
+    }
     val p = g.progress ?: return
     val next = g.stage.next ?: return
     Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
@@ -160,8 +170,8 @@ fun GrowthProgress(g: GrowthInfo, onScene: Boolean) {
 
 /** Feier beim Aufstieg (unten eingeblendet, wie das Entwicklungs-Banner). */
 @Composable
-fun GrowthBanner(name: String, stage: GrowthStage, onAck: () -> Unit) {
-    val text = when (stage) {
+fun GrowthBanner(name: String, stage: GrowthStage, down: Boolean, onAck: () -> Unit) {
+    val text = if (down) "$name ist wieder ${article(stage)} geworden. Mit guter Pflege wächst es wieder." else when (stage) {
         GrowthStage.BABY -> "$name ist geschlüpft! Willkommen, kleines Baby."
         GrowthStage.CHILD -> "$name ist jetzt ein Kind! Größer, mutiger, neugieriger."
         GrowthStage.TEEN -> "$name ist jetzt jugendlich! Fast schon groß."
@@ -170,13 +180,19 @@ fun GrowthBanner(name: String, stage: GrowthStage, onAck: () -> Unit) {
     }
     Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("🎉", style = MaterialTheme.typography.headlineSmall)
+            Text(if (down) "🥺" else "🎉", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.width(10.dp))
             Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.width(8.dp))
-            Button(onClick = onAck) { Text("Juhu!") }
+            Button(onClick = onAck) { Text(if (down) "Ich pass auf" else "Juhu!") }
         }
     }
+}
+
+/** „ein Baby“, „ein Kind“, „jugendlich“, „erwachsen“ */
+fun article(s: GrowthStage) = when (s) {
+    GrowthStage.BABY -> "ein Baby"; GrowthStage.CHILD -> "ein Kind"; GrowthStage.TEEN -> "jugendlich"
+    GrowthStage.ADULT -> "erwachsen"; GrowthStage.EGG -> "ein Ei"
 }
 
 /** Kopfzeile: „Lumo · Kind · Tag 9“. */

@@ -635,8 +635,9 @@ fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         state.growth?.pending?.let { st ->
-            LaunchedEffect(st) { onCelebrate() }               // Konfetti + Drehung beim Aufstieg
-            Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { GrowthBanner(rememberCurrentFigure().name, st, onAckGrowth) }
+            val down = state.growth?.pendingDown == true
+            LaunchedEffect(st) { if (!down) onCelebrate() }    // Konfetti + Drehung beim Aufstieg (nicht beim Rückfall)
+            Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { GrowthBanner(rememberCurrentFigure().name, st, down, onAckGrowth) }
         }
         state.evolutionEvent?.let { Box(Modifier.shadow(10.dp, RoundedCornerShape(16.dp))) { EvolutionBanner(it, onAckEvolution) } }
         if (state.newScenes.isNotEmpty()) {

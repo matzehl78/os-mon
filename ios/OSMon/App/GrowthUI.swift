@@ -11,6 +11,8 @@ struct GrowthInfo: Equatable {
     let progress: Double?
     let daysLeft: Int?
     var pending: GrowthStage? { state.pendingStage }
+    var pendingDown: Bool { state.pendingDown ?? false }
+    var risk: GrowthRisk? { Growth.risk(state) }
 }
 
 enum GrowthStore {
@@ -59,8 +61,13 @@ enum GrowthStore {
     }
 
     static func ackStage() {
-        var s = load(); s.pendingStage = nil; GrowthStorage.save(s)
+        var s = load(); s.pendingStage = nil; s.pendingDown = nil; GrowthStorage.save(s)
     }
+}
+
+/// „ein Baby“, „ein Kind“, „jugendlich“, „erwachsen“
+func growthArticle(_ s: GrowthStage) -> String {
+    switch s { case .baby: "ein Baby"; case .child: "ein Kind"; case .teen: "jugendlich"; case .adult: "erwachsen"; case .egg: "ein Ei" }
 }
 
 /// „Lumo · Kind · Tag 9“
@@ -71,7 +78,11 @@ func growthLabel(_ name: String, _ g: GrowthInfo) -> String {
 struct GrowthProgressView: View {
     let g: GrowthInfo
     var body: some View {
-        if let p = g.progress, let left = g.daysLeft, let next = g.stage.next {
+        if let r = g.risk {
+            Text("⚠️ Vorsicht: Noch \(r.badDaysLeft) schlechte \(r.badDaysLeft == 1 ? "Tag" : "Tage"), dann wird dein Wesen wieder \(growthArticle(r.to))")
+                .font(.caption2).foregroundStyle(.orange).padding(.top, 2)
+                .fixedSize(horizontal: false, vertical: true)
+        } else if let p = g.progress, let left = g.daysLeft, let next = g.stage.next {
             VStack(alignment: .leading, spacing: 2) {
                 ProgressView(value: p).tint(.green)
                 Text("Noch \(left) gute \(left == 1 ? "Tag" : "Tage") bis \(next.title)")
@@ -86,9 +97,11 @@ struct GrowthProgressView: View {
 struct GrowthBanner: View {
     let name: String
     let stage: GrowthStage
+    var down = false
     let onAck: () -> Void
 
     private var text: String {
+        if down { return "\(name) ist wieder \(growthArticle(stage)) geworden. Mit guter Pflege wächst es wieder." }
         switch stage {
         case .baby: "\(name) ist geschlüpft! Willkommen, kleines Baby."
         case .child: "\(name) ist jetzt ein Kind! Größer, mutiger, neugieriger."
@@ -100,9 +113,9 @@ struct GrowthBanner: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Text("🎉").font(.title)
+            Text(down ? "🥺" : "🎉").font(.title)
             Text(text).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
-            Button("Juhu!", action: onAck).buttonStyle(.borderedProminent)
+            Button(down ? "Ich pass auf" : "Juhu!", action: onAck).buttonStyle(.borderedProminent)
         }
         .padding(14)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))

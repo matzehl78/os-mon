@@ -15,18 +15,48 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth.stage(GrowthState(hatched: false, lastDay: d0)), .egg)
     }
 
-    func testOnlyGoodDaysCount() {
+    func testGoodAndBadDays() {
         var s = Growth.hatch(GrowthState(hatched: false, lastDay: d0), today: d0)
         XCTAssertEqual(s.pendingStage, .baby)
         s.pendingStage = nil
         s = Growth.closeDay(s, day: d0, avgWellbeing: 90)
         XCTAssertEqual(s.goodDays, 0)
-        s = Growth.closeDay(s, day: d0 + 1, avgWellbeing: 39.9)
-        s = Growth.closeDay(s, day: d0 + 2, avgWellbeing: nil)
-        s = Growth.closeDay(s, day: d0 + 3, avgWellbeing: 40)
+        s = Growth.closeDay(s, day: d0 + 1, avgWellbeing: 40)
+        s = Growth.closeDay(s, day: d0 + 2, avgWellbeing: 80)
+        s = Growth.closeDay(s, day: d0 + 3, avgWellbeing: nil)
         s = Growth.closeDay(s, day: d0 + 3, avgWellbeing: 80)
+        XCTAssertEqual(s.goodDays, 2)
+        s = Growth.closeDay(s, day: d0 + 4, avgWellbeing: 39.9)
         XCTAssertEqual(s.goodDays, 1)
-        XCTAssertEqual(s.lastDay, d0 + 3)
+        s = Growth.closeDay(s, day: d0 + 5, avgWellbeing: 10)
+        XCTAssertEqual(s.goodDays, 0)
+        XCTAssertEqual(s.lastDay, d0 + 5)
+        XCTAssertEqual(Growth.stage(s), .baby)
+        XCTAssertEqual(([nil, 40, 39, 19] as [Float?]).map { Growth.delta($0) }, [0, 1, -1, -2])
+    }
+
+    func testDropsBackWithBuffer() {
+        var s = GrowthState(hatched: true, goodDays: 14, lastDay: d0, stage: .child)
+        s = Growth.closeDay(s, day: d0 + 1, avgWellbeing: 30)
+        XCTAssertEqual(Growth.stage(s), .child); XCTAssertNil(s.pendingStage)
+        XCTAssertEqual(Growth.risk(s), GrowthRisk(badDaysLeft: 3, to: .baby))
+        s = Growth.closeDay(s, day: d0 + 2, avgWellbeing: 30)
+        s = Growth.closeDay(s, day: d0 + 3, avgWellbeing: 30)
+        XCTAssertEqual(Growth.stage(s), .child); XCTAssertEqual(Growth.risk(s)?.badDaysLeft, 1)
+        s = Growth.closeDay(s, day: d0 + 4, avgWellbeing: 30)
+        XCTAssertEqual(Growth.stage(s), .baby)
+        XCTAssertEqual(s.pendingStage, .baby); XCTAssertEqual(s.pendingDown, true)
+        XCTAssertNil(Growth.risk(s))
+        s.pendingStage = nil; s.pendingDown = nil
+        for i in 5...8 { s = Growth.closeDay(s, day: d0 + i, avgWellbeing: 70) }
+        XCTAssertEqual(s.goodDays, 14); XCTAssertEqual(Growth.stage(s), .child); XCTAssertEqual(s.pendingDown, false)
+    }
+
+    func testAdultCanFallBackToTeen() {
+        var s = GrowthState(hatched: true, goodDays: 84, lastDay: d0, stage: .adult)
+        XCTAssertNil(Growth.progress(s))
+        for i in 1...2 { s = Growth.closeDay(s, day: d0 + i, avgWellbeing: 10) }
+        XCTAssertEqual(Growth.stage(s), .teen); XCTAssertEqual(s.pendingDown, true)
     }
 
     func testEggDoesNotGrow() {
@@ -38,6 +68,7 @@ final class GrowthTests: XCTestCase {
         var s = GrowthState(hatched: true, goodDays: 13, lastDay: d0)
         s = Growth.closeDay(s, day: d0 + 1, avgWellbeing: 70)
         XCTAssertEqual(s.pendingStage, .child)
+        XCTAssertEqual(s.pendingDown, false)
         s.pendingStage = nil
         s = Growth.closeDay(s, day: d0 + 2, avgWellbeing: 70)
         XCTAssertNil(s.pendingStage)
@@ -51,6 +82,7 @@ final class GrowthTests: XCTestCase {
         XCTAssertNil(Growth.progress(GrowthState(hatched: false, lastDay: d0)))
         let m = Growth.migrated(hatchDay: d0 - 20, today: d0)
         XCTAssertEqual(m.goodDays, 20); XCTAssertEqual(Growth.stage(m), .child); XCTAssertEqual(m.lastDay, d0 - 1)
+        XCTAssertEqual(Growth.stage(GrowthState(hatched: true, goodDays: 50, lastDay: d0)), .teen)
     }
 
     func testCracksAndLook() {

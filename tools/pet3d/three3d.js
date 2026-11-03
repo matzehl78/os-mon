@@ -210,6 +210,19 @@ window.make3D = () => (() => {
     const hg = p.headGroup, hy = y => y - p.pivotY;
 
     // Akku-Herz
+    // Abstand zum Mund: das Herz darf den (gähnenden) Mund nie berühren → bei Bedarf tiefer und etwas kleiner
+    {
+      const mouthY = !SH.lumo && SH.face.my != null ? Y3(SH.face.my) : face.eyeY - face.eyeR - 0.03;
+      const limit = mouthY - 0.08 - 0.14 * 1.05 - 0.1;           // Unterkante Gähn-Mund minus Luft
+      const top = heartPos.y + heartPos.size * 0.5;
+      if (!SH.lumo && top > limit) {
+        // erst höchstens 0,1 tiefer (sonst rutscht es an die Bauchrundung), den Rest durch Verkleinern bei fester Unterkante
+        const over = top - limit, down = Math.min(0.1, over);
+        heartPos.y -= down;
+        const rest = Math.min(over - down, heartPos.size * 0.35);
+        if (rest > 0) { const bottom = heartPos.y - heartPos.size * 0.5; heartPos.size -= rest; heartPos.y = bottom + heartPos.size * 0.5; }
+      }
+    }
     // Als gewölbter Aufkleber: jeder Punkt folgt der Körperoberfläche (sonst steckt das Herz bei runden Figuren halb im Bauch)
     const bodyZ = SH.lumo ? (x, y) => 0.58 * Math.sqrt(Math.max(0, 1 - (x / 0.66) ** 2 - ((y - 0.66) / 0.62) ** 2)) : fz;
     heartPos.z = bodyZ(heartPos.x, heartPos.y) + 0.03;
@@ -381,7 +394,7 @@ window.make3D = () => (() => {
       return g;
     };
     p.mouths.radiant = openGroup(-0.05, 0.75);
-    p.mouths.yawn = openGroup(-0.08, 1.25);
+    p.mouths.yawn = openGroup(-0.08, 1.05);
     const wave = new T.CatmullRomCurve3(Array.from({ length: 9 }, (_, k) => new T.Vector3(-0.16 + k * 0.04, (k % 2 ? 0.022 : -0.022), 0)));
     p.mouths.stress = mk(new T.TubeGeometry(wave, 40, 0.018, 6, false), -0.05);
     // Wangen
@@ -574,7 +587,8 @@ window.make3D = () => (() => {
     // Zusätze
     Q.sweat.visible = stress;
     zz.visible = yawn || md === "hibernation";
-    zz.position.set(-1.25, Q.zzBase + (zz.visible && !reduce ? 0.08 * Math.sin(t * 2.5) : 0), 0.3);
+    const LZ = Array.isArray(STAGE) ? STAGE : LOOK[STAGE];              // „z Z“ wächst mit der Figur mit
+    zz.position.set(-1.25 * (LZ ? LZ[0] : 1), Q.zzBase * (LZ ? LZ[1] : 1) + (zz.visible && !reduce ? 0.08 * Math.sin(t * 2.5) : 0), 0.3);
     const bText = p.form ? ({ chatterling: "💬", bingeon: "📺", pixelo: "🎮", zenfuchs: "🦊", wandero: "🍃" }[p.form]) : "";
     if (bText !== lastBadge) { lastBadge = bText; setSpriteText(badge, bText); }
     badge.visible = !!bText;

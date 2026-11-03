@@ -85,7 +85,14 @@ final class TaskModel {
     var cheer: String? = nil
     var day: Int { TaskStore.today }
 
-    func update(_ l: [DayTask]) { tasks = l; TaskStore.save(l) }
+    init() {
+        // Auf der Uhr abgehakt → neu laden
+        NotificationCenter.default.addObserver(forName: .osmonTasksChanged, object: nil, queue: .main) { [weak self] _ in
+            self?.tasks = TaskStore.load()
+        }
+    }
+
+    func update(_ l: [DayTask]) { tasks = l; TaskStore.save(l); PhoneWatchBridge.shared.push() }
 
     @discardableResult
     func add(_ title: String, emoji: String, rule: TaskRepeat) -> Bool {

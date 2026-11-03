@@ -108,6 +108,9 @@ final class HomeViewModel: ObservableObject {
             festivalCard: FestivalStore.today(now) != nil && !FestivalStore.cardHidden(EpochDay.of(now)),
             season: SceneTheme.season(day: EpochDay.of(now)),
             seasonsOn: FestivalStore.seasons)
+
+        PhoneWatchBridge.shared.push(snapshot: t.snapshot, accessory: state.festival?.accessory,
+                                     form: evo.current?.form, updateExtras: true)
     }
 
     func hideFestivalCard() {

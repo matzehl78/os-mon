@@ -30,9 +30,19 @@ jobs:
           rc=$?
           grep -E "error:|Test Case .* failed|Executed [0-9]+ test|\*\* (BUILD|TEST)" xcodebuild.log | sort -u | head -200
           exit $rc
+      - name: Apple Watch bauen
+        run: |
+          set +e
+          xcodebuild build -project OSMon.xcodeproj -scheme OSMonWatch \
+            -destination "generic/platform=watchOS Simulator" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO > watch.log 2>&1
+          rc=$?
+          grep -E "error:|\*\* BUILD" watch.log | sort -u | head -100
+          exit $rc
       - name: Log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-xcodebuild-log
-          path: ios/xcodebuild.log
+          path: |
+            ios/xcodebuild.log
+            ios/watch.log

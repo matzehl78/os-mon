@@ -16,6 +16,7 @@ struct OSMonApp: App {
         DemoMode.prepare()
         #endif
         PushResponder.shared.setUp()
+        PhoneWatchBridge.shared.start()                 // Apple Watch (falls gekoppelt)
     }
 
     var body: some Scene {

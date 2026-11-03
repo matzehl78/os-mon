@@ -36,6 +36,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.osmon.PetSync
+import com.example.osmon.PhoneWearBridge
 import com.example.osmon.R
 import com.example.osmon.engine.DayTask
 import com.example.osmon.engine.DayTasks
@@ -65,6 +68,7 @@ import com.example.osmon.engine.TaskStage
 import com.example.osmon.figure.PetFigures
 import java.time.LocalDate
 import java.util.UUID
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -147,6 +151,12 @@ object TaskStore {
     }
 }
 
+/** Aufgaben wurden außerhalb der Oberfläche geändert (z. B. auf der Uhr abgehakt). */
+object TaskEvents {
+    val version = MutableStateFlow(0)
+    fun changed() { version.value++ }
+}
+
 /** Gemeinsamer Zustand für beide Karten und die Dialoge. */
 class TaskModel(private val ctx: Context) {
     var tasks by mutableStateOf(TaskStore.load(ctx))
@@ -154,7 +164,8 @@ class TaskModel(private val ctx: Context) {
     var cheer by mutableStateOf<String?>(null)          // kurzer Satz nach dem Abhaken
     val day get() = TaskStore.today()
 
-    fun update(list: List<DayTask>) { tasks = list; TaskStore.save(ctx, list) }
+    fun update(list: List<DayTask>) { tasks = list; TaskStore.save(ctx, list); PhoneWearBridge.push(ctx) }
+    fun reload() { tasks = TaskStore.load(ctx) }
     fun add(title: String, emoji: String, repeat: TaskRepeat): Boolean {
         if (!DayTasks.canAdd(tasks, day, title)) return false
         update(tasks + TaskStore.newTask(title, emoji, repeat)); return true
@@ -183,6 +194,8 @@ fun TasksSection(onCheer: (Boolean, String) -> Unit, demoSeed: Boolean = false) 
     var showAdd by remember { mutableStateOf(false) }
     var showKind by remember { mutableStateOf(false) }
     val view = LocalView.current
+    val changes by TaskEvents.version.collectAsState()
+    LaunchedEffect(changes) { if (changes > 0) model.reload() }
 
     val onToggle: (DayTask) -> Unit = { t ->
         val nowDone = !DayTasks.isDone(t, model.day)

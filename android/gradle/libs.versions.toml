@@ -10,6 +10,11 @@ glance = "1.1.1"
 work = "2.9.1"
 healthConnect = "1.1.0-alpha10"
 serializationJson = "1.7.3"
+playWearable = "19.0.0"
+wearCompose = "1.4.0"
+complications = "1.2.1"
+coroutinesPlay = "1.9.0"
+orgJson = "20240303"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -26,6 +31,12 @@ androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidge
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 androidx-health-connect = { group = "androidx.health.connect", name = "connect-client", version.ref = "healthConnect" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
+androidx-wear-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "wearCompose" }
+androidx-wear-compose-foundation = { group = "androidx.wear.compose", name = "compose-foundation", version.ref = "wearCompose" }
+androidx-wear-complications-source = { group = "androidx.wear.watchface", name = "watchface-complications-data-source-ktx", version.ref = "complications" }
+play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playWearable" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutinesPlay" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

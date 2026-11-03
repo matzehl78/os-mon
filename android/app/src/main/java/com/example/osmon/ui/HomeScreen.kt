@@ -124,6 +124,7 @@ import com.example.osmon.EvolutionScheduler
 import com.example.osmon.PetCopy
 import com.example.osmon.PetScheduler
 import com.example.osmon.PetSync
+import com.example.osmon.PhoneWearBridge
 import com.example.osmon.PetWidget
 import com.example.osmon.formBadge
 import com.example.osmon.formTitle
@@ -316,6 +317,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             seasonsOn = FestivalStore.seasons(ctx)
         )
         PetSync.updateWidgetIfNeeded(ctx, t.snapshot, force = forceWidget)
+        PhoneWearBridge.push(ctx, t.snapshot, _state.value.festival?.accessory, evo.current?.form, updateExtras = true)
     }
 
     private fun quests(i: Inputs, now: Long): List<Quest> = buildList {

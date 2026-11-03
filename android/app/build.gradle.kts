@@ -44,8 +44,10 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.health.connect)
+    implementation(libs.play.services.wearable)          // Wear-OS-Uhr (PhoneWearBridge.kt)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.org.json)                    // echtes org.json für WearPayloadTest
 }

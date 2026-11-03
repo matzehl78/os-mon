@@ -3,7 +3,7 @@ name: Android
 
 on:
   push:
-    paths-ignore: ["ios/**", ".github/workflows/ios.yml"]
+    paths-ignore: ["ios/**", ".github/workflows/ios.yml", ".github/workflows/screenshots.yml"]
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
         with:
           gradle-version: "8.11.1"       # wie gradle-wrapper.properties (Wrapper-JAR liegt nicht im Repo)
       - name: Bauen
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+        run: gradle --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug
       - name: Unit-Tests
         run: gradle --no-daemon :app:testDebugUnitTest
       - name: Testübersicht
@@ -48,4 +48,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: osmon-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/wear/build/outputs/apk/debug/*.apk

@@ -566,7 +566,7 @@ fun HomeContent(
                     Pet3DView(
                         Pet3DState(figure.id, state.festival?.accessory, snap.mood, snap.overlays, snap.stats.e, snap.stats.r,
                             state.evolution?.form, state.evolution?.branch, g?.stage,
-                            if (egg) Growth.cracks(g?.eggTaps ?? 0) else null, platform = !hasScene),
+                            if (egg) Growth.cracks(g?.eggTaps ?: 0) else null, platform = !hasScene),
                         Modifier.size(if (hasScene) 300.dp else 250.dp).semantics {
                             contentDescription = if (egg) "Ei. Antippen, damit es schlüpft." else "Dein Wesen: ${moodTitle(snap.mood)}. Antippen für eine Reaktion, ziehen zum Drehen."
                         },

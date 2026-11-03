@@ -118,6 +118,9 @@ final class HomeViewModel: ObservableObject {
     /// Ei antippen; nach dem letzten Tippen schlüpft das Wesen (Banner „geschlüpft“).
     func tapEgg() { state.growth = GrowthStore.tapEgg() }
 
+    /// Grob behandelt (wildes Antippen, Schütteln).
+    func rough() { state.growth = GrowthStore.addRough() }
+
     func ackGrowth() {
         GrowthStore.ackStage()
         state.growth = GrowthStore.info()
@@ -220,7 +223,8 @@ struct HomeScreen: View {
             onDismissMorning: { model.dismissMorning() },
             onHideFestival: { model.hideFestivalCard() },
             onTapEgg: { model.tapEgg() },
-            onAckGrowth: { model.ackGrowth() })
+            onAckGrowth: { model.ackGrowth() },
+            onRough: { model.rough() })
             .fullScreenCover(isPresented: $showBedtime, onDismiss: { model.refresh() }) { BedtimeView { showBedtime = false } }
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
@@ -249,6 +253,7 @@ struct HomeContent: View {
     var onHideFestival: () -> Void = {}
     var onTapEgg: () -> Void = {}
     var onAckGrowth: () -> Void = {}
+    var onRough: () -> Void = {}
     var demoScrollTo: String? = nil               // nur Screenshots: z. B. "review"
 
     private var snap: PetSnapshot { state.snapshot }
@@ -261,6 +266,8 @@ struct HomeContent: View {
     @State private var stageFrame: CGRect = .zero
     @State private var headerFrame: CGRect = .zero
     @State private var eggShakeAt: Date? = nil
+    @StateObject private var shake = ShakeMonitor()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var topInset: CGFloat = 0
     @State private var ringsFrame: CGRect = .zero
     // Antippen
@@ -356,6 +363,11 @@ struct HomeContent: View {
             }
         }
         .animation(.spring(duration: 0.35), value: state.newScenes.isEmpty)
+        // Grob: kräftig schütteln (nach dem Schlüpfen, nur solange sichtbar)
+        .onAppear { startShake() }
+        .onDisappear { shake.stop() }
+        .onChange(of: scenePhase) { _, p in if p == .active { startShake() } else { shake.stop() } }
+        .onChange(of: state.growth?.stage) { _, _ in startShake() }   // Handler mit aktuellem Stand
         .background(
             Group {
                 if hasScene { Color(.systemBackground) }
@@ -432,6 +444,16 @@ struct HomeContent: View {
         if all { celebrateAt = .now }
     }
 
+    private func startShake() {
+        shake.onShake = {
+            guard let g = state.growth, g.stage != .egg else { return }
+            reaction = ActiveReaction(kind: .dizzy, start: .now, say: "Hilfe! Bitte nicht schütteln!")
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            onRough()
+        }
+        shake.start()
+    }
+
     private func celebrate() {
         reaction = picker.start(.spin)
         celebrateAt = .now
@@ -441,6 +463,7 @@ struct HomeContent: View {
     private func tapPet() {
         let k = picker.pick(mood: snap.mood, overlays: snap.overlays)
         reaction = picker.start(k)
+        if k == .dizzy { onRough() }                       // 5× in 3 s = grob
         switch k {
         case .dizzy, .startle: UINotificationFeedbackGenerator().notificationOccurred(.warning)
         case .weak, .sleepy, .night: UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.6)

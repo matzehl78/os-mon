@@ -52,7 +52,8 @@ data class GrowthInfo(
     val stage: GrowthStage,
     val eggTaps: Int,
     val ageDays: Int,                         // Tage seit dem Schlüpfen
-    val progress: Pair<Float, Int>?           // (Anteil, fehlende gute Tage) bis zur nächsten Stufe
+    val progress: Pair<Float, Int>?,          // (Anteil, fehlende gute Tage) bis zur nächsten Stufe
+    val roughToday: Int = 0                   // grobe Aktionen heute (wildes Antippen, Schütteln)
 ) {
     val pending: GrowthStage? get() = state.pendingStage
     val pendingDown: Boolean get() = state.pendingDown
@@ -106,7 +107,7 @@ object GrowthStore {
         val t = today()
         if (s.hatched && s.lastDay < t - 1) {
             val from = maxOf(s.lastDay + 1, t - Growth.MAX_CATCH_UP)
-            for (d in from until t) s = Growth.closeDay(s, d, DayLog.average(ctx, d))
+            for (d in from until t) s = Growth.closeDay(s, d, DayLog.average(ctx, d), rough(ctx, d))
             save(ctx, s)
         }
         return info(ctx, s)
@@ -114,7 +115,17 @@ object GrowthStore {
 
     fun info(ctx: Context, s: GrowthState = load(ctx)) = GrowthInfo(
         s, Growth.stage(s), p(ctx).getInt(TAPS, 0),
-        s.hatchedDay?.let { (today() - it).toInt() } ?: 0, Growth.progress(s))
+        s.hatchedDay?.let { (today() - it).toInt() } ?: 0, Growth.progress(s), rough(ctx, today()))
+
+    /** Grobe Aktionen eines Tages (wildes Antippen, Schütteln). */
+    fun rough(ctx: Context, day: Long) = p(ctx).getInt("growth.rough.$day", 0)
+
+    /** Grobe Aktion zählen (nur nach dem Schlüpfen). */
+    fun addRough(ctx: Context): GrowthInfo {
+        val s = load(ctx)
+        if (s.hatched) { val d = today(); p(ctx).edit().putInt("growth.rough.$d", rough(ctx, d) + 1).apply() }
+        return info(ctx, s)
+    }
 
     /** Ei antippen. Gibt den neuen Stand zurück (nach Growth.EGG_TAPS geschlüpft). */
     fun tapEgg(ctx: Context): GrowthInfo {
@@ -152,6 +163,11 @@ fun EggCanvas(figure: PetFigure, cracks: Int, shakeAtMs: Long?, modifier: Modifi
 /** Zeile unter dem Namen: Fortschritt bis zur nächsten Stufe, oder Warnung vor dem Rückfall. */
 @Composable
 fun GrowthProgress(g: GrowthInfo, onScene: Boolean) {
+    if (g.roughToday > 0 && g.stage != GrowthStage.EGG) {
+        Text(if (g.roughToday >= Growth.ROUGH_LIMIT) "😣 Heute zu grob behandelt – der Tag zählt als schlecht."
+            else "😣 Heute ${g.roughToday}× grob behandelt – ab ${Growth.ROUGH_LIMIT}× zählt der Tag als schlecht.",
+            style = MaterialTheme.typography.labelSmall, color = Color(0xFFD9667A), modifier = Modifier.padding(top = 4.dp))
+    }
     g.risk?.let { r ->
         Text("⚠️ Vorsicht: Noch ${r.badDaysLeft} schlechte ${if (r.badDaysLeft == 1) "Tag" else "Tage"}, dann wird dein Wesen wieder ${article(r.to)}",
             style = MaterialTheme.typography.labelSmall, color = Color(0xFFE08A1E), modifier = Modifier.padding(top = 4.dp))
@@ -199,4 +215,38 @@ fun article(s: GrowthStage) = when (s) {
 fun growthLabel(name: String, g: GrowthInfo): String = when (g.stage) {
     GrowthStage.EGG -> "$name · Ei"
     else -> "$name · ${g.stage.title} · Tag ${g.ageDays + 1}"
+}
+
+/**
+ * Erkennt kräftiges Schütteln (ab ca. 2,6 g, höchstens einmal pro 1,5 s), nur solange der Bildschirm sichtbar ist.
+ * Ohne Beschleunigungssensor passiert nichts.
+ */
+@Composable
+fun ShakeDetector(onShake: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val latest = androidx.compose.runtime.rememberUpdatedState(onShake)
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val sm = ctx.getSystemService(Context.SENSOR_SERVICE) as? android.hardware.SensorManager
+        val acc = sm?.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
+        var last = 0L
+        val listener = object : android.hardware.SensorEventListener {
+            override fun onSensorChanged(e: android.hardware.SensorEvent) {
+                val (x, y, z) = Triple(e.values[0], e.values[1], e.values[2])
+                val g = kotlin.math.sqrt(x * x + y * y + z * z) / android.hardware.SensorManager.GRAVITY_EARTH
+                val now = SystemClock.uptimeMillis()
+                if (g > 2.6f && now - last > 1500) { last = now; latest.value() }
+            }
+            override fun onAccuracyChanged(s: android.hardware.Sensor?, a: Int) {}
+        }
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, ev ->
+            when (ev) {
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> acc?.let { sm.registerListener(listener, it, android.hardware.SensorManager.SENSOR_DELAY_UI) }
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> sm?.unregisterListener(listener)
+                else -> {}
+            }
+        }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs); sm?.unregisterListener(listener) }
+    }
 }

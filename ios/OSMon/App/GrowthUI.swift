@@ -1,6 +1,7 @@
 // GrowthUI.swift: Wachsen vom Ei bis zum Erwachsenen – Nachtragen, Ei antippen, Banner. Gegenstück: GrowthUI.kt.
 // Regeln: Shared/Logic/Growth.swift. Ei auf der Startseite antippen (5×, mit Rissen) → schlüpft als Baby.
 
+import CoreMotion
 import SwiftUI
 
 struct GrowthInfo: Equatable {
@@ -10,6 +11,7 @@ struct GrowthInfo: Equatable {
     let ageDays: Int
     let progress: Double?
     let daysLeft: Int?
+    var roughToday = 0                 // grobe Aktionen heute (wildes Antippen, Schütteln)
     var pending: GrowthStage? { state.pendingStage }
     var pendingDown: Bool { state.pendingDown ?? false }
     var risk: GrowthRisk? { Growth.risk(state) }
@@ -40,7 +42,9 @@ enum GrowthStore {
         var s = load()
         let t = today
         if s.hatched && s.lastDay < t - 1 {
-            for d in max(s.lastDay + 1, t - Growth.maxCatchUp)..<t { s = Growth.closeDay(s, day: d, avgWellbeing: DayLog.average(day: d)) }
+            for d in max(s.lastDay + 1, t - Growth.maxCatchUp)..<t {
+                s = Growth.closeDay(s, day: d, avgWellbeing: DayLog.average(day: d), rough: rough(d))
+            }
             GrowthStorage.save(s)
         }
         return info(s)
@@ -49,7 +53,18 @@ enum GrowthStore {
     static func info(_ s: GrowthState = load()) -> GrowthInfo {
         let p = Growth.progress(s)
         return GrowthInfo(state: s, stage: Growth.stage(s), eggTaps: GrowthStorage.eggTaps,
-                          ageDays: s.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft)
+                          ageDays: s.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft,
+                          roughToday: rough(today))
+    }
+
+    /// Grobe Aktionen eines Tages (wildes Antippen, Schütteln).
+    static func rough(_ day: Int) -> Int { STShared.defaults.integer(forKey: "growth.rough.\(day)") }
+
+    /// Grobe Aktion zählen (nur nach dem Schlüpfen).
+    static func addRough() -> GrowthInfo {
+        let s = load()
+        if s.hatched { STShared.defaults.set(rough(today) + 1, forKey: "growth.rough.\(today)") }
+        return info(s)
     }
 
     static func tapEgg() -> GrowthInfo {
@@ -78,6 +93,12 @@ func growthLabel(_ name: String, _ g: GrowthInfo) -> String {
 struct GrowthProgressView: View {
     let g: GrowthInfo
     var body: some View {
+        if g.roughToday > 0 && g.stage != .egg {
+            Text(g.roughToday >= Growth.roughLimit ? "😣 Heute zu grob behandelt – der Tag zählt als schlecht."
+                 : "😣 Heute \(g.roughToday)× grob behandelt – ab \(Growth.roughLimit)× zählt der Tag als schlecht.")
+                .font(.caption2).foregroundStyle(.pink).padding(.top, 2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
         if let r = g.risk {
             Text("⚠️ Vorsicht: Noch \(r.badDaysLeft) schlechte \(r.badDaysLeft == 1 ? "Tag" : "Tage"), dann wird dein Wesen wieder \(growthArticle(r.to))")
                 .font(.caption2).foregroundStyle(.orange).padding(.top, 2)
@@ -127,4 +148,23 @@ struct GrowthBanner: View {
 func eggLine(_ g: GrowthInfo?) -> String? {
     guard let g, g.stage == .egg else { return nil }
     return g.eggTaps == 0 ? "Da liegt ein Ei! Tippe es an …" : "Es knackt! Noch \(Growth.eggTaps - g.eggTaps)× tippen …"
+}
+
+/// Erkennt kräftiges Schütteln (ab ca. 2,6 g, höchstens einmal pro 1,5 s), solange der Startbildschirm sichtbar ist.
+final class ShakeMonitor: ObservableObject {
+    private let motion = CMMotionManager()
+    private var last = Date.distantPast
+    var onShake: () -> Void = {}
+
+    func start() {
+        guard motion.isAccelerometerAvailable, !motion.isAccelerometerActive else { return }
+        motion.accelerometerUpdateInterval = 1.0 / 30
+        motion.startAccelerometerUpdates(to: .main) { [weak self] data, _ in
+            guard let self, let a = data?.acceleration else { return }
+            let g = (a.x * a.x + a.y * a.y + a.z * a.z).squareRoot()
+            if g > 2.6, Date().timeIntervalSince(self.last) > 1.5 { self.last = Date(); self.onShake() }
+        }
+    }
+
+    func stop() { motion.stopAccelerometerUpdates() }
 }

@@ -277,6 +277,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     /** Ei antippen; nach dem letzten Tippen schlüpft das Wesen (Banner „geschlüpft“). */
     fun tapEgg() { _state.value = _state.value.copy(growth = GrowthStore.tapEgg(ctx)) }
 
+    /** Grob behandelt (wildes Antippen, Schütteln). */
+    fun rough() { _state.value = _state.value.copy(growth = GrowthStore.addRough(ctx)) }
+
     fun ackGrowth() {
         GrowthStore.ackStage(ctx)
         _state.value = _state.value.copy(growth = GrowthStore.info(ctx))
@@ -385,7 +388,8 @@ fun HomeScreen(
         onDismissMorning = vm::dismissMorning,
         onHideFestival = vm::hideFestivalCard,
         onTapEgg = vm::tapEgg,
-        onAckGrowth = vm::ackGrowth
+        onAckGrowth = vm::ackGrowth,
+        onRough = vm::rough
     )
 }
 
@@ -408,6 +412,7 @@ fun HomeContent(
     onHideFestival: () -> Unit = {},
     onTapEgg: () -> Unit = {},
     onAckGrowth: () -> Unit = {},
+    onRough: () -> Unit = {},
     scene: Scene = rememberCurrentScene()
 ) {
     val snap = state.snapshot
@@ -440,6 +445,7 @@ fun HomeContent(
         val t = LocalTime.now()
         val k = picker.pick(snap.mood, snap.overlays, t.hour + t.minute / 60f, LocalDate.now().toEpochDay(), now)
         reaction = picker.start(k, now)
+        if (k == ReactionKind.DIZZY) onRough()          // 5× in 3 s = grob
         view.performHapticFeedback(
             when (k) {
                 ReactionKind.DIZZY, ReactionKind.STARTLE -> HapticFeedbackConstants.LONG_PRESS
@@ -448,6 +454,13 @@ fun HomeContent(
             }
         )
         Unit
+    }
+
+    // Grob: kräftig schütteln (nach dem Schlüpfen)
+    if (state.growth?.let { it.stage != GrowthStage.EGG } == true) ShakeDetector {
+        reaction = ActiveReaction(ReactionKind.DIZZY, SystemClock.uptimeMillis(), "Hilfe! Bitte nicht schütteln!")
+        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        onRough()
     }
 
     Box(Modifier.fillMaxSize()) {

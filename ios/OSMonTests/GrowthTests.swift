@@ -59,6 +59,17 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth.stage(s), .teen); XCTAssertEqual(s.pendingDown, true)
     }
 
+    func testRoughBehaviour() {
+        XCTAssertEqual(Growth.delta(80, rough: 2), 1)
+        XCTAssertEqual(Growth.delta(80, rough: 3), -1)
+        XCTAssertEqual(Growth.delta(nil, rough: 3), -1)
+        XCTAssertEqual(Growth.delta(30, rough: 3), -2)
+        XCTAssertEqual(Growth.delta(10, rough: 5), -3)
+        var s = GrowthState(hatched: true, goodDays: 5, lastDay: d0, stage: .baby)
+        s = Growth.closeDay(s, day: d0 + 1, avgWellbeing: 80, rough: 4)
+        XCTAssertEqual(s.goodDays, 4)
+    }
+
     func testEggDoesNotGrow() {
         let egg = GrowthState(hatched: false, lastDay: d0)
         XCTAssertEqual(Growth.closeDay(egg, day: d0 + 1, avgWellbeing: 90), egg)

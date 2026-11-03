@@ -89,7 +89,7 @@ jobs:
           shot 37_kind_lila             light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila -OSMonMood content -OSMonStage child -OSMonGrowUp YES
           shot 38_jugend_glut           light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure glut -OSMonMood radiant -OSMonStage teen
           shot 39_rueckfall_minto       light -OSMonDemo home -OSMonScene zen         -OSMonFigure minto -OSMonMood sick -OSMonStage child -OSMonDown YES
-          shot 40_warnung_kasto         light -OSMonDemo home -OSMonScene raumstation -OSMonFigure kasto -OSMonMood tired -OSMonStage teen -OSMonRisk YES
+          shot 40_warnung_kasto         light -OSMonDemo home -OSMonScene raumstation -OSMonFigure kasto -OSMonMood tired -OSMonStage teen -OSMonRisk YES -OSMonRough 2
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

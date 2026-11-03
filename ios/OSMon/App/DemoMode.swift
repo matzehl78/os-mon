@@ -64,7 +64,8 @@ enum DemoMode {
             if flag("OSMonRisk") { g.goodDays = st.minDays - 2 }                   // Warnung vor dem Rückfall
             let p = Growth.progress(g)
             s.growth = GrowthInfo(state: g, stage: st, eggTaps: args.integer(forKey: "OSMonEggTaps"),
-                                  ageDays: g.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft)
+                                  ageDays: g.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft,
+                                  roughToday: args.integer(forKey: "OSMonRough"))
         }
         return s
     }

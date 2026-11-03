@@ -64,6 +64,17 @@ class GrowthTest {
         assertEquals(GrowthStage.TEEN, Growth.stage(s)); assertEquals(true, s.pendingDown)
     }
 
+    @Test fun roughBehaviour() {
+        assertEquals(1, Growth.delta(80f, 2))              // 2× grob: noch kein Abzug
+        assertEquals(-1, Growth.delta(80f, 3))             // guter Tag wird schlecht
+        assertEquals(-1, Growth.delta(null, 3))            // auch ohne Messung
+        assertEquals(-2, Growth.delta(30f, 3))             // kränklich + grob
+        assertEquals(-3, Growth.delta(10f, 5))             // Winterschlaf + grob
+        var s = GrowthState(hatched = true, goodDays = 5, lastDay = d0, stage = GrowthStage.BABY)
+        s = Growth.closeDay(s, d0 + 1, 80f, rough = 4)
+        assertEquals(4, s.goodDays)
+    }
+
     @Test fun eggDoesNotGrow() {
         val egg = GrowthState(hatched = false, lastDay = d0)
         assertEquals(egg, Growth.closeDay(egg, d0 + 1, 90f))

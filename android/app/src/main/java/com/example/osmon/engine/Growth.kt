@@ -3,7 +3,9 @@
 //
 // Ei → (antippen bis es schlüpft) → Baby → Kind → Jugend → Erwachsen.
 // Wachstumstage je abgeschlossenem Tag (mittleres Wohlbefinden): gut (>= 40) +1, kränklich (20–39) −1,
-// Winterschlaf (< 20) −2, ohne Messung 0. Aufstieg, sobald die Grenze der nächsten Stufe erreicht ist.
+// Winterschlaf (< 20) −2, ohne Messung 0. Grobes Verhalten (wildes Antippen, Schütteln): ab ROUGH_LIMIT
+// groben Aktionen am Tag zählt der Tag als schlecht (höchstens −1, ein ohnehin schlechter Tag eine Stufe schlimmer).
+// Aufstieg, sobald die Grenze der nächsten Stufe erreicht ist.
 // Rückfall um eine Stufe, wenn die Tage mehr als DROP_BUFFER unter die Grenze der aktuellen Stufe fallen
 // (Puffer gegen Hin und Her). Nie zurück ins Ei; Baby ist das Minimum.
 // Bei lauter guten Tagen ist das Wesen nach 12 Wochen erwachsen, realistisch nach etwa 3 Monaten.
@@ -38,6 +40,7 @@ object Growth {
     const val GOOD_MIN = 40f         // ab hier „nicht kränklich“ (Mood.SICK liegt darunter)
     const val SEVERE_MAX = 20f       // darunter Winterschlaf → doppelt schlecht
     const val DROP_BUFFER = 3
+    const val ROUGH_LIMIT = 3        // grobe Aktionen pro Tag, ab denen der Tag schlecht zählt
     const val EGG_TAPS = 5
     const val MAX_CATCH_UP = 120
 
@@ -48,19 +51,23 @@ object Growth {
 
     fun isGood(avgWellbeing: Float?) = avgWellbeing != null && avgWellbeing >= GOOD_MIN
 
-    /** Änderung der Wachstumstage für einen Tag. */
-    fun delta(avgWellbeing: Float?): Int = when {
-        avgWellbeing == null -> 0
-        avgWellbeing >= GOOD_MIN -> 1
-        avgWellbeing < SEVERE_MAX -> -2
-        else -> -1
+    /** Änderung der Wachstumstage für einen Tag (rough = grobe Aktionen an diesem Tag). */
+    fun delta(avgWellbeing: Float?, rough: Int = 0): Int {
+        val base = when {
+            avgWellbeing == null -> 0
+            avgWellbeing >= GOOD_MIN -> 1
+            avgWellbeing < SEVERE_MAX -> -2
+            else -> -1
+        }
+        if (rough < ROUGH_LIMIT) return base
+        return if (base < 0) base - 1 else -1
     }
 
     /** Tag abschließen (aufsteigend). Bereits ausgewertete Tage und Tage vor dem Schlüpfen werden ignoriert. */
-    fun closeDay(s: GrowthState, day: Long, avgWellbeing: Float?): GrowthState {
+    fun closeDay(s: GrowthState, day: Long, avgWellbeing: Float?, rough: Int = 0): GrowthState {
         if (!s.hatched || day <= s.lastDay) return s
         val cur = stage(s)
-        val days = (s.goodDays + delta(avgWellbeing)).coerceAtLeast(0)
+        val days = (s.goodDays + delta(avgWellbeing, rough)).coerceAtLeast(0)
         val nx = cur.next
         val prev = cur.previous
         val new = when {

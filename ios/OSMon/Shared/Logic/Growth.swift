@@ -3,7 +3,9 @@
 //
 // Ei → (antippen bis es schlüpft) → Baby → Kind → Jugend → Erwachsen.
 // Wachstumstage je abgeschlossenem Tag (mittleres Wohlbefinden): gut (>= 40) +1, kränklich (20–39) −1,
-// Winterschlaf (< 20) −2, ohne Messung 0. Aufstieg, sobald die Grenze der nächsten Stufe erreicht ist.
+// Winterschlaf (< 20) −2, ohne Messung 0. Grobes Verhalten (wildes Antippen, Schütteln): ab roughLimit
+// groben Aktionen am Tag zählt der Tag als schlecht (höchstens −1, ein ohnehin schlechter Tag eine Stufe schlimmer).
+// Aufstieg, sobald die Grenze der nächsten Stufe erreicht ist.
 // Rückfall um eine Stufe, wenn die Tage mehr als dropBuffer unter die Grenze der aktuellen Stufe fallen.
 // Nie zurück ins Ei; Baby ist das Minimum.
 
@@ -44,6 +46,7 @@ enum Growth {
     static let goodMin: Float = 40
     static let severeMax: Float = 20
     static let dropBuffer = 3
+    static let roughLimit = 3
     static let eggTaps = 5
     static let maxCatchUp = 120
 
@@ -55,16 +58,18 @@ enum Growth {
 
     static func isGood(_ avg: Float?) -> Bool { (avg ?? -1) >= goodMin }
 
-    static func delta(_ avg: Float?) -> Int {
-        guard let avg else { return 0 }
-        return avg >= goodMin ? 1 : avg < severeMax ? -2 : -1
+    static func delta(_ avg: Float?, rough: Int = 0) -> Int {
+        let base: Int
+        if let avg { base = avg >= goodMin ? 1 : avg < severeMax ? -2 : -1 } else { base = 0 }
+        guard rough >= roughLimit else { return base }
+        return base < 0 ? base - 1 : -1
     }
 
-    static func closeDay(_ s: GrowthState, day: Int, avgWellbeing: Float?) -> GrowthState {
+    static func closeDay(_ s: GrowthState, day: Int, avgWellbeing: Float?, rough: Int = 0) -> GrowthState {
         guard s.hatched, day > s.lastDay else { return s }
         let cur = stage(s)
         var c = s
-        c.goodDays = max(0, s.goodDays + delta(avgWellbeing))
+        c.goodDays = max(0, s.goodDays + delta(avgWellbeing, rough: rough))
         c.lastDay = day
         var new = cur
         if let nx = cur.next, c.goodDays >= nx.minDays { new = nx }

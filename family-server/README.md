@@ -15,7 +15,9 @@ Zwei separate native Eltern-Apps und ein optionaler Familienserver. Noch keine S
 - Beidseitiges Trennen; Elternzugang löschen entfernt alle zugehörigen Server-Geräte.
 
 ## Was nicht enthalten ist
-Passwort-Login, Eltern-Einladungen, Kontowiederherstellung, automatische Wiederkopplung, QR-Scanner, Push-Zustellung, Fernsperren fremder Apps, Bildschirmzeit-/Schrittdatenübertragung, Premiumkäufe oder bezahltes Hosting. Elternhandy wechselt: am Kindergerät Verbindung entfernen und neu koppeln. Bei „Alles löschen“ versucht die Kinder-App auch, die Serververbindung zu löschen. Offline kann dies scheitern; Serverdaten dann über die Eltern-App löschen. Der lokale Zugang wird in jedem Fall entfernt.
+Passwort-Login, Eltern-Einladungen, Kontowiederherstellung, automatische Wiederkopplung, QR-Scanner, Push-Zustellung, Fernsperren fremder Apps, Bildschirmzeit-/Schrittdatenübertragung, Premiumkäufe oder bezahltes Hosting. In der Bestätigung zum Löschen des Elternzugangs kann alternativ nur der lokale Zugang entfernt werden, auch bei abgelaufenem Zugang oder unerreichbarem Server. Das löscht keine Serverdaten.
+
+Elternhandy wechselt: am Kindergerät Verbindung entfernen und neu koppeln. Bei „Alles löschen“ versucht die Kinder-App auch, die Serververbindung zu löschen. Offline kann dies scheitern; Serverdaten dann über die Eltern-App löschen. Der lokale Zugang wird in jedem Fall entfernt.
 
 ## Lokal testen
 ```sh

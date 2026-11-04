@@ -62,6 +62,7 @@ class FamilyTests(unittest.TestCase):
     def test_expired_parent_revokes_children(self):
         self.claim();self.now+=91*86400
         self.assert_error(401,'GET','/v1/device',self.child)
+        self.assertEqual(self.s.db.execute('SELECT count(*) FROM devices').fetchone()[0],0)
     def test_tokens_and_code_are_stored_hashed(self):
         dump=''.join(self.s.db.iterdump())
         for secret in [self.p,self.other,self.child,self.pair['code']]:self.assertNotIn(secret,dump)

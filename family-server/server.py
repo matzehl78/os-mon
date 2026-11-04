@@ -64,6 +64,7 @@ class Store:
             now = self.clock()
             self.db.execute('DELETE FROM devices WHERE owner IS NULL AND expires<?', (now,))
             self.db.execute('DELETE FROM parents WHERE expires<?', (now,))
+            self.db.commit()  # Expiry cleanup must survive a subsequently rejected request.
             if method == 'POST' and path == '/v1/parents':
                 raw = secrets.token_urlsafe(32)
                 self.db.execute('INSERT INTO parents VALUES (?,?)', (digest(raw), now+90*86400))

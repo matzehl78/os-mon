@@ -76,7 +76,12 @@ private fun ParentsHome() {
     }
     if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Zugang löschen?") }, text = { Text("Alle Geräte werden getrennt.") }, confirmButton = {
         TextButton(onClick = { confirm = false; run { FamilyApi(connection!!).call("DELETE", "/v1/parents"); FamilyVault.clear(ctx); connection = null; children = emptyList() } }) { Text("Löschen") }
-    }, dismissButton = { TextButton(onClick = { confirm = false }) { Text("Abbrechen") } })
+    }, dismissButton = {
+        Column {
+            TextButton(onClick = { confirm = false; FamilyVault.clear(ctx); connection = null; children = emptyList(); message = "Lokaler Zugang entfernt. Serverdaten werden dadurch nicht gelöscht." }) { Text("Nur lokalen Zugang entfernen") }
+            TextButton(onClick = { confirm = false }) { Text("Abbrechen") }
+        }
+    })
 }
 
 private data class TaskDraft(val id: String, val title: String, val repeat: String)

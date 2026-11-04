@@ -78,6 +78,9 @@ struct ParentsHome: View {
                     let _: FamilyOK = try await FamilyAPI(connection: connection).call("DELETE", "/v1/parents")
                     FamilyVault.clear(); self.connection = nil; children = []
                 } }
+                Button("Nur Zugang auf diesem Handy entfernen", role: .destructive) {
+                    FamilyVault.clear(); connection = nil; children = []; message = "Lokaler Zugang entfernt. Serverdaten und andere Geräte werden dadurch nicht gelöscht."
+                }
             }
         }
     }

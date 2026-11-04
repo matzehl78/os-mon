@@ -47,7 +47,7 @@ private fun ParentsHome() {
     LaunchedEffect(connection) { run { refresh() } }
     Column(Modifier.systemBarsPadding().padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("OS-Mon Eltern", style = MaterialTheme.typography.headlineMedium)
-        Text("Aufgaben und Spielelimit verwalten. Geteilt werden nur diese Einstellungen und der Übernahmestatus – keine Sensor- oder Gesundheitsdaten.")
+        Text("Aufgaben und Spielelimit verwalten. Geteilt werden nur diese Einstellungen und der Übernahmestatus – auf Wunsch ein ausdrücklich geteilter Standort; keine Gesundheitsdaten.")
         if (connection == null) {
             OutlinedTextField(server, { server = it }, label = { Text("HTTPS-Serveradresse") }, enabled = !busy)
             Text("Verwende denselben Familienserver wie auf dem Kindergerät. Der Zugang wird sicher auf diesem Elternhandy gespeichert.")
@@ -106,6 +106,21 @@ private fun DeviceEditor(device: JSONObject, connection: FamilyConnection, onClo
     Text(device.getString("name"), style = MaterialTheme.typography.titleLarge)
     Text(if (device.getInt("applied") == device.getInt("version")) "Letzter gespeicherter Stand übernommen" else "Wartet auf Übernahme am Kindergerät")
     Text("Übernahme bei geöffneter Kinder-App. Ohne Internet bleiben die zuletzt übernommenen Einstellungen gültig.")
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    var location by remember(device) { mutableStateOf(device.optJSONObject("location")) }
+    Text("Zuletzt geteilter Standort", style = MaterialTheme.typography.titleMedium)
+    val loc = location
+    if (loc != null && System.currentTimeMillis() / 1000.0 - loc.getDouble("received") < 86400) {
+        Text("Gemessen: " + java.text.DateFormat.getDateTimeInstance().format(java.util.Date((loc.getDouble("measured") * 1000).toLong())))
+        Text("Genauigkeit ungefähr ${loc.getDouble("accuracy").toInt()} m. Keine Live-Ortung.")
+        OutlinedButton(onClick = { uriHandler.openUri("geo:${loc.getDouble("latitude")},${loc.getDouble("longitude")}?q=${loc.getDouble("latitude")},${loc.getDouble("longitude")}") }, enabled = !busy) { Text("In Karten-App anzeigen") }
+    } else Text("Kein geteilter Standort. Auf dem Kindergerät ausdrücklich teilen.")
+    OutlinedButton(onClick = { busy = true; scope.launch {
+        try {
+            val a = FamilyApi(connection).call("GET", "/v1/children").getJSONArray("children")
+            location = (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.getString("id") == device.getString("id") }?.optJSONObject("location")
+        } catch (e: Exception) { message = e.message ?: "Abruf fehlgeschlagen." } finally { busy = false }
+    } }, enabled = !busy) { Text("Standort aktualisieren") }
     Text("Runden pro Tag")
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { for (n in 0..3) {
         FilterChip(selected = limit == n, onClick = { limit = n }, label = { Text(if (n == 0) "Aus" else "$n") }, enabled = !busy)

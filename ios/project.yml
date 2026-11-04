@@ -58,6 +58,7 @@ targets:
         BGTaskSchedulerPermittedIdentifiers: [com.example.osmon.refresh]
         NSHealthShareUsageDescription: "OS-Mon liest nur deine tägliche Schrittzahl. Daraus wird die Vitalität deines Wesens. Nichts verlässt dein Gerät."
         NSHealthUpdateUsageDescription: "OS-Mon schreibt keine Gesundheitsdaten."
+        NSLocationWhenInUseUsageDescription: "Nur wenn du Standort teilen wählst, wird dein aktueller Standort an den verbundenen Elternzugang gesendet. Keine Hintergrundortung."
         NSPhotoLibraryAddUsageDescription: "OS-Mon speichert nur das Hintergrundbild mit deinem Wesen, wenn du „Bild sichern“ wählst."
     entitlements:
       path: OSMon/App/OSMon.entitlements

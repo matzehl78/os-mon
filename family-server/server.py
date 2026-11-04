@@ -3,6 +3,7 @@ from http.cookies import SimpleCookie
 from pathlib import Path
 import hashlib
 import json
+import math
 import os
 import secrets
 import sqlite3
@@ -48,6 +49,8 @@ class Store:
         CREATE TABLE IF NOT EXISTS web_codes(code TEXT PRIMARY KEY, owner TEXT NOT NULL REFERENCES parents(token) ON DELETE CASCADE, expires REAL NOT NULL);
         CREATE TABLE IF NOT EXISTS web_sessions(token TEXT PRIMARY KEY, owner TEXT NOT NULL REFERENCES parents(token) ON DELETE CASCADE, expires REAL NOT NULL);
         """)
+        columns={row[1] for row in self.db.execute('PRAGMA table_info(devices)')}
+        if 'location' not in columns: self.db.execute('ALTER TABLE devices ADD COLUMN location TEXT')
         self.db.commit()
 
     def session(self, owner):
@@ -70,7 +73,7 @@ class Store:
 
     def output(self, d):
         return dict(id=d['id'], name=d['name'], paired=bool(d['owner']), config=json.loads(d['config']),
-                    version=d['version'], applied=d['applied'], completed=json.loads(d['completed']), seen=d['seen'], day=d['status_day'])
+                    version=d['version'], applied=d['applied'], completed=json.loads(d['completed']), seen=d['seen'], day=d['status_day'], location=json.loads(d['location']) if d['location'] else None)
 
     def dispatch(self, method, path, token, body):
         with self.lock, self.db:
@@ -79,6 +82,7 @@ class Store:
             self.db.execute('DELETE FROM parents WHERE expires<?', (now,))
             self.db.execute('DELETE FROM web_codes WHERE expires<?',(now,))
             self.db.execute('DELETE FROM web_sessions WHERE expires<?',(now,))
+            self.db.execute("UPDATE devices SET location=NULL WHERE location IS NOT NULL AND json_extract(location,'$.received')<?",(now-86400,))
             self.db.commit()  # Expiry cleanup must survive a subsequently rejected request.
             if method == 'POST' and path == '/v1/web-codes':
                 owner=self.parent(token)
@@ -139,6 +143,20 @@ class Store:
                     config=validate_config(body.get('config'))
                     if type(body.get('version')) is not int or body['version'] != d['version']: raise APIError(409, 'Einstellungen wurden zwischenzeitlich geändert. Bitte neu laden.')
                     self.db.execute('UPDATE devices SET config=?,version=version+1 WHERE id=?',(json.dumps(config),ident))
+                    return {'ok':True}
+            if path=='/v1/device/location':
+                d=self.device(token)
+                if not d['owner']: raise APIError(409,'Zuerst mit Elternzugang koppeln.')
+                if method=='DELETE':
+                    self.db.execute('UPDATE devices SET location=NULL WHERE id=?',(d['id'],));return {'ok':True}
+                if method=='POST':
+                    if set(body)!={'latitude','longitude','accuracy','measured'}: raise APIError(400,'Ungültiger Standort.')
+                    for key in body:
+                        if type(body[key]) not in (int,float) or not math.isfinite(body[key]): raise APIError(400,'Ungültiger Standort.')
+                    if not -90<=body['latitude']<=90 or not -180<=body['longitude']<=180 or not 0<=body['accuracy']<=100000 or not now-120<=body['measured']<=now+30:
+                        raise APIError(400,'Standort ungültig oder älter als zwei Minuten.')
+                    value=dict(body,received=now)
+                    self.db.execute('UPDATE devices SET location=? WHERE id=?',(json.dumps(value),d['id']))
                     return {'ok':True}
             if path in ['/v1/device','/v1/device/ack']:
                 d=self.device(token)

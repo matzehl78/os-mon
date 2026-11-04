@@ -149,3 +149,39 @@ class BrowserHTTPTests(unittest.TestCase):
         finally:s.shutdown();s.server_close();s.store.db.close();thread.join()
 
 if __name__=="__main__":unittest.main()
+
+class LocationTests(unittest.TestCase):
+    setUp=FamilyTests.setUp
+    tearDown=FamilyTests.tearDown
+    call=FamilyTests.call
+    claim=FamilyTests.claim
+    device=FamilyTests.device
+    assert_error=FamilyTests.assert_error
+    def fix(self): return {'latitude':53.86,'longitude':10.68,'accuracy':100,'measured':self.now}
+    def test_location_requires_paired_child_and_is_owner_only(self):
+        self.assert_error(409,'POST','/v1/device/location',self.child,self.fix())
+        self.claim()
+        self.assert_error(401,'POST','/v1/device/location',self.p,self.fix())
+        self.call('POST','/v1/device/location',self.child,self.fix())
+        self.assertEqual(self.call('GET','/v1/children',self.other)['children'],[])
+        self.assertEqual(self.call('GET','/v1/children',self.p)['children'][0]['location']['latitude'],53.86)
+    def test_invalid_and_stale_fixes_rejected(self):
+        self.claim()
+        for patch in [{'latitude':True},{'longitude':181},{'latitude':float('nan')},{'accuracy':-1},{'measured':self.now-121},{'measured':self.now+31},{'extra':1}]:
+            self.assert_error(400,'POST','/v1/device/location',self.child,dict(self.fix(),**patch))
+    def test_replaces_deletes_and_expires_without_history(self):
+        self.claim();self.call('POST','/v1/device/location',self.child,self.fix())
+        self.now+=10;self.call('POST','/v1/device/location',self.child,dict(self.fix(),latitude=54))
+        self.assertEqual(self.device()['location']['latitude'],54)
+        self.call('DELETE','/v1/device/location',self.child);self.assertIsNone(self.device()['location'])
+        self.call('POST','/v1/device/location',self.child,self.fix());self.now+=86401
+        self.assertIsNone(self.device()['location'])
+        self.assertIsNone(self.s.db.execute('SELECT location FROM devices').fetchone()[0])
+    def test_browser_shares_same_location_and_unpair_removes_it(self):
+        self.claim();self.call('POST','/v1/device/location',self.child,self.fix())
+        code=self.call('POST','/v1/web-codes',self.p)['code']
+        token=self.call('POST','/v1/web-codes/redeem',body={'code':code})['token']
+        d=self.call('GET','/v1/children',token)['children'][0]
+        self.assertEqual(d['location']['accuracy'],100)
+        self.call('DELETE','/v1/children/'+d['id'],self.p)
+        self.assertEqual(self.s.db.execute('SELECT count(*) FROM devices').fetchone()[0],0)

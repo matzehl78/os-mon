@@ -56,7 +56,7 @@ fun FamilyChildCard() {
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Mit OS-Mon Eltern verbinden", style = MaterialTheme.typography.titleMedium)
-        Text("Optional: Aufgaben, Spielelimit und Erledigt-Status werden über euren Familienserver geteilt. Keine Sensor- oder Gesundheitsdaten. Beide Apps brauchen denselben HTTPS-Server.")
+        Text("Optional: Aufgaben, Spielelimit und Erledigt-Status werden über euren Familienserver geteilt. Standort nur nach ausdrücklichem Teilen; keine Gesundheitsdaten. Beide Apps brauchen denselben HTTPS-Server.")
         if (!linked) {
             OutlinedTextField(server, { server = it }, label = { Text("HTTPS-Serveradresse") }, enabled = !busy)
             OutlinedTextField(name, { name = it.take(40) }, label = { Text("Gerätename (ohne echten Kindernamen)") }, enabled = !busy)
@@ -68,6 +68,7 @@ fun FamilyChildCard() {
         } else {
             if (code.isNotEmpty()) Text(code, style = MaterialTheme.typography.headlineMedium)
             Button(onClick = { run { FamilyChild.sync(ctx); message = "Verbindung abgefragt. Übernahme erfolgt, sobald gekoppelt." } }, enabled = !busy) { Text("Verbindung prüfen") }
+            FamilyLocationCard()
             TextButton(onClick = { confirm = true }, enabled = !busy) { Text("Verbindung entfernen") }
             Text("Synchronisierung bei geöffneter OS-Mon-App. Nach Trennen bleiben zuletzt übernommene Aufgaben und Limits lokal erhalten.")
         }

@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 @main
 struct OSMonParentsApp: App {
@@ -30,7 +31,7 @@ struct ParentsHome: View {
             Form {
                 Section {
                     Text("Aufgaben und Spielelimit für dein verbundenes OS-Mon-Gerät.")
-                    Text("Es werden nur Aufgaben, Einstellungen und deren Übernahmestatus geteilt. Keine Bildschirmzeit- oder Gesundheitsdaten.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Geteilt werden Aufgaben, Einstellungen, Übernahmestatus und auf Wunsch ein bewusst geteilter Standort. Keine Bildschirmzeit- oder Gesundheitsdaten.").font(.footnote).foregroundStyle(.secondary)
                 }
                 if connection == nil {
                     Section("Elternzugang einrichten") {
@@ -113,6 +114,25 @@ struct ParentDeviceEditor: View {
                 Text(device.applied == device.version ? "Letzter gespeicherter Stand übernommen" : "Änderungen warten auf das Kindergerät")
                 if let seen = device.seen { Text("Letzte Rückmeldung: \(Date(timeIntervalSince1970: seen).formatted())").font(.footnote) }
                 Text("Übernahme bei geöffneter Kinder-App. Ohne Internet gelten die zuletzt übernommenen Einstellungen.").font(.footnote)
+            }
+            Section("Zuletzt geteilter Standort") {
+                if let l = device.location, Date().timeIntervalSince1970 - l.received < 86400 {
+                    Map(initialPosition: .region(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: l.latitude, longitude: l.longitude), span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)))) {
+                        Marker("Geteilter Standort", coordinate: CLLocationCoordinate2D(latitude: l.latitude, longitude: l.longitude))
+                    }.frame(height: 220)
+                    Text("Gemessen: \(Date(timeIntervalSince1970: l.measured).formatted())")
+                    Text("Genauigkeit ungefähr \(Int(l.accuracy.rounded())) m. Keine Live-Ortung.").font(.footnote)
+                } else { Text("Kein geteilter Standort. Auf dem Kindergerät ausdrücklich teilen.") }
+                Button("Standort aktualisieren") {
+                    busy = true
+                    Task {
+                        do {
+                            let result: FamilyList = try await FamilyAPI(connection: connection).call("GET", "/v1/children")
+                            device.location = result.children.first(where: { $0.id == device.id })?.location
+                        } catch { message = error.localizedDescription }
+                        busy = false
+                    }
+                }
             }
             Section("Mini-Spiele") {
                 Picker("Runden pro Tag", selection: $device.config.limit) { Text("Aus").tag(0); ForEach(1...3, id: \.self) { Text("\($0)").tag($0) } }

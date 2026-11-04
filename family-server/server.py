@@ -51,6 +51,8 @@ class Store:
         """)
         columns={row[1] for row in self.db.execute('PRAGMA table_info(devices)')}
         if 'location' not in columns: self.db.execute('ALTER TABLE devices ADD COLUMN location TEXT')
+        for name, definition in [('location_sharing','INTEGER NOT NULL DEFAULT 0'),('location_request','TEXT')]:
+            if name not in columns: self.db.execute(f'ALTER TABLE devices ADD COLUMN {name} {definition}')
         self.db.commit()
 
     def session(self, owner):
@@ -73,7 +75,12 @@ class Store:
 
     def output(self, d):
         return dict(id=d['id'], name=d['name'], paired=bool(d['owner']), config=json.loads(d['config']),
-                    version=d['version'], applied=d['applied'], completed=json.loads(d['completed']), seen=d['seen'], day=d['status_day'], location=json.loads(d['location']) if d['location'] else None)
+                    version=d['version'], applied=d['applied'], completed=json.loads(d['completed']), seen=d['seen'], day=d['status_day'], location=json.loads(d['location']) if d['location'] else None, locationSharing=bool(d['location_sharing']), locationRequest=self.location_request(d))
+
+    def location_request(self, d):
+        value=json.loads(d['location_request']) if d['location_request'] else None
+        if value and value['state']=='pending' and value['expires']<=self.clock(): value['state']='expired'
+        return value
 
     def dispatch(self, method, path, token, body):
         with self.lock, self.db:
@@ -137,6 +144,14 @@ class Store:
                 ident=parts[3] if len(parts)>3 else ''
                 d=self.db.execute('SELECT * FROM devices WHERE id=? AND owner=?',(ident,owner)).fetchone()
                 if not d: raise APIError(404, 'Gerät nicht gefunden.')
+                if method=='POST' and len(parts)==5 and parts[4]=='location-request':
+                    if not d['location_sharing']: raise APIError(409,'Standortanfragen sind auf dem Kindergerät nicht freigegeben.')
+                    previous=self.location_request(d)
+                    if previous and previous['state']=='pending': return {'request':previous}
+                    if previous and now-previous['created']<30: raise APIError(429,'Bitte 30 Sekunden zwischen Standortanfragen warten.')
+                    value={'id':str(uuid.uuid4()),'created':now,'expires':now+90,'state':'pending'}
+                    self.db.execute('UPDATE devices SET location_request=? WHERE id=?',(json.dumps(value),ident))
+                    return {'request':value}
                 if method=='DELETE' and len(parts)==4:
                     self.db.execute('DELETE FROM devices WHERE id=?',(ident,));return {'ok':True}
                 if method=='PUT' and len(parts)==5 and parts[4]=='config':
@@ -144,18 +159,42 @@ class Store:
                     if type(body.get('version')) is not int or body['version'] != d['version']: raise APIError(409, 'Einstellungen wurden zwischenzeitlich geändert. Bitte neu laden.')
                     self.db.execute('UPDATE devices SET config=?,version=version+1 WHERE id=?',(json.dumps(config),ident))
                     return {'ok':True}
+            if path=='/v1/device/location-sharing' and method=='PUT':
+                d=self.device(token)
+                if not d['owner']: raise APIError(409,'Zuerst koppeln.')
+                if set(body)!={'enabled'} or type(body['enabled']) is not bool: raise APIError(400,'Ungültige Freigabe.')
+                if body['enabled']:
+                    self.db.execute('UPDATE devices SET location_sharing=1 WHERE id=?',(d['id'],))
+                else:
+                    self.db.execute('UPDATE devices SET location_sharing=0,location=NULL,location_request=NULL WHERE id=?',(d['id'],))
+                return {'ok':True}
+            if path=='/v1/device/location-result' and method=='POST':
+                d=self.device(token);request=self.location_request(d)
+                if not d['location_sharing'] or not request or request['state']!='pending' or request['id']!=body.get('requestId'): raise APIError(409,'Standortanfrage nicht mehr gültig.')
+                if set(body)!={'requestId','state'} or body['state'] not in ['unavailable','permissionDenied']: raise APIError(400,'Ungültiger Standortstatus.')
+                request['state']=body['state']
+                self.db.execute('UPDATE devices SET location_request=? WHERE id=?',(json.dumps(request),d['id']))
+                return {'ok':True}
             if path=='/v1/device/location':
                 d=self.device(token)
                 if not d['owner']: raise APIError(409,'Zuerst mit Elternzugang koppeln.')
                 if method=='DELETE':
-                    self.db.execute('UPDATE devices SET location=NULL WHERE id=?',(d['id'],));return {'ok':True}
+                    self.db.execute('UPDATE devices SET location=NULL,location_request=NULL WHERE id=?',(d['id'],));return {'ok':True}
                 if method=='POST':
-                    if set(body)!={'latitude','longitude','accuracy','measured'}: raise APIError(400,'Ungültiger Standort.')
-                    for key in body:
+                    if set(body) not in [{'latitude','longitude','accuracy','measured'},{'latitude','longitude','accuracy','measured','requestId'}]: raise APIError(400,'Ungültiger Standort.')
+                    request=None
+                    if 'requestId' in body:
+                        request=self.location_request(d)
+                        if not d['location_sharing'] or not request or request['state']!='pending' or request['id']!=body['requestId']: raise APIError(409,'Standortanfrage nicht mehr gültig.')
+                    for key in ['latitude','longitude','accuracy','measured']:
                         if type(body[key]) not in (int,float) or not math.isfinite(body[key]): raise APIError(400,'Ungültiger Standort.')
                     if not -90<=body['latitude']<=90 or not -180<=body['longitude']<=180 or not 0<=body['accuracy']<=100000 or not now-120<=body['measured']<=now+30:
                         raise APIError(400,'Standort ungültig oder älter als zwei Minuten.')
-                    value=dict(body,received=now)
+                    if request and body['measured']<request['created']-5: raise APIError(400,'Messung liegt vor der Anfrage.')
+                    value={k:body[k] for k in ['latitude','longitude','accuracy','measured']};value['received']=now
+                    if request:
+                        request['state']='received';value['requestId']=request['id']
+                        self.db.execute('UPDATE devices SET location_request=? WHERE id=?',(json.dumps(request),d['id']))
                     self.db.execute('UPDATE devices SET location=? WHERE id=?',(json.dumps(value),d['id']))
                     return {'ok':True}
             if path in ['/v1/device','/v1/device/ack']:

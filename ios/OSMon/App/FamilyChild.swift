@@ -10,6 +10,7 @@ enum FamilyChild {
         let api = FamilyAPI(connection: connection)
         let device: FamilyDevice = try await api.call("GET", "/v1/device")
         guard device.paired else { return }
+        FamilyLocationSender.shared.handle(device, connection: connection)
         let old = TaskStore.load()
         let local = old.filter { !$0.id.hasPrefix("family:") }
         guard local.count + device.config.tasks.count <= DayTasks.maxTasks else { throw FamilyError(text: "Zu viele Aufgaben. Lokal und aus der Eltern-App zusammen sind höchstens 12 möglich.") }
@@ -80,37 +81,73 @@ struct FamilyChildCard: View {
 // A location is requested only after a visible, explicit action on this device.
 @MainActor
 final class FamilyLocationSender: NSObject, ObservableObject, CLLocationManagerDelegate {
-    @Published var message = "Kein automatisches Tracking. Ein geteilter Standort wird spätestens nach 24 Stunden gelöscht."
+    static let shared = FamilyLocationSender()
+    @Published var sharing = false
+    private var requestID: String?
+    private var connection: FamilyConnection?
+    private var timeout: Task<Void, Never>?
+    @Published var message = "Kein automatisches Tracking. Ein geteilter Standort wird nach 24 Stunden ausgeblendet."
     @Published var busy = false
     private let manager = CLLocationManager()
     private var pending = false
     override init() { super.init(); manager.delegate = self; manager.desiredAccuracy = kCLLocationAccuracyHundredMeters }
+    func handle(_ device: FamilyDevice, connection: FamilyConnection) {
+        sharing = device.locationSharing == true
+        guard sharing, let req = device.locationRequest, req.state == "pending", req.expires > Date().timeIntervalSince1970, !busy else { return }
+        requestID = req.id; self.connection = connection
+        guard manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways else {
+            Task { let _: FamilyOK? = try? await FamilyAPI(connection: connection).call("POST", "/v1/device/location-result", ["requestId": req.id, "state": "permissionDenied"]) }; requestID = nil; self.connection = nil; return
+        }
+        share()
+    }
+    func setSharing(_ enabled: Bool) async {
+        guard !busy, let c = FamilyVault.load() else { return }
+        if enabled && manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization(); message = "Bitte Berechtigung erlauben und danach Freigabe erneut aktivieren."; return }
+        if enabled && manager.authorizationStatus != .authorizedWhenInUse && manager.authorizationStatus != .authorizedAlways { message = "Standortberechtigung in den iPhone-Einstellungen erlauben."; return }
+        do {
+            let _: FamilyOK = try await FamilyAPI(connection: c).call("PUT", "/v1/device/location-sharing", ["enabled": enabled])
+            sharing = enabled; message = enabled ? "Eltern dürfen einen Standort anfragen, solange OS-Mon geöffnet ist." : "Standortanfragen deaktiviert und Serverstandort gelöscht."
+        } catch { message = error.localizedDescription }
+    }
     func share() {
         guard !busy else { return }; busy = true; pending = true
+        if connection == nil { connection = FamilyVault.load() }
+        timeout?.cancel()
+        timeout = Task { try? await Task.sleep(for: .seconds(30)); if !Task.isCancelled && pending { fail("Kein Standort innerhalb von 30 Sekunden verfügbar.") } }
         if manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization() }
         else { request() }
     }
     private func request() {
         guard pending else { return }
         guard manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways else {
-            pending = false; busy = false; message = "Standortzugriff fehlt. Bei Bedarf in den iPhone-Einstellungen erlauben."; return
+            fail("Standortzugriff fehlt. Bei Bedarf in den iPhone-Einstellungen erlauben."); return
         }
         manager.requestLocation()
     }
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) { if manager.authorizationStatus != .notDetermined { request() } }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard pending, let location = locations.last else { return }; pending = false
-        guard location.horizontalAccuracy >= 0, abs(location.timestamp.timeIntervalSinceNow) <= 120 else { busy = false; message = "Kein aktueller Standort verfügbar."; return }
+        guard location.horizontalAccuracy >= 0, abs(location.timestamp.timeIntervalSinceNow) <= 120 else { fail("Kein aktueller Standort verfügbar."); return }
+        timeout?.cancel()
+        let capturedID = requestID; let capturedConnection = connection
         Task {
-            defer { busy = false }
+            defer { busy = false; requestID = nil; connection = nil }
             do {
-                guard let c = FamilyVault.load() else { throw FamilyError(text: "Kein Familienzugang.") }
-                let _: FamilyOK = try await FamilyAPI(connection: c).call("POST", "/v1/device/location", ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude, "accuracy": location.horizontalAccuracy, "measured": location.timestamp.timeIntervalSince1970])
+                guard UIApplication.shared.applicationState == .active else { throw FamilyError(text: "Standortanfrage nur bei geöffneter App möglich.") }
+                guard let c = capturedConnection else { throw FamilyError(text: "Kein Familienzugang.") }
+                var body: [String: Any] = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude, "accuracy": location.horizontalAccuracy, "measured": location.timestamp.timeIntervalSince1970]
+                if let capturedID { body["requestId"] = capturedID }
+                let _: FamilyOK = try await FamilyAPI(connection: c).call("POST", "/v1/device/location", body)
                 message = "Standort mit verbundenem Elternzugang geteilt. Keine laufende Ortung."
             } catch { message = error.localizedDescription }
         }
     }
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) { pending = false; busy = false; message = "Standort nicht verfügbar: " + error.localizedDescription }
+    private func fail(_ text: String) {
+        pending = false; busy = false; message = text; timeout?.cancel()
+        let id = requestID; let c = connection; requestID = nil; connection = nil
+        if let id, let c { Task { let _: FamilyOK? = try? await FamilyAPI(connection: c).call("POST", "/v1/device/location-result", ["requestId": id, "state": "unavailable"]) } }
+    }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) { fail("Standort nicht verfügbar: " + error.localizedDescription) }
     func remove() async {
         guard !busy else { return }; busy = true; defer { busy = false }
         do { if let c = FamilyVault.load() { let _: FamilyOK = try await FamilyAPI(connection: c).call("DELETE", "/v1/device/location") }; message = "Geteilter Standort vom Server gelöscht." }
@@ -118,14 +155,17 @@ final class FamilyLocationSender: NSObject, ObservableObject, CLLocationManagerD
     }
 }
 struct FamilyLocationCard: View {
-    @StateObject private var sender = FamilyLocationSender()
+    @ObservedObject private var sender = FamilyLocationSender.shared
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Standort teilen").font(.headline)
-            Text("Nur nach diesem Tippen wird der aktuelle Standort an euren verbundenen Elternzugang gesendet. App und Eltern-Webseite können ihn anzeigen.").font(.footnote)
+            Text("Einmalig Standortanfragen erlauben: Danach darf der verbundene Elternzugang Messungen anfordern, solange OS-Mon geöffnet ist. Keine Hintergrundortung.").font(.footnote)
+            Text(sender.sharing ? "Standortanfragen: freigegeben" : "Standortanfragen: aus")
+            Button(sender.sharing ? "Standortanfragen deaktivieren" : "Standortanfragen erlauben") { Task { await sender.setSharing(!sender.sharing) } }
             Button("Aktuellen Standort einmal teilen") { sender.share() }
             Button("Geteilten Standort löschen", role: .destructive) { Task { await sender.remove() } }
             Text(sender.message).font(.caption)
         }.disabled(sender.busy)
+        .task { if let c = FamilyVault.load(), let d: FamilyDevice = try? await FamilyAPI(connection: c).call("GET", "/v1/device") { sender.sharing = d.locationSharing == true } }
     }
 }

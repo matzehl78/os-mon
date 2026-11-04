@@ -7,10 +7,12 @@ struct FamilyTask: Codable, Identifiable, Equatable {
     var `repeat`: String
 }
 struct FamilyConfig: Codable, Equatable { var limit: Int; var tasks: [FamilyTask] }
+struct FamilyRequestResult: Decodable { var request: FamilyLocationRequest }
+struct FamilyLocationRequest: Codable { var id: String; var created: Double; var expires: Double; var state: String }
 struct FamilyLocation: Codable { var latitude: Double; var longitude: Double; var accuracy: Double; var measured: Double; var received: Double }
 struct FamilyDevice: Codable, Identifiable {
     var id: String; var name: String; var paired: Bool; var config: FamilyConfig
-    var version: Int; var applied: Int; var completed: [String]; var seen: Double?; var day: Int?; var location: FamilyLocation?
+    var version: Int; var applied: Int; var completed: [String]; var seen: Double?; var day: Int?; var location: FamilyLocation?; var locationSharing: Bool?; var locationRequest: FamilyLocationRequest?
 }
 struct FamilyConnection: Codable { var server: String; var token: String }
 struct FamilyPair: Decodable { let token: String; let code: String; let expires: Int }

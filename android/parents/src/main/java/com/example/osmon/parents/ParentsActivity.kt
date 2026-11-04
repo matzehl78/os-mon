@@ -107,8 +107,34 @@ private fun DeviceEditor(device: JSONObject, connection: FamilyConnection, onClo
     Text(if (device.getInt("applied") == device.getInt("version")) "Letzter gespeicherter Stand übernommen" else "Wartet auf Übernahme am Kindergerät")
     Text("Übernahme bei geöffneter Kinder-App. Ohne Internet bleiben die zuletzt übernommenen Einstellungen gültig.")
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    var sharing by remember(device) { mutableStateOf(device.optBoolean("locationSharing", false)) }
+    var locationRequest by remember(device) { mutableStateOf(device.optJSONObject("locationRequest")) }
     var location by remember(device) { mutableStateOf(device.optJSONObject("location")) }
+    suspend fun refreshLocation() {
+        val a = FamilyApi(connection).call("GET", "/v1/children").getJSONArray("children")
+        val updated = (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.getString("id") == device.getString("id") }
+        location = updated?.optJSONObject("location"); sharing = updated?.optBoolean("locationSharing", false) == true; locationRequest = updated?.optJSONObject("locationRequest")
+    }
+    LaunchedEffect(device) {
+        while (true) {
+            try { refreshLocation() } catch (e: Exception) { message = e.message ?: "Standortabruf fehlgeschlagen." }
+            kotlinx.coroutines.delay(5000)
+        }
+    }
     Text("Zuletzt geteilter Standort", style = MaterialTheme.typography.titleMedium)
+    Text(if (sharing) "Standortanfragen freigegeben" else "Am Kindergerät noch nicht freigegeben")
+    locationRequest?.let { req -> Text(when (req.optString("state")) {
+        "pending" -> if (req.optDouble("expires") > System.currentTimeMillis()/1000.0) "Anfrage läuft …" else "Keine Antwort innerhalb von 90 Sekunden. Gerät möglicherweise nicht erreichbar."
+        "received" -> "Standort für die letzte Anfrage empfangen."
+        "permissionDenied" -> "Standortberechtigung am Kindergerät fehlt."
+        "unavailable" -> "Kindergerät konnte keinen aktuellen Standort ermitteln."
+        else -> "Anfrage abgelaufen. Gerät möglicherweise nicht erreichbar."
+    }) }
+    Button(enabled = sharing && !busy, onClick = { busy = true; scope.launch {
+        try { FamilyApi(connection).call("POST", "/v1/children/${device.getString("id")}/location-request", JSONObject()); refreshLocation() }
+        catch (e: Exception) { message = e.message ?: "Standortanfrage fehlgeschlagen." } finally { busy = false }
+    } }) { Text("Neuen Standort anfragen") }
+    Text("Kinder-App muss geöffnet sein. Anfrage läuft nach 90 Sekunden ab. Der angezeigte Standort kann aus einer früheren Messung stammen.")
     val loc = location
     if (loc != null && System.currentTimeMillis() / 1000.0 - loc.getDouble("received") < 86400) {
         Text("Gemessen: " + java.text.DateFormat.getDateTimeInstance().format(java.util.Date((loc.getDouble("measured") * 1000).toLong())))
@@ -120,7 +146,7 @@ private fun DeviceEditor(device: JSONObject, connection: FamilyConnection, onClo
             val a = FamilyApi(connection).call("GET", "/v1/children").getJSONArray("children")
             location = (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.getString("id") == device.getString("id") }?.optJSONObject("location")
         } catch (e: Exception) { message = e.message ?: "Abruf fehlgeschlagen." } finally { busy = false }
-    } }, enabled = !busy) { Text("Standort aktualisieren") }
+    } }, enabled = !busy) { Text("Anzeige neu laden") }
     Text("Runden pro Tag")
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { for (n in 0..3) {
         FilterChip(selected = limit == n, onClick = { limit = n }, label = { Text(if (n == 0) "Aus" else "$n") }, enabled = !busy)

@@ -25,6 +25,7 @@ object FamilyChild {
             val c = FamilyVault.load(ctx) ?: return
             val api = FamilyApi(c); val device = api.call("GET", "/v1/device")
             if (!device.getBoolean("paired")) return
+            FamilyLocation.handle(ctx, c, device)
             val config = device.getJSONObject("config"); val a = config.getJSONArray("tasks")
             val old = TaskStore.load(ctx); val local = old.filterNot { it.id.startsWith("family:") }
             check(local.size + a.length() <= DayTasks.MAX_TASKS) { "Lokal und aus der Eltern-App zusammen sind höchstens 12 Aufgaben möglich." }

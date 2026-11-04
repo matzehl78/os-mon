@@ -240,6 +240,9 @@ struct HomeScreen: View {
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
             }
+            .safeAreaInset(edge: .bottom) {
+                FamilyLocationNotice()
+            }
             .task(id: phase) {
                 guard phase == .active else { return }
                 while !Task.isCancelled {
@@ -880,4 +883,14 @@ extension HomeState {
     s.snapshot.stats.r = nil
     s.snapshot.stats.v = nil
     return HomeContent(state: s).preferredColorScheme(.dark)
+}
+
+private struct FamilyLocationNotice: View {
+    @ObservedObject var sender = FamilyLocationSender.shared
+    var body: some View {
+        if sender.sharing {
+            Text(sender.busy ? "Standortanfrage wird bearbeitet …" : "Standortanfragen für deinen Elternzugang sind freigegeben.")
+                .font(.caption).padding(8).frame(maxWidth: .infinity).background(.regularMaterial)
+        }
+    }
 }

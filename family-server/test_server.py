@@ -185,3 +185,54 @@ class LocationTests(unittest.TestCase):
         self.assertEqual(d['location']['accuracy'],100)
         self.call('DELETE','/v1/children/'+d['id'],self.p)
         self.assertEqual(self.s.db.execute('SELECT count(*) FROM devices').fetchone()[0],0)
+
+class LocationRequestTests(unittest.TestCase):
+    setUp=FamilyTests.setUp
+    tearDown=FamilyTests.tearDown
+    call=FamilyTests.call
+    claim=FamilyTests.claim
+    device=FamilyTests.device
+    assert_error=FamilyTests.assert_error
+    fix=LocationTests.fix
+    def allow(self, enabled=True):
+        self.call('PUT','/v1/device/location-sharing',self.child,{'enabled':enabled})
+    def request(self, owner=None):
+        return self.call('POST','/v1/children/'+self.device()['id']+'/location-request',owner or self.p)['request']
+    def test_request_needs_child_consent_and_correct_parent(self):
+        self.claim()
+        self.assert_error(409,'POST','/v1/children/'+self.device()['id']+'/location-request',self.p)
+        self.assert_error(401,'PUT','/v1/device/location-sharing',self.p,{'enabled':True})
+        self.allow()
+        self.assert_error(404,'POST','/v1/children/'+self.device()['id']+'/location-request',self.other)
+        req=self.request();self.assertEqual(req['state'],'pending')
+        self.assertEqual(req['id'],self.request()['id'])
+    def test_response_must_match_request_and_be_new(self):
+        self.claim();self.allow();req=self.request()
+        self.assert_error(409,'POST','/v1/device/location',self.child,dict(self.fix(),requestId='wrong'))
+        self.assert_error(400,'POST','/v1/device/location',self.child,dict(self.fix(),requestId=req['id'],measured=self.now-6))
+        self.now+=10
+        self.call('POST','/v1/device/location',self.child,dict(self.fix(),requestId=req['id']))
+        d=self.device();self.assertEqual(d['locationRequest']['state'],'received');self.assertEqual(d['location']['requestId'],req['id'])
+        self.assert_error(409,'POST','/v1/device/location',self.child,dict(self.fix(),requestId=req['id']))
+    def test_expiry_and_late_result_cannot_complete_new_request(self):
+        self.claim();self.allow();old=self.request();self.now+=91
+        self.assertEqual(self.device()['locationRequest']['state'],'expired')
+        new=self.request();self.assertNotEqual(new['id'],old['id'])
+        self.assert_error(409,'POST','/v1/device/location',self.child,dict(self.fix(),requestId=old['id']))
+        self.assertEqual(self.device()['locationRequest']['state'],'pending')
+    def test_revoke_clears_pending_and_position(self):
+        self.claim();self.allow();req=self.request()
+        self.call('POST','/v1/device/location',self.child,self.fix())
+        self.allow(False);d=self.device()
+        self.assertFalse(d['locationSharing']);self.assertIsNone(d['location']);self.assertIsNone(d['locationRequest'])
+        self.assert_error(409,'POST','/v1/device/location',self.child,dict(self.fix(),requestId=req['id']))
+    def test_failure_does_not_replace_old_position(self):
+        self.claim();self.call('POST','/v1/device/location',self.child,self.fix());self.allow();req=self.request()
+        self.call('POST','/v1/device/location-result',self.child,{'requestId':req['id'],'state':'permissionDenied'})
+        d=self.device();self.assertEqual(d['locationRequest']['state'],'permissionDenied');self.assertIsNotNone(d['location'])
+        self.assert_error(429,'POST','/v1/children/'+d['id']+'/location-request',self.p)
+    def test_browser_can_request_and_child_receives_same_id(self):
+        self.claim();self.allow()
+        code=self.call('POST','/v1/web-codes',self.p)['code']
+        token=self.call('POST','/v1/web-codes/redeem',body={'code':code})['token']
+        req=self.request(token);self.assertEqual(self.device()['locationRequest']['id'],req['id'])

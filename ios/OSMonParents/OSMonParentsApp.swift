@@ -108,6 +108,21 @@ struct ParentDeviceEditor: View {
     @State private var busy = false
     @State private var confirmUnpair = false
     @Environment(\.dismiss) private var dismiss
+    private func refreshLocation() async throws {
+        let result: FamilyList = try await FamilyAPI(connection: connection).call("GET", "/v1/children")
+        if let d = result.children.first(where: { $0.id == device.id }) {
+            device.location = d.location; device.locationSharing = d.locationSharing; device.locationRequest = d.locationRequest
+        }
+    }
+    private func locationRequestText(_ req: FamilyLocationRequest) -> String {
+        switch req.state {
+        case "pending": return req.expires > Date().timeIntervalSince1970 ? "Anfrage läuft …" : "Keine Antwort innerhalb von 90 Sekunden. Gerät möglicherweise nicht erreichbar."
+        case "received": return "Standort für die letzte Anfrage empfangen."
+        case "permissionDenied": return "Standortberechtigung am Kindergerät fehlt."
+        case "unavailable": return "Kindergerät konnte keinen aktuellen Standort ermitteln."
+        default: return "Anfrage abgelaufen. Gerät möglicherweise nicht erreichbar."
+        }
+    }
     var body: some View {
         Form {
             Section("Übertragung") {
@@ -116,14 +131,29 @@ struct ParentDeviceEditor: View {
                 Text("Übernahme bei geöffneter Kinder-App. Ohne Internet gelten die zuletzt übernommenen Einstellungen.").font(.footnote)
             }
             Section("Zuletzt geteilter Standort") {
+                Text(device.locationSharing == true ? "Standortanfragen am Kindergerät freigegeben" : "Standortanfragen am Kindergerät nicht freigegeben")
+                if let req = device.locationRequest {
+                    Text(locationRequestText(req))
+                }
+                Button("Neuen Standort anfragen") {
+                    busy = true
+                    Task {
+                        do {
+                            let _: FamilyRequestResult = try await FamilyAPI(connection: connection).call("POST", "/v1/children/\(device.id)/location-request", [:])
+                            try await refreshLocation()
+                        } catch { message = error.localizedDescription }
+                        busy = false
+                    }
+                }.disabled(device.locationSharing != true)
+                Text("Kinder-App muss geöffnet sein. Die Anfrage läuft nach 90 Sekunden ab. Der unten angezeigte Standort kann von einer früheren Messung stammen.").font(.footnote)
                 if let l = device.location, Date().timeIntervalSince1970 - l.received < 86400 {
                     Map(initialPosition: .region(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: l.latitude, longitude: l.longitude), span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)))) {
                         Marker("Geteilter Standort", coordinate: CLLocationCoordinate2D(latitude: l.latitude, longitude: l.longitude))
-                    }.frame(height: 220)
+                    }.frame(height: 220).id(l.measured)
                     Text("Gemessen: \(Date(timeIntervalSince1970: l.measured).formatted())")
                     Text("Genauigkeit ungefähr \(Int(l.accuracy.rounded())) m. Keine Live-Ortung.").font(.footnote)
                 } else { Text("Kein geteilter Standort. Auf dem Kindergerät ausdrücklich teilen.") }
-                Button("Standort aktualisieren") {
+                Button("Anzeige neu laden") {
                     busy = true
                     Task {
                         do {
@@ -169,6 +199,12 @@ struct ParentDeviceEditor: View {
             }
             if !message.isEmpty { Text(message) }
         }.navigationTitle(device.name).disabled(busy)
+        .task {
+            while !Task.isCancelled {
+                do { try await refreshLocation() } catch { message = error.localizedDescription }
+                do { try await Task.sleep(for: .seconds(5)) } catch { break }
+            }
+        }
         .confirmationDialog("Gerät wirklich trennen? Die zuletzt übernommenen Einstellungen bleiben lokal erhalten.", isPresented: $confirmUnpair, titleVisibility: .visible) {
             Button("Trennen", role: .destructive) {
                 busy = true; Task {

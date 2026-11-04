@@ -111,7 +111,7 @@ struct ParentDeviceEditor: View {
                 ForEach(device.config.tasks) { task in
                     VStack(alignment: .leading) {
                         Text(task.title)
-                        Text((device.completed.contains(task.id) ? "Als erledigt gemeldet" : "Noch nicht als erledigt gemeldet") + (device.day.map { " · Gerätetag \($0)" } ?? "")).font(.caption).foregroundStyle(.secondary)
+                        Text((device.completed.contains(task.id) ? "Als erledigt gemeldet" : "Noch nicht als erledigt gemeldet")).font(.caption).foregroundStyle(.secondary)
                     }
                 }.onDelete { device.config.tasks.remove(atOffsets: $0) }
                 TextField("Neue Aufgabe (max. 40 Zeichen)", text: $title).onChange(of: title) { title = String(title.prefix(40)) }

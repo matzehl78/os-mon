@@ -170,6 +170,23 @@ fun ParentDialog(onClose: () -> Unit) {
     val ctx = LocalContext.current
     var version by remember { mutableIntStateOf(0) }
     val refresh: () -> Unit = { version++ }
+    val familyOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        var wasUnlocked = ParentStore.isUnlocked()
+        while (true) {
+            kotlinx.coroutines.delay(500)
+            val unlocked = ParentStore.isUnlocked()
+            if (wasUnlocked && !unlocked) version++
+            wasUnlocked = unlocked
+        }
+    }
+    androidx.compose.runtime.DisposableEffect(familyOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) { ParentStore.lockNow(); version++ }
+        }
+        familyOwner.lifecycle.addObserver(observer)
+        onDispose { familyOwner.lifecycle.removeObserver(observer) }
+    }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {

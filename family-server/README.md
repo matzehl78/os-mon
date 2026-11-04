@@ -11,6 +11,7 @@ Zwei separate native Eltern-Apps und ein optionaler Familienserver. Noch keine S
 - Kinder-App fragt alle 15 Sekunden bei sichtbarer Startseite ab. Keine garantierte Hintergrundzustellung. Ohne Netz bleiben zuletzt übernommene Werte erhalten.
 - Erledigt-Meldung mit lokalem Gerätetag und Zeitpunkt der letzten Übernahme. „Offen“ bedeutet bei fehlender aktueller Rückmeldung nicht sicher „nicht erledigt“.
 - Serverseitige Versionsprüfung verhindert überschreibende veraltete Änderungen.
+- Die lokale Eltern-Ansicht sperrt bei Sitzungsablauf und beim Wechsel in den Hintergrund. Kopplungsaktionen prüfen die PIN-Sitzung direkt.
 - Beidseitiges Trennen; Elternzugang löschen entfernt alle zugehörigen Server-Geräte.
 
 ## Was nicht enthalten ist

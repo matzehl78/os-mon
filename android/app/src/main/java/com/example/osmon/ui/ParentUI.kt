@@ -300,6 +300,8 @@ private fun ParentContent(onChanged: () -> Unit) {
     Text("Jede Runde dauert 30 Sekunden. Standard: 2 Runden am Tag.", style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant)
 
+    FamilyChildCard()
+
     // Premium (Einmalkauf, nur hier hinter dem PIN)
     Text("Premium", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     PremiumCard()

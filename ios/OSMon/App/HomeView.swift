@@ -240,6 +240,13 @@ struct HomeScreen: View {
             .sheet(isPresented: $showSettings, onDismiss: { model.refresh() }) {
                 SettingsView()          // "Alle Daten löschen" setzt onboarding.done zurück -> App-Root wechselt
             }
+            .task(id: phase) {
+                guard phase == .active else { return }
+                while !Task.isCancelled {
+                    do { if FamilyVault.load() != nil { try await FamilyChild.sync(); model.refresh() } } catch { /* Last applied settings remain valid offline. */ }
+                    do { try await Task.sleep(for: .seconds(15)) } catch { break }
+                }
+            }
             .onAppear { SleepStore.noteOpen(); model.refresh() }
             .onChange(of: phase) { _, new in if new == .active { SleepStore.noteOpen(); model.refresh() } }
             .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in model.refresh() }

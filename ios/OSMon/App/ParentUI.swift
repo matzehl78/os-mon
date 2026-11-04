@@ -199,6 +199,7 @@ private struct ParentContentView: View {
                 .pickerStyle(.segmented)
                 .onChange(of: gameLimit) { _, n in GameStore.setLimit(n) }
             } header: { Text("Mini-Spiele") } footer: { Text("Jede Runde dauert 30 Sekunden. Standard: 2 Runden am Tag.") }
+            Section("Eltern-App verbinden") { FamilyChildCard() }
             Section("Premium") { PremiumCard().listRowInsets(EdgeInsets()) }
             Section("Schutz") {
                 Toggle("Einstellungen sperren (Ziele, Schlafenszeit, Daten löschen)", isOn: $lock)

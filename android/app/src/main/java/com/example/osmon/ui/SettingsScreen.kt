@@ -133,6 +133,10 @@ object PetData {
      * kann nur die Person in den Systemeinstellungen entziehen (darauf weist der Dialog hin).
      */
     suspend fun deleteAll(ctx: Context) = withContext(Dispatchers.IO) {
+        com.example.osmon.family.FamilyVault.load(ctx)?.let {
+            runCatching { com.example.osmon.family.FamilyApi(it).call("DELETE", "/v1/device") }
+        }
+        com.example.osmon.family.FamilyVault.clear(ctx)
         PetScheduler.stop(ctx)
         EvolutionScheduler.stop(ctx)
         NotificationManagerCompat.from(ctx).cancelAll()

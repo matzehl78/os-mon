@@ -386,6 +386,16 @@ fun HomeScreen(
             }
         }
     }
+    val familyOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val familyContext = LocalContext.current.applicationContext
+    LaunchedEffect(familyOwner) {
+        familyOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) {
+                try { if (com.example.osmon.family.FamilyVault.load(familyContext) != null) { FamilyChild.sync(familyContext); vm.refresh() } } catch (_: Exception) { /* Retain last applied values offline. */ }
+                kotlinx.coroutines.delay(15_000)
+            }
+        }
+    }
     HomeContent(
         state = state,
         onPat = vm::pat,

@@ -13,6 +13,7 @@ struct FamilyDevice: Codable, Identifiable {
 }
 struct FamilyConnection: Codable { var server: String; var token: String }
 struct FamilyPair: Decodable { let token: String; let code: String; let expires: Int }
+struct FamilyWebCode: Decodable { let code: String; let expires: Int }
 struct FamilyToken: Decodable { let token: String }
 struct FamilyList: Decodable { let children: [FamilyDevice] }
 struct FamilyOK: Decodable { let ok: Bool }

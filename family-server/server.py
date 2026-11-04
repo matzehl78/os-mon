@@ -1,4 +1,6 @@
 """OS-Mon Family API. Standard library only. Bind behind an HTTPS reverse proxy."""
+from http.cookies import SimpleCookie
+from pathlib import Path
 import hashlib
 import json
 import os
@@ -42,12 +44,23 @@ class Store:
           config TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1, applied INTEGER NOT NULL DEFAULT 0,
           completed TEXT NOT NULL DEFAULT '[]', seen REAL, status_day INTEGER);
         ''')
+        self.db.executescript("""
+        CREATE TABLE IF NOT EXISTS web_codes(code TEXT PRIMARY KEY, owner TEXT NOT NULL REFERENCES parents(token) ON DELETE CASCADE, expires REAL NOT NULL);
+        CREATE TABLE IF NOT EXISTS web_sessions(token TEXT PRIMARY KEY, owner TEXT NOT NULL REFERENCES parents(token) ON DELETE CASCADE, expires REAL NOT NULL);
+        """)
         self.db.commit()
+
+    def session(self, owner):
+        raw = secrets.token_urlsafe(32)
+        self.db.execute('INSERT INTO web_sessions VALUES (?,?,?)',(digest(raw),owner,self.clock()+7*86400))
+        return raw
 
     def parent(self, token):
         key = digest(token)
-        if not self.db.execute('SELECT 1 FROM parents WHERE token=? AND expires>?', (key,self.clock())).fetchone(): raise APIError(401, 'Elternzugang abgelaufen oder ungültig. Bitte erneut koppeln.')
-        return key
+        if self.db.execute('SELECT 1 FROM parents WHERE token=? AND expires>?',(key,self.clock())).fetchone(): return key
+        row=self.db.execute('SELECT s.owner FROM web_sessions s JOIN parents p ON p.token=s.owner WHERE s.token=? AND s.expires>? AND p.expires>?',(key,self.clock(),self.clock())).fetchone()
+        if row: return row['owner']
+        raise APIError(401, 'Elternzugang abgelaufen oder ungültig. Bitte erneut anmelden.')
 
     def device(self, token):
         d = self.db.execute('SELECT * FROM devices WHERE token=?', (digest(token),)).fetchone()
@@ -64,7 +77,31 @@ class Store:
             now = self.clock()
             self.db.execute('DELETE FROM devices WHERE owner IS NULL AND expires<?', (now,))
             self.db.execute('DELETE FROM parents WHERE expires<?', (now,))
+            self.db.execute('DELETE FROM web_codes WHERE expires<?',(now,))
+            self.db.execute('DELETE FROM web_sessions WHERE expires<?',(now,))
             self.db.commit()  # Expiry cleanup must survive a subsequently rejected request.
+            if method == 'POST' and path == '/v1/web-codes':
+                owner=self.parent(token)
+                self.db.execute('DELETE FROM web_codes WHERE owner=?',(owner,))
+                code=''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(10))
+                self.db.execute('INSERT INTO web_codes VALUES (?,?,?)',(digest(code),owner,now+300))
+                return {'code':code,'expires':int(now+300)}
+            if method == 'POST' and path == '/v1/web-codes/redeem':
+                code=body.get('code','')
+                if not isinstance(code,str): raise APIError(400,'Ungültiger Code.')
+                code=code.upper().replace(' ','').replace('-','')
+                row=self.db.execute('SELECT c.owner FROM web_codes c JOIN parents p ON p.token=c.owner WHERE c.code=? AND c.expires>? AND p.expires>?',(digest(code),now,now)).fetchone()
+                if not row: raise APIError(404,'Anmeldecode ungültig, abgelaufen oder bereits verwendet.')
+                self.db.execute('DELETE FROM web_codes WHERE code=?',(digest(code),))
+                return {'token':self.session(row['owner'])}
+            if method == 'POST' and path == '/v1/browser-access':
+                # Never return the primary parent credential to browser JavaScript.
+                owner=digest(secrets.token_urlsafe(32))
+                self.db.execute('INSERT INTO parents VALUES (?,?)',(owner,now+90*86400))
+                return {'token':self.session(owner)}
+            if method == 'DELETE' and path == '/v1/browser-session':
+                self.db.execute('DELETE FROM web_sessions WHERE token=?',(digest(token),))
+                return {'ok':True}
             if method == 'POST' and path == '/v1/parents':
                 raw = secrets.token_urlsafe(32)
                 self.db.execute('INSERT INTO parents VALUES (?,?)', (digest(raw), now+90*86400))
@@ -122,11 +159,12 @@ class Store:
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
-    def __init__(self,address,store):
+    def __init__(self,address,store,web_origin=None):
         super().__init__(address,Handler);self.store=store;self.rates={};self.rate_lock=threading.Lock()
+        self.web_origin=(web_origin or os.environ.get("OSMON_WEB_ORIGIN", "")).rstrip("/")
     def rate(self, ip, route):
         # Never trust unverified X-Forwarded-For. Proxy must also rate-limit clients.
-        key=(ip,route);now=time.time();limit=10 if route in ['/v1/parents','/v1/pairings','/v1/claims'] else 120
+        key=(ip,route);now=time.time();limit=10 if route in ['/v1/parents','/v1/browser-access','/v1/pairings','/v1/claims','/v1/web-codes','/v1/web-codes/redeem','/web-api/access','/web-api/login','/web-api/claims'] else 120
         with self.rate_lock:
             self.rates={k:v for k,v in self.rates.items() if v[0]>now-60}
             since,count=self.rates.get(key,(now,0))
@@ -137,7 +175,15 @@ class Handler(BaseHTTPRequestHandler):
     server_version='OSMonFamily/0.1'
     def log_message(self,*args): pass  # No codes, tokens or task titles in access logs.
     def handle_api(self):
-        status=200
+        static={'/':'index.html','/app.js':'app.js','/style.css':'style.css','/lumo.svg':'lumo.svg'}
+        if self.command=='GET' and self.path in static:
+            asset=Path(__file__).parent/'web'/static[self.path]
+            if not asset.is_file(): self.send_error(404);return
+            raw=asset.read_bytes();types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'}
+            self.send_response(200);self.send_header('Content-Type',types[asset.suffix]);self.send_header('Content-Length',str(len(raw)))
+            self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+            self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer');self.end_headers();self.wfile.write(raw);return
+        status=200;cookie=None
         try:
             if self.path.split('?')[0] != self.path: raise APIError(400,'Keine URL-Parameter erlaubt.')
             self.server.rate(self.client_address[0],self.path)
@@ -147,12 +193,38 @@ class Handler(BaseHTTPRequestHandler):
             body=json.loads(self.rfile.read(size)) if size else {}
             if not isinstance(body,dict): raise APIError(400,'Ungültiges JSON.')
             auth=self.headers.get('Authorization','');token=auth[7:] if auth.startswith('Bearer ') else ''
-            result=self.server.store.dispatch(self.command,self.path,token,body)
+            if self.path.startswith('/web-api/'):
+                if not self.server.web_origin: raise APIError(503,'Der Familienserver ist noch nicht für den Webzugang eingerichtet.')
+                if self.command!='GET' and (self.headers.get('Origin') != self.server.web_origin or self.headers.get('X-OSMon-Web')!='1'):
+                    raise APIError(403,'Anfrage von dieser Webseite nicht erlaubt.')
+                cookies=SimpleCookie();cookies.load(self.headers.get('Cookie',''))
+                token=cookies['__Host-osmon_parent'].value if '__Host-osmon_parent' in cookies else ''
+                sub=self.path[len('/web-api/'):]
+                if sub=='status' and self.command=='GET':
+                    with self.server.store.lock:
+                        try: self.server.store.parent(token);authenticated=True
+                        except APIError: authenticated=False
+                    result={'configured':True,'authenticated':authenticated}
+                elif sub in ['access','login'] and self.command=='POST':
+                    result=self.server.store.dispatch('POST','/v1/browser-access' if sub=='access' else '/v1/web-codes/redeem','',body)
+                    cookie=f"__Host-osmon_parent={result['token']}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800"
+                    result={'ok':True}
+                elif sub=='logout' and self.command=='DELETE':
+                    result=self.server.store.dispatch('DELETE','/v1/browser-session',token,{})
+                    cookie='__Host-osmon_parent=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0'
+                elif sub in ['children','claims','parents'] or sub.startswith('children/'):
+                    result=self.server.store.dispatch(self.command,'/v1/'+sub,token,body)
+                    if sub=='parents' and self.command=='DELETE':cookie='__Host-osmon_parent=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0'
+                else: raise APIError(404,'Nicht gefunden.')
+            else:
+                result=self.server.store.dispatch(self.command,self.path,token,body)
         except APIError as e: status,result=e.status,{'error':e.message}
         except (ValueError,UnicodeError): status,result=400,{'error':'Ungültige Anfrage.'}
         except Exception: status,result=500,{'error':'Interner Fehler.'}
         raw=json.dumps(result,ensure_ascii=False).encode()
-        self.send_response(status);self.send_header('Content-Type','application/json; charset=utf-8');self.send_header('Content-Length',str(len(raw)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.end_headers();self.wfile.write(raw)
+        self.send_response(status)
+        if cookie:self.send_header('Set-Cookie',cookie)
+        self.send_header('Content-Type','application/json; charset=utf-8');self.send_header('Content-Length',str(len(raw)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.end_headers();self.wfile.write(raw)
     do_GET=do_POST=do_PUT=do_DELETE=handle_api
     def setup(self): super().setup();self.connection.settimeout(10)
 

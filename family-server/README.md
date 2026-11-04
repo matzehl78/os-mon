@@ -54,3 +54,14 @@ Nach Ablauf eines Kopplungscodes oder nach Server-Widerruf auf dem Kindergerät 
 - Codeablauf, Wiederverwendung, fremdes Elternkonto, Netzabbruch, Neustart, Tageswechsel und Zugangslöschung testen.
 - Datenlöschung und Datenschutzerklärung der Kinder-App auf den optionalen Servermodus abstimmen.
 - Die ältere unvollständige iOS-Löschroutine aus dem Prüfbericht ist eine separate noch offene Baustelle; diese Erweiterung behauptet keine vollständige Reparatur dieses Altfehlers.
+
+## Weboberfläche (gleichberechtigter Elternzugang)
+Die vollständige Browseroberfläche liegt in `web/` und wird vom Python-Dienst unter `/` ausgeliefert. Aufgaben und Spielelimits verwenden dieselben API-Endpunkte, dieselbe Versionsprüfung und dieselben Gerätedaten wie die nativen Apps.
+
+Zusätzlich setzen: `OSMON_WEB_ORIGIN=https://familie.deine-domain.de`. Statische Dateien und `/web-api/` müssen über exakt diese HTTPS-Origin erreichbar sein. Keine CORS-Freigabe nötig oder erwünscht. Der Reverse Proxy muss `/`, die statischen Assets und `/web-api/` weiterleiten. Cookie- und Origin-Header unverändert weitergeben. Eine Webanmeldung über unverschlüsseltes HTTP wird bewusst nicht unterstützt.
+
+In der Eltern-App „Web-Anmeldecode erstellen“ wählen; den fünf Minuten gültigen Code auf der eigenen Eltern-Webseite eingeben. Der Browser erhält eine eigene sieben Tage gültige Sitzung zum bestehenden Elternzugang. Code nur einmal verwendbar; keine Zugangsschlüssel in LocalStorage oder JavaScript. Das Cookie ist HttpOnly, Secure, SameSite=Strict und nur auf dem eigenen Host gültig. Schreibzugriffe prüfen außerdem Origin und einen eigenen Request-Header. Browser-Abmelden widerruft nur diese Sitzung; die Eltern-App bleibt angemeldet. Gesamten Elternzugang löschen widerruft alle Browser-Sitzungen und die Geräteverbindungen.
+
+Ohne Eltern-App kann die Website einen neuen Webzugang erstellen und direkt einen Kindergeräte-Kopplungscode einlösen. Dieser Zugang übernimmt keine bereits einem anderen Elternzugang zugeordneten Geräte. Eine spätere Anmeldung desselben Zugangs in einer neuen nativen Eltern-App ist in dieser Version noch nicht enthalten.
+
+Ohne eingerichteten Server zeigt die bereitgestellte private Vorschau ausschließlich Beispieldaten. Änderungen dort wirken auf kein echtes Gerät. Die Vorschau ist kein zusätzlicher Datenspeicher und kein öffentlicher Familienserver.

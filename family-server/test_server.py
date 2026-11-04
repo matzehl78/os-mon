@@ -92,4 +92,60 @@ class HTTPTests(unittest.TestCase):
             self.assertEqual(error.exception.code,400)
         finally:s.shutdown();s.server_close();s.store.db.close();thread.join()
 
-if __name__=='__main__':unittest.main()
+
+class WebAccessTests(unittest.TestCase):
+    setUp=FamilyTests.setUp
+    tearDown=FamilyTests.tearDown
+    call=FamilyTests.call
+    claim=FamilyTests.claim
+    device=FamilyTests.device
+    assert_error=FamilyTests.assert_error
+    def test_app_and_browser_share_devices_and_scope(self):
+        self.claim()
+        code=self.call('POST','/v1/web-codes',self.p)['code']
+        token=self.call('POST','/v1/web-codes/redeem',body={'code':code})['token']
+        self.assertEqual(self.call('GET','/v1/children',token),self.call('GET','/v1/children',self.p))
+        self.assert_error(404,'POST','/v1/web-codes/redeem',body={'code':code})
+        self.assert_error(404,'DELETE',f'/v1/children/{self.device()["id"]}',self.other)
+        self.call('DELETE','/v1/browser-session',token)
+        self.assert_error(401,'GET','/v1/children',token)
+        self.assertEqual(len(self.call('GET','/v1/children',self.p)['children']),1)
+    def test_web_code_expiry_and_parent_revocation(self):
+        self.claim();code=self.call('POST','/v1/web-codes',self.p)['code'];self.now+=301
+        self.assert_error(404,'POST','/v1/web-codes/redeem',body={'code':code})
+        code=self.call('POST','/v1/web-codes',self.p)['code'];token=self.call('POST','/v1/web-codes/redeem',body={'code':code})['token']
+        self.call('DELETE','/v1/parents',self.p)
+        self.assert_error(401,'GET','/v1/children',token)
+    def test_browser_session_expires_after_seven_days(self):
+        token=self.call('POST','/v1/browser-access')['token'];self.now+=7*86400+1
+        self.assert_error(401,'GET','/v1/children',token)
+
+class BrowserHTTPTests(unittest.TestCase):
+    def test_cookie_csrf_static_and_shared_device_control(self):
+        from http.cookies import SimpleCookie
+        s=Server(('127.0.0.1',0),Store(':memory:'));s.web_origin=f'http://127.0.0.1:{s.server_port}'
+        thread=threading.Thread(target=s.serve_forever,daemon=True);thread.start();base=s.web_origin
+        def req(method,path,body=None,cookie='',origin=None,token=''):
+            headers={'Content-Type':'application/json','X-OSMon-Web':'1','Origin':origin or base,'Cookie':cookie,'Authorization':'Bearer '+token}
+            r=urllib.request.Request(base+path,data=json.dumps(body).encode() if body is not None else None,method=method,headers=headers)
+            return urllib.request.urlopen(r)
+        try:
+            with req('GET','/') as response:
+                self.assertIn('OS-Mon Eltern',response.read().decode());self.assertIn("frame-ancestors 'none'",response.headers['Content-Security-Policy'])
+            with req('POST','/v1/parents',{}) as response:parent=json.load(response)['token']
+            with req('POST','/v1/web-codes',{},token=parent) as response:code=json.load(response)['code']
+            with self.assertRaises(urllib.error.HTTPError) as e:req('POST','/web-api/login',{'code':code},origin='https://evil.invalid')
+            self.assertEqual(e.exception.code,403)
+            with req('POST','/web-api/login',{'code':code}) as response:
+                result=json.load(response);self.assertNotIn('token',result)
+                raw=response.headers['Set-Cookie'];self.assertIn('HttpOnly',raw);self.assertIn('Secure',raw);self.assertIn('SameSite=Strict',raw);cookie=raw.split(';')[0]
+            with req('POST','/v1/pairings',{'name':'Webtest','config':{'limit':2,'tasks':[]}}) as response:pair=json.load(response)
+            with req('POST','/web-api/claims',{'code':pair['code']},cookie) as response:self.assertTrue(json.load(response)['ok'])
+            with req('GET','/web-api/children',cookie=cookie) as response:child=json.load(response)['children'][0]
+            with req('PUT',f'/web-api/children/{child["id"]}/config',{'version':1,'config':{'limit':0,'tasks':[]}},cookie) as response:self.assertTrue(json.load(response)['ok'])
+            with req('GET','/v1/device',token=pair['token']) as response:self.assertEqual(json.load(response)['config']['limit'],0)
+            with req('DELETE','/web-api/logout',cookie=cookie) as response:self.assertIn('Max-Age=0',response.headers['Set-Cookie'])
+            with req('GET','/web-api/status',cookie=cookie) as response:self.assertFalse(json.load(response)['authenticated'])
+        finally:s.shutdown();s.server_close();s.store.db.close();thread.join()
+
+if __name__=="__main__":unittest.main()

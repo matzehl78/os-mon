@@ -9,6 +9,7 @@ struct ParentsHome: View {
     @State private var connection = FamilyVault.load()
     @State private var server = ""
     @State private var code = ""
+    @State private var webCode = ""
     @State private var children: [FamilyDevice] = []
     @State private var message = ""
     @State private var busy = false
@@ -52,6 +53,15 @@ struct ParentsHome: View {
                             let _: FamilyOK = try await FamilyAPI(connection: connection).call("POST", "/v1/claims", ["code": code])
                             code = ""; try await refresh(); message = "Gerät verbunden."
                         } }
+                    }
+                    Section("Auch im Browser") {
+                        Button("Web-Anmeldecode erstellen") { run {
+                            guard let connection else { return }
+                            let result: FamilyWebCode = try await FamilyAPI(connection: connection).call("POST", "/v1/web-codes")
+                            webCode = result.code
+                        } }
+                        if !webCode.isEmpty { Text(webCode).font(.title2.monospaced()).textSelection(.enabled) }
+                        Text("Fünf Minuten gültig, einmal verwendbar. Nur auf eurer eigenen Eltern-Webseite eingeben. App und Browser verwenden danach dieselben Geräte.").font(.footnote)
                     }
                     Section("Deine Geräte") {
                         if children.isEmpty { Text("Noch kein Gerät verbunden.") }

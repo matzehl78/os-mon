@@ -28,6 +28,7 @@ class ParentsActivity : ComponentActivity() {
 private fun ParentsHome() {
     val ctx = LocalContext.current; val scope = rememberCoroutineScope()
     var connection by remember { mutableStateOf(FamilyVault.load(ctx)) }
+    var webCode by remember { mutableStateOf("") }
     var server by remember { mutableStateOf("") }; var code by remember { mutableStateOf("") }
     var children by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var selected by remember { mutableStateOf<JSONObject?>(null) }
@@ -61,6 +62,11 @@ private fun ParentsHome() {
             Button(onClick = { run {
                 FamilyApi(connection!!).call("POST", "/v1/claims", JSONObject().put("code", code)); code = ""; refresh(); message = "Gerät verbunden."
             } }, enabled = !busy) { Text("Verbinden") }
+            HorizontalDivider()
+            Text("Auch im Browser", style = MaterialTheme.typography.titleMedium)
+            OutlinedButton(onClick = { run { webCode = FamilyApi(connection!!).call("POST", "/v1/web-codes").getString("code") } }, enabled = !busy) { Text("Web-Anmeldecode erstellen") }
+            if (webCode.isNotEmpty()) Text(webCode, style = MaterialTheme.typography.headlineSmall)
+            Text("Fünf Minuten gültig, einmal verwendbar. Nur auf eurer eigenen Eltern-Webseite eingeben. App und Browser verwenden dieselben Geräte.")
             HorizontalDivider()
             Text("Deine Geräte", style = MaterialTheme.typography.titleLarge)
             if (children.isEmpty()) Text("Noch kein Gerät verbunden.")

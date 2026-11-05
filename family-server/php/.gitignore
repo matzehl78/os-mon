@@ -2,3 +2,4 @@ private/config.php
 *.zip
 .setup*
 private/.setup*
+private/setup-enable.txt

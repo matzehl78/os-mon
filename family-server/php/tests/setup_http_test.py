@@ -9,7 +9,7 @@ class SetupHTTPTests(unittest.TestCase):
   result=subprocess.run(['php',str(ROOT/'tests/setup_http_fixture.php'),str(cls.directory)],capture_output=True,check=True,text=True)
   cls.code=json.loads(result.stdout)['code']
   with socket.socket()as s:s.bind(('127.0.0.1',0));cls.port=s.getsockname()[1]
-  env=dict(os.environ,OSMON_CONFIG_FILE=str(cls.cfg),OSMON_HTTP_TEST='1')
+  env=dict(os.environ,OSMON_CONFIG_FILE=str(cls.cfg),OSMON_HTTP_TEST='1',OSMON_SETUP_ORIGIN='https://parents.example.test')
   cls.proc=subprocess.Popen(['php','-S',f'127.0.0.1:{cls.port}','-t',str(ROOT/'public'),str(ROOT/'tests/http_router.php')],env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
   for _ in range(100):
    if cls.proc.poll()is not None:raise RuntimeError('PHP server failed')
@@ -30,6 +30,7 @@ class SetupHTTPTests(unittest.TestCase):
  def test_01_bootstrap_transport_and_origin(self):
   self.assertEqual(self.req('GET','/setup')[0],200)
   self.assertFalse(self.req('GET','/setup-api/status')[2]['authenticated'])
+  self.assertFalse((self.directory/'setup-enable.txt').exists())
   self.assertEqual(self.req('GET','/setup',headers={'X-Test-HTTP-Only':'1','X-Forwarded-Proto':'https'})[0],400)
   self.assertEqual(self.req('GET','/setup',headers={'Host':'evil.example'})[0],421)
   self.assertEqual(self.req('POST','/setup-api/unlock',{'code':self.code},headers={'Origin':'https://evil.example'})[0],403)

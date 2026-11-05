@@ -11,7 +11,7 @@ final class SetupWizard {
     public function origin():string{
         if(is_file($this->path('.setup-state.json'))){$s=json_decode((string)file_get_contents($this->path('.setup-state.json')),true);if(is_array($s)&&isset($s['origin']))return $s['origin'];}
         if(is_file($this->path('config.php'))){$c=require $this->path('config.php');if(is_array($c)&&isset($c['origin']))return $c['origin'];}
-        return 'https://parents.ulmatti-studios.com';
+        return getenv('OSMON_SETUP_ORIGIN') ?: 'https://parents.ulmatti-studios.com';
     }
     private function save(array $state):void {
         $p=$this->path('.setup-state.json');$h=fopen($p,'c+b');if(!$h)fail(503,'Einrichtungsdatei nicht beschreibbar.');
@@ -32,6 +32,17 @@ final class SetupWizard {
             $this->save($state);return $code;
         });
     }
+    private function activateFromFile():void{
+        $file=$this->path('setup-enable.txt');
+        if(is_file($this->path('.setup-state.json'))||!is_file($file))return;
+        if(is_link($file)||filesize($file)>128)fail(400,'Freischaltdatei ungültig. Nur einen zufälligen Code mit 32–100 Zeichen eintragen.');
+        $raw=file_get_contents($file,false,null,0,129);
+        $code=trim(preg_replace('/^\xEF\xBB\xBF/','',(string)$raw));
+        if(!preg_match('/^[A-Za-z0-9_-]{32,100}$/D',$code)||preg_match('/^(HIER|REPLACE|CHANGE|DEIN_)/i',$code))fail(400,'In setup-enable.txt einen eigenen zufälligen Code mit 32–100 Zeichen (Buchstaben, Ziffern, _ oder -) eintragen.');
+        @chmod($file,0600);
+        if(!unlink($file))fail(503,'Freischaltdatei konnte nicht entfernt werden. Private Verzeichnisrechte prüfen.');
+        $this->save(['origin'=>$this->origin(),'expires'=>$this->now()+1800,'codeHash'=>tokenHash($code),'sessionHash'=>null,'csrf'=>newToken(),'stage'=>'unlock','attempts'=>[]]);
+    }
     private function checklist():array{
         return ['php'=>version_compare(PHP_VERSION,'8.3','>='),'pdo_mysql'=>extension_loaded('pdo_mysql'),'mbstring'=>extension_loaded('mbstring'),'openssl'=>extension_loaded('openssl'),'privateWritable'=>is_writable($this->directory),'phpVersion'=>PHP_VERSION];
     }
@@ -47,10 +58,11 @@ final class SetupWizard {
                 if($method==='GET'&&$route==='status')return ['complete'=>true,'authenticated'=>false];
                 fail(410,'Einrichtung bereits abgeschlossen.');
             }
+            $this->activateFromFile();
             $path=$this->path('.setup-state.json');
-            if(!is_file($path))fail(503,'Zuerst per SSH: php private/setup-start.php ausführen.');
+            if(!is_file($path))fail(503,'Zuerst die private Datei setup-enable.txt mit deinem zufälligen Einrichtungscode anlegen.');
             $s=json_decode((string)file_get_contents($path),true,32,JSON_THROW_ON_ERROR);
-            if(!is_array($s)||($s['expires']??0)<=$this->now()) { @unlink($path);fail(410,'Einrichtungscode abgelaufen. Assistent per SSH neu starten.'); }
+            if(!is_array($s)||($s['expires']??0)<=$this->now()) { @unlink($path);fail(410,'Einrichtungscode abgelaufen. Neue private Freischaltdatei anlegen und Seite neu laden.'); }
             try{
                 if($method==='POST'&&$route==='unlock'){
                     $minute=(int)floor($this->now()/60);$key=hash_hmac('sha256',$ip,$s['csrf']);
@@ -65,7 +77,7 @@ final class SetupWizard {
                 }
                 $valid=$session!==''&&is_string($s['sessionHash'])&&hash_equals($s['sessionHash'],tokenHash($session));
                 if($method==='GET'&&$route==='status')return $valid?$this->view($s):['complete'=>false,'authenticated'=>false,'stage'=>'unlock'];
-                if(!$valid)fail(401,'Einrichtungssitzung ungültig. Per SSH neu starten, falls der Browserzugang verloren ging.');
+                if(!$valid)fail(401,'Einrichtungssitzung ungültig. Bei Browserverlust die private .setup-state.json entfernen und neu freischalten.');
                 if(!hash_equals($s['csrf'],$csrf))fail(403,'Ungültige Einrichtungsanfrage. Seite neu laden.');
                 if($method!=='POST')fail(405,'Nicht unterstützt.');
                 if($route==='database'){
@@ -95,7 +107,7 @@ final class SetupWizard {
                     if($s['stage']!=='authenticator')fail(409,'Zuerst Adminzugang einrichten.');
                     $code=$body['code']??'';if(!is_string($code))fail(400,'Sechsstelligen Authenticator-Code eingeben.');
                     // Bound OTP guessing within the same setup session.
-                    $s['otpFailures']=(int)($s['otpFailures']??0)+1;if($s['otpFailures']>10)fail(429,'Zu viele Codeversuche. Einrichtung per SSH neu starten.');
+                    $s['otpFailures']=(int)($s['otpFailures']??0)+1;if($s['otpFailures']>10)fail(429,'Zu viele Codeversuche. Private .setup-state.json entfernen und mit neuer Freischaltdatei starten.');
                     $secret=base64_decode($s['totp'],true);$step=matchTOTP($secret,$code,$this->now(),-1);if($step===null)fail(400,'Authenticator-Code ungültig. Uhrzeit prüfen und neuen Code eingeben.');
                     $db=connectFamily($s['config']);$db->beginTransaction();$wrote=false;$marked=false;
                     try{

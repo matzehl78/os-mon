@@ -2,23 +2,26 @@
 
 Ziel: https://parents.ulmatti-studios.com. Dieses Paket ersetzt den Python-Server für Shared Hosting; die API-Pfade und Antwortfelder der nativen Apps bleiben erhalten. Keine echten Zugangsdaten im Paket. Die bestehende SQLite-Datenbank wird nicht automatisch importiert; für diesen neuen Server Geräte neu koppeln.
 
-## Neuer Ersteinrichtungsassistent (empfohlener Weg)
+## Ersteinrichtungsassistent ohne SSH (empfohlener Weg)
 
-Nach Upload und Zuordnung der Subdomain auf `parents/public`:
+1. Paket entpacken und `public` sowie `private` per SFTP oder Hosting-Dateimanager nach `ulmatti-studios.com/parents` hochladen. Subdomain-Ziel auf `ulmatti-studios.com/parents/public` setzen. `private` darf über keine Domain öffentlich abrufbar sein; dort liegt zusätzlich eine sperrende .htaccess.
+2. Im privaten Ordner eine neue reine Textdatei **setup-enable.txt** erstellen. Ihr gesamter Inhalt ist ein eigener zufälliger Code mit 32–100 Zeichen: A–Z, a–z, Ziffern, `_` und `-`. Mit einem Passwortgenerator erzeugen. Kein vorhandenes Passwort oder Beispielcode verwenden. Rechte nach Möglichkeit 600 setzen. Die mitgelieferte `setup-enable.example.txt` ist nur eine Anleitung und aktiviert nichts.
+3. `https://parents.ulmatti-studios.com/setup` im eigenen Browser öffnen bzw. neu laden. Der Server übernimmt den Code als Hash in eine private Einrichtungsdatei und entfernt setup-enable.txt. Ab diesem Aufruf gilt die Freischaltung 30 Minuten. Denselben Code im Browser eingeben; er ist einmal verwendbar. Nie im Chat oder als URL-Parameter übermitteln.
+4. Die Serverprüfliste ansehen und eigene **leere** MySQL-Datenbank eintragen. Verbindung prüfen und Tabellen vorbereiten. Datenbankpasswort nur hier auf dem eigenen HTTPS-Server eingeben.
+5. Adminname und neues Adminpasswort wählen. Den angezeigten Schlüssel manuell in eine Authenticator-App übernehmen (6 Ziffern, 30 Sekunden, SHA-1). Keine externen QR-Dienste. Aktuellen Authenticator-Code bestätigen.
+6. Der Assistent schreibt die private Konfiguration, richtet den Admin ein und sperrt sich dauerhaft. Für die erste Anmeldung unter `/admin` auf den nächsten neuen Authenticator-Code warten.
 
-1. Per SSH im Ordner `parents` einmalig `php private/setup-start.php` ausführen (passenden PHP-CLI-Pfad verwenden).
-2. Im eigenen Browser `https://parents.ulmatti-studios.com/setup` öffnen. Den im SSH-Terminal angezeigten einmaligen Code **nur dort** eingeben. Gültigkeit 30 Minuten; kein Code in der URL und kein Standardpasswort.
-3. Serverprüfliste ansehen und die eigene **leere** MySQL-Datenbank angeben. Der Assistent prüft die Verbindung und legt die Tabellen an. Datenbankpasswort nur in diesem HTTPS-Formular eingeben.
-4. Adminnamen und neues Adminpasswort wählen; Authenticator-App mit dem angezeigten Schlüssel manuell verbinden. Keine externen QR-Dienste. Schlüssel sicher verwahren und nicht in Chats/Screenshots teilen.
-5. Aktuellen sechsstelligen Authenticator-Code bestätigen. Der Assistent schreibt die private Konfiguration, richtet den Admin ein und sperrt sich danach dauerhaft. Für die erste Admin-Anmeldung den nächsten neuen Authenticator-Code abwarten.
+Kein SSH-Terminal nötig. Auch das manuelle Bearbeiten von config.php entfällt. Ratenbegrenzungs- und Admin-Verschlüsselungsschlüssel werden automatisch erzeugt. Die folgenden manuellen Abschnitte bleiben als Alternative für Wartung mit Terminalzugang gültig. Alternativ kann weiterhin `php private/setup-start.php` einen Code erzeugen.
 
-Damit entfallen manuelles Bearbeiten von config.php, separate Tabelleneinrichtung und admin-setup.php bei einer frischen Installation. Ratenbegrenzungs- und Admin-Verschlüsselungsschlüssel werden automatisch erzeugt. Die folgenden manuellen Abschnitte bleiben als Alternative und für spätere Wartung gültig.
+Falls der Dateimanager keine neuen Textdateien erstellen kann: eine reine UTF-8-Textdatei mit diesem Namen auf dem eigenen Gerät erstellen und per SFTP hochladen. Keine Word-/RTF-Datei und nicht versehentlich `setup-enable.txt.txt`. Passwort und Code nicht hier hochladen. Die Freischaltdatei gehört ausschließlich nach private, nie nach public. Auch über die Studio-Hauptdomain darf der Ordner nicht zugänglich sein.
 
-Der Einmalcode ist ein Zugang zur Einrichtung und kann Datenbank-/Adminzugang anlegen. Nicht weitergeben. Die Einrichtungsdaten liegen bis Abschluss/Abbruch in einer Datei mit Rechten 600 außerhalb des Domain-Webroots; das Adminpasswort wird dort ausschließlich gehasht gespeichert. Nach Abschluss wird diese Zwischenablage gelöscht. Eine abgelaufene Zwischenablage wird beim nächsten Aufruf gelöscht oder beim nächsten bewussten CLI-Start ersetzt. Die Laufzeit wird nicht durch Browseraktivität verlängert.
+Nach Ablauf den Assistenten einmal aufrufen (dadurch wird die abgelaufene `.setup-state.json` entfernt), eine neue Freischaltdatei mit neuem zufälligem Code anlegen und erneut laden. Bei Browserverlust oder ausgeschöpften Authenticator-Versuchen vor Abschluss `.setup-state.json` im privaten Ordner per Dateimanager entfernen und neu freischalten. Ein bereits fertig eingerichteter Server lässt sich dadurch **nicht** neu einrichten: config.php und `.setup-complete` bleiben gesperrt. Nicht zur Wiederherstellung diese Produktivdateien löschen.
 
-`setup-start.php` ersetzt vor Abschluss einen vorherigen Code und beendet dessen Einrichtungssitzung. Bei verlorener Sitzung oder Ablauf kann neu gestartet werden. Bereits angelegte Tabellen werden dabei **nicht** gelöscht: Bei einer abgebrochenen Einrichtung nach Tabellenerstellung eine neue leere Datenbank wählen oder die manuelle Installation aus den folgenden Abschnitten abschließen. Keine automatische Datenbanklöschung. Bestehende `config.php` oder die private Sperrdatei `.setup-complete` verhindern einen Neustart. Eine bestehende produktive Installation nicht mit dem Assistenten neu konfigurieren; Admin-Wiederherstellung erfolgt über `admin-setup.php`.
+Einmalcode vertraulich behandeln. Temporäre Einrichtungsdaten liegen mit Rechten 600 außerhalb des öffentlichen Verzeichnisses. Das Adminpasswort wird darin nur gehasht gespeichert. Nach Abschluss wird diese Zwischenablage gelöscht; abgelaufene Zwischenablagen werden beim nächsten Aufruf entfernt. Bereits angelegte Datenbanktabellen werden bei Abbruch **nicht** automatisch gelöscht. Nach erneutem Start mit neuer Sitzung eine andere leere Datenbank verwenden oder die dokumentierte manuelle Installation abschließen lassen.
 
-Der Assistent prüft PHP-Erweiterungen, Schreibrechte, Datenbankverbindung und die lokale Admin-Einrichtung. Er kann die Sicherheitswartung des Hosters, Apache-Konfiguration, Backups, Rechtstexte und echte Geräteverbindungen nicht vollständig prüfen. Das Abschlussbild kennzeichnet diese verbleibenden Schritte. Es werden keine SSH-/Datenbankpasswörter an ChatGPT oder Dritte geschickt.
+Eine vorhandene config.php oder `.setup-complete` verhindert jede erneute Einrichtung. Verlorene Adminzugänge benötigen weiterhin die separate Wiederherstellung durch jemanden mit Hosting-/Terminalzugang; dafür gibt es keine ungeschützte Web-Zurücksetzung.
+
+Der Assistent prüft PHP-Module, Schreibrechte, Datenbank und lokale Admin-Einrichtung. Sicherheitswartung des Hosters, Apache-Zuordnung, Backups, Rechtstexte, automatische Bereinigung und echte Geräteverbindungen müssen vor Livebetrieb zusätzlich geprüft werden. Geheimnisse werden nicht an ChatGPT oder Dritte geschickt.
 
 ## Voraussetzungen und Stand
 

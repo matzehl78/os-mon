@@ -8,6 +8,10 @@ header('Permissions-Policy: geolocation=(), camera=(), microphone=()');
 function browserCookie(string $token,int $maxAge): void {
     header('Set-Cookie: __Host-osmon_parent='.$token.'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age='.$maxAge,false);
 }
+if (str_starts_with($_SERVER['REQUEST_URI']??'', '/setup')) {
+    require_once dirname(__DIR__).'/private/SetupHTTP.php';
+    handleSetupHTTP();
+}
 try {
     $c=familyConfig();
     // Never trust arbitrary forwarded HTTPS / IP headers from clients.

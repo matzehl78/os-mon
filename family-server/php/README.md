@@ -2,6 +2,24 @@
 
 Ziel: https://parents.ulmatti-studios.com. Dieses Paket ersetzt den Python-Server für Shared Hosting; die API-Pfade und Antwortfelder der nativen Apps bleiben erhalten. Keine echten Zugangsdaten im Paket. Die bestehende SQLite-Datenbank wird nicht automatisch importiert; für diesen neuen Server Geräte neu koppeln.
 
+## Neuer Ersteinrichtungsassistent (empfohlener Weg)
+
+Nach Upload und Zuordnung der Subdomain auf `parents/public`:
+
+1. Per SSH im Ordner `parents` einmalig `php private/setup-start.php` ausführen (passenden PHP-CLI-Pfad verwenden).
+2. Im eigenen Browser `https://parents.ulmatti-studios.com/setup` öffnen. Den im SSH-Terminal angezeigten einmaligen Code **nur dort** eingeben. Gültigkeit 30 Minuten; kein Code in der URL und kein Standardpasswort.
+3. Serverprüfliste ansehen und die eigene **leere** MySQL-Datenbank angeben. Der Assistent prüft die Verbindung und legt die Tabellen an. Datenbankpasswort nur in diesem HTTPS-Formular eingeben.
+4. Adminnamen und neues Adminpasswort wählen; Authenticator-App mit dem angezeigten Schlüssel manuell verbinden. Keine externen QR-Dienste. Schlüssel sicher verwahren und nicht in Chats/Screenshots teilen.
+5. Aktuellen sechsstelligen Authenticator-Code bestätigen. Der Assistent schreibt die private Konfiguration, richtet den Admin ein und sperrt sich danach dauerhaft. Für die erste Admin-Anmeldung den nächsten neuen Authenticator-Code abwarten.
+
+Damit entfallen manuelles Bearbeiten von config.php, separate Tabelleneinrichtung und admin-setup.php bei einer frischen Installation. Ratenbegrenzungs- und Admin-Verschlüsselungsschlüssel werden automatisch erzeugt. Die folgenden manuellen Abschnitte bleiben als Alternative und für spätere Wartung gültig.
+
+Der Einmalcode ist ein Zugang zur Einrichtung und kann Datenbank-/Adminzugang anlegen. Nicht weitergeben. Die Einrichtungsdaten liegen bis Abschluss/Abbruch in einer Datei mit Rechten 600 außerhalb des Domain-Webroots; das Adminpasswort wird dort ausschließlich gehasht gespeichert. Nach Abschluss wird diese Zwischenablage gelöscht. Eine abgelaufene Zwischenablage wird beim nächsten Aufruf gelöscht oder beim nächsten bewussten CLI-Start ersetzt. Die Laufzeit wird nicht durch Browseraktivität verlängert.
+
+`setup-start.php` ersetzt vor Abschluss einen vorherigen Code und beendet dessen Einrichtungssitzung. Bei verlorener Sitzung oder Ablauf kann neu gestartet werden. Bereits angelegte Tabellen werden dabei **nicht** gelöscht: Bei einer abgebrochenen Einrichtung nach Tabellenerstellung eine neue leere Datenbank wählen oder die manuelle Installation aus den folgenden Abschnitten abschließen. Keine automatische Datenbanklöschung. Bestehende `config.php` oder die private Sperrdatei `.setup-complete` verhindern einen Neustart. Eine bestehende produktive Installation nicht mit dem Assistenten neu konfigurieren; Admin-Wiederherstellung erfolgt über `admin-setup.php`.
+
+Der Assistent prüft PHP-Erweiterungen, Schreibrechte, Datenbankverbindung und die lokale Admin-Einrichtung. Er kann die Sicherheitswartung des Hosters, Apache-Konfiguration, Backups, Rechtstexte und echte Geräteverbindungen nicht vollständig prüfen. Das Abschlussbild kennzeichnet diese verbleibenden Schritte. Es werden keine SSH-/Datenbankpasswörter an ChatGPT oder Dritte geschickt.
+
 ## Voraussetzungen und Stand
 
 - PHP 8.3 oder neuer, Zielhosting PHP 8.5; Erweiterungen PDO_MYSQL und mbstring.

@@ -35,11 +35,13 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '${{ matrix.php }}'
-          extensions: pdo_mysql, mbstring
+          extensions: pdo_mysql, mbstring, openssl
           coverage: none
       - name: PHP syntax
         run: find family-server/php -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Store integration on MySQL 5.7
         run: php family-server/php/tests/store_test.php
+      - name: Admin authentication, permissions and audit
+        run: php family-server/php/tests/admin_test.php
       - name: HTTP cookies, CSRF, configuration and location flow
         run: python3 family-server/php/tests/http_test.py

@@ -17,7 +17,7 @@ try {
     header('Strict-Transport-Security: max-age=15552000');
     $method=$_SERVER['REQUEST_METHOD']??'GET';$path=$_SERVER['REQUEST_URI']??'/';
     if (strlen($path)>256 || str_contains($path,'?') || str_contains($path,'%')) fail(400,'Ungültiger Pfad.');
-    $assets=['/'=>'index.html','/app.js'=>'app.js','/style.css'=>'style.css','/lumo.svg'=>'lumo.svg'];
+    $assets=['/'=>'index.html','/app.js'=>'app.js','/style.css'=>'style.css','/lumo.svg'=>'lumo.svg','/admin'=>'admin.html','/admin/'=>'admin.html','/admin.js'=>'admin.js','/admin.css'=>'admin.css'];
     if ($method==='GET' && isset($assets[$path])) {
         $file=__DIR__.'/'.$assets[$path];
         if (!is_file($file)) $file=dirname(__DIR__,2).'/web/'.$assets[$path];
@@ -25,7 +25,7 @@ try {
         $types=['html'=>'text/html; charset=utf-8','js'=>'text/javascript; charset=utf-8','css'=>'text/css; charset=utf-8','svg'=>'image/svg+xml'];
         header('Content-Type: '.$types[pathinfo($file,PATHINFO_EXTENSION)]);readfile($file);exit;
     }
-    if (!str_starts_with($path,'/v1/') && !str_starts_with($path,'/web-api/')) fail(404,'Nicht gefunden.');
+    if (!str_starts_with($path,'/v1/') && !str_starts_with($path,'/web-api/') && !str_starts_with($path,'/admin-api/')) fail(404,'Nicht gefunden.');
     $db=connectFamily($c);$store=new FamilyStore($db);
     $store->rate($_SERVER['REMOTE_ADDR']??'unknown',$path,$c['rate_secret']);
     if (isset($_SERVER['HTTP_TRANSFER_ENCODING'])) fail(400,'Nicht unterstützte Übertragung.');
@@ -41,7 +41,19 @@ try {
     }
     $auth=$_SERVER['HTTP_AUTHORIZATION']??$_SERVER['REDIRECT_HTTP_AUTHORIZATION']??'';
     $token=str_starts_with($auth,'Bearer ')?substr($auth,7):'';
-    if (str_starts_with($path,'/web-api/')) {
+    if (str_starts_with($path,'/admin-api/')) {
+        require_once dirname(__DIR__).'/private/AdminStore.php';
+        $admin=new AdminStore($db,adminKey($c));$store->cleanup();
+        if ($method!=='GET' && (($_SERVER['HTTP_ORIGIN']??'')!==$c['origin'] || ($_SERVER['HTTP_X_OSMON_ADMIN']??'')!=='1')) fail(403,'Admin-Anfrage von dieser Webseite nicht erlaubt.');
+        $adminToken=$_COOKIE['__Host-osmon_admin']??'';
+        if (!is_string($adminToken) || strlen($adminToken)>100) fail(401,'Ungültige Admin-Sitzung.');
+        try { $result=$admin->dispatch($method,$path,$adminToken,$body,$_SERVER['HTTP_X_OSMON_CSRF']??''); }
+        catch(FamilyAPIError $e) { if($e->status===401 && $path==='/admin-api/status' && $method==='GET')$result=['authenticated'=>false];else throw $e; }
+        if($path==='/admin-api/login' && $method==='POST') {
+            header('Set-Cookie: __Host-osmon_admin='.$result['token'].'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=7200',false);unset($result['token']);$result['authenticated']=true;
+        }
+        if($path==='/admin-api/logout' && $method==='DELETE') header('Set-Cookie: __Host-osmon_admin=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0',false);
+    } elseif (str_starts_with($path,'/web-api/')) {
         if ($method!=='GET' && (($_SERVER['HTTP_ORIGIN']??'')!==$c['origin'] || ($_SERVER['HTTP_X_OSMON_WEB']??'')!=='1')) fail(403,'Anfrage von dieser Webseite nicht erlaubt.');
         $token=$_COOKIE['__Host-osmon_parent']??'';
         if (!is_string($token) || strlen($token)>100) fail(401,'Ungültige Sitzung.');

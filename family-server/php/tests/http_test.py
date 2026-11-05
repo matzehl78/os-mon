@@ -5,9 +5,10 @@ class HTTPTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if os.environ.get('OSMON_TEST_DATABASE')!='osmon_test':raise RuntimeError('Dedicated test database required')
+        subprocess.run(['php',str(ROOT/'tests/admin_http_fixture.php')],check=True)
         cls.temp=tempfile.TemporaryDirectory();cfg=pathlib.Path(cls.temp.name)/'config.php'
         # Secret values are test-only; never printed, never shipped.
-        settings={'origin':'https://parents.example.test','host':os.getenv('OSMON_TEST_HOST','127.0.0.1'),'port':int(os.getenv('OSMON_TEST_PORT','3306')),'database':'osmon_test','username':os.getenv('OSMON_TEST_USER','root'),'password':os.getenv('OSMON_TEST_PASSWORD','test-only'),'rate_secret':'a'*64}
+        settings={'origin':'https://parents.example.test','host':os.getenv('OSMON_TEST_HOST','127.0.0.1'),'port':int(os.getenv('OSMON_TEST_PORT','3306')),'database':'osmon_test','username':os.getenv('OSMON_TEST_USER','root'),'password':os.getenv('OSMON_TEST_PASSWORD','test-only'),'rate_secret':'a'*64,'admin_key':(b'k'*32).hex()}
         cfg.write_text('<?php return json_decode('+json.dumps(json.dumps(settings))+',true);')
         with socket.socket() as s:s.bind(('127.0.0.1',0));cls.port=s.getsockname()[1]
         env=dict(os.environ,OSMON_CONFIG_FILE=str(cfg),OSMON_HTTP_TEST='1')
@@ -61,4 +62,21 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(self.obj('DELETE','/web-api/logout',cookie=cookie)[0],200)
         self.assertFalse(self.obj('GET','/web-api/status',cookie=cookie)[2]['authenticated'])
         self.obj('DELETE','/v1/parents',token=parent)
+    def test_04_admin_auth_cookie_csrf_and_privacy(self):
+        import hmac, hashlib, struct
+        step=int(time.time()/30);digest=hmac.new(b'12345678901234567890',struct.pack('>Q',step),hashlib.sha1).digest();offset=digest[-1]&15;code=f"{(struct.unpack('>I',digest[offset:offset+4])[0]&0x7fffffff)%1000000:06d}"
+        h={'X-OSMon-Admin':'1'}
+        self.assertEqual(self.obj('GET','/admin-api/overview')[0],401)
+        self.assertEqual(self.req('GET','/admin')[0],200)
+        body={'username':'httpoperator','password':'Test-only-password-123','code':code}
+        self.assertEqual(self.obj('POST','/admin-api/login',body,headers=dict(h,Origin='https://evil.example'))[0],403)
+        status,headers,result=self.obj('POST','/admin-api/login',body,headers=h);self.assertEqual(status,200);self.assertNotIn('token',result)
+        cookie=headers['Set-Cookie'];self.assertIn('__Host-osmon_admin=',cookie);self.assertIn('HttpOnly',cookie);self.assertIn('Secure',cookie);cookie=cookie.split(';')[0]
+        self.assertEqual(self.obj('POST','/admin-api/families',{'page':0},cookie=cookie,headers=h)[0],403)
+        h['X-OSMon-CSRF']=result['csrf']
+        self.assertEqual(self.obj('POST','/admin-api/families',{'page':0},cookie=cookie,headers=h)[0],200)
+        status,_,summary=self.obj('GET','/admin-api/overview',cookie=cookie);self.assertEqual(status,200);self.assertNotIn('location',summary)
+        self.assertEqual(self.obj('GET','/web-api/children',cookie=cookie)[0],401)
+        self.assertEqual(self.obj('DELETE','/admin-api/logout',{},cookie=cookie,headers=h)[0],200)
+        self.assertFalse(self.obj('GET','/admin-api/status',cookie=cookie)[2]['authenticated'])
 if __name__=='__main__':unittest.main()

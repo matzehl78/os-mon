@@ -66,12 +66,14 @@ final class FamilyStore {
             $this->query('DELETE FROM osmon_web_codes WHERE expires<=?',[$now]);
             $this->query('DELETE FROM osmon_web_sessions WHERE expires<=?',[$now]);
             $this->query('UPDATE osmon_devices SET location=NULL,location_at=NULL WHERE location_at<=?',[$now-86400]);
+            $this->query('DELETE FROM osmon_admin_sessions WHERE expires<=? OR touched<=?',[$now,$now-1800]);
+            $this->query('DELETE FROM osmon_admin_audit WHERE happened<?',[$now-90*86400]);
             $this->query('DELETE FROM osmon_rates WHERE minute<?',[(int)floor($now/60)-2]);
         });
     }
     public function rate(string $ip, string $route, string $secret): void {
-        $limited=['/v1/parents','/v1/browser-access','/v1/pairings','/v1/claims','/v1/web-codes','/v1/web-codes/redeem','/web-api/access','/web-api/login','/web-api/claims'];
-        $limit=in_array($route,$limited,true)?10:120;
+        $limited=['/admin-api/login','/v1/parents','/v1/browser-access','/v1/pairings','/v1/claims','/v1/web-codes','/v1/web-codes/redeem','/web-api/access','/web-api/login','/web-api/claims'];
+        $limit=$route==='/admin-api/login'?5:(in_array($route,$limited,true)?10:120);
         // Bound key cardinality: unknown routes share one bucket, no raw IPs stored.
         $group=in_array($route,$limited,true)?$route:'other';
         $key=hash_hmac('sha256',$ip."\n".$group,$secret);$minute=(int)floor($this->now()/60);
@@ -84,14 +86,14 @@ final class FamilyStore {
     }
     public function parent(string $token): string {
         $key=tokenHash($token);$now=$this->now();
-        if ($this->one('SELECT token FROM osmon_parents WHERE token=? AND expires>?',[$key,$now])) return $key;
-        $row=$this->one('SELECT s.owner FROM osmon_web_sessions s JOIN osmon_parents p ON p.token=s.owner WHERE s.token=? AND s.expires>? AND p.expires>?',[$key,$now,$now]);
+        if ($this->one('SELECT token FROM osmon_parents WHERE token=? AND expires>? AND suspended=0',[$key,$now])) return $key;
+        $row=$this->one('SELECT s.owner FROM osmon_web_sessions s JOIN osmon_parents p ON p.token=s.owner WHERE s.token=? AND s.expires>? AND p.expires>? AND p.suspended=0',[$key,$now,$now]);
         if ($row) return $row['owner'];fail(401,'Elternzugang abgelaufen oder ungültig. Bitte erneut anmelden.');
     }
     private function device(string $token): array {
         $d=$this->one('SELECT * FROM osmon_devices WHERE token=?',[tokenHash($token)]);
         if (!$d || (!$d['owner'] && (float)$d['expires']<=$this->now())) fail(401,'Verbindung ungültig oder abgelaufen.');
-        if ($d['owner'] && !$this->one('SELECT token FROM osmon_parents WHERE token=? AND expires>?',[$d['owner'],$this->now()])) fail(401,'Elternzugang abgelaufen.');return $d;
+        if ($d['owner'] && !$this->one('SELECT token FROM osmon_parents WHERE token=? AND expires>? AND suspended=0',[$d['owner'],$this->now()])) fail(401,'Elternzugang abgelaufen.');return $d;
     }
     private function request(array $d): ?array {
         $r=$d['location_request'] ? json_decode($d['location_request'],true,32,JSON_THROW_ON_ERROR):null;
@@ -123,7 +125,7 @@ final class FamilyStore {
         }
         if ($m==='POST' && $path==='/v1/web-codes/redeem') {
             $code=normalizeCode($b['code']??'');
-            $row=$this->one('SELECT c.owner FROM osmon_web_codes c JOIN osmon_parents p ON p.token=c.owner WHERE c.code=? AND c.expires>? AND p.expires>?',[tokenHash($code),$now,$now]);
+            $row=$this->one('SELECT c.owner FROM osmon_web_codes c JOIN osmon_parents p ON p.token=c.owner WHERE c.code=? AND c.expires>? AND p.expires>? AND p.suspended=0',[tokenHash($code),$now,$now]);
             if (!$row) fail(404,'Anmeldecode ungültig, abgelaufen oder bereits verwendet.');
             $this->query('DELETE FROM osmon_web_codes WHERE code=?',[tokenHash($code)]);return ['token'=>$this->session($row['owner'])];
         }

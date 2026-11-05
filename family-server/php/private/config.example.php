@@ -9,5 +9,7 @@ return [
     'username' => 'YOUR_DATABASE_USER',
     'password' => 'REPLACE_WITH_NEW_DATABASE_PASSWORD',
     // Generate: php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
+    // Separate key for encrypted admin TOTP secrets (required only for /admin).
+    'admin_key' => 'REPLACE_WITH_ANOTHER_64_RANDOM_HEX_CHARACTERS',
     'rate_secret' => 'REPLACE_WITH_64_RANDOM_HEX_CHARACTERS',
 ];

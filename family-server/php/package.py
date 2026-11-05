@@ -4,8 +4,10 @@ import sys, zipfile
 root=Path(__file__).resolve().parent
 output=Path(sys.argv[1]).resolve()
 with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
-    for p in sorted((root/'private').iterdir()):
-        if p.is_file() and p.name!='config.php': z.write(p,'osmon-parents/private/'+p.name)
+    private_files=['.htaccess','FamilyStore.php','AdminStore.php','bootstrap.php','config.example.php','schema.sql','install.php','cleanup.php','admin-setup.php']
+    for name in private_files:
+        p=root/'private'/name
+        z.write(p,'osmon-parents/private/'+name)
     for p in sorted((root/'public').iterdir()):
         if p.is_file(): z.write(p,'osmon-parents/public/'+p.name)
     for p in sorted((root.parent/'web').iterdir()):

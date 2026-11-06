@@ -73,7 +73,7 @@ final class FamilyStore {
     }
     public function rate(string $ip, string $route, string $secret): void {
         $limited=['/admin-api/login','/v1/account/register','/v1/account/resend','/v1/account/forgot','/v1/account/login','/v1/account/verify','/v1/account/reset','/web-api/account/register','/web-api/account/resend','/web-api/account/forgot','/web-api/account/login','/web-api/account/verify','/web-api/account/reset','/v1/parents','/v1/browser-access','/v1/pairings','/v1/claims','/v1/web-codes','/v1/web-codes/redeem','/web-api/access','/web-api/login','/web-api/claims'];
-        $limit=($route==='/admin-api/login'||str_contains($route,'/account/'))?5:(in_array($route,$limited,true)?10:120);
+        $limit=($route==='/admin-api/login'||(in_array($route,$limited,true)&&str_contains($route,'/account/')))?5:(in_array($route,$limited,true)?10:120);
         // Bound key cardinality: unknown routes share one bucket, no raw IPs stored.
         $group=in_array($route,$limited,true)?$route:'other';
         $key=hash_hmac('sha256',$ip."\n".$group,$secret);$minute=(int)floor($this->now()/60);

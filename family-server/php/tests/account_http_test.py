@@ -37,7 +37,7 @@ class AccountsHTTP(unittest.TestCase):
   self.assertEqual(self.req('GET','/web-api/children',cookie=cookie)[0],401)
   self.assertEqual(self.req('GET','/v1/children',token=native['token'])[0],200)
  def test_public_routes_do_not_expose_account_or_secrets(self):
-  self.assertEqual(self.req('GET','/web-api/account/status')[0],401)
+  for _ in range(6):self.assertEqual(self.req('GET','/web-api/account/status')[0],401)
   self.assertEqual(self.req('POST','/v1/account/login',{'email':'absent@example.test','password':'wrong'})[0],401)
   a=self.req('POST','/web-api/account/forgot',{'email':'absent@example.test'})
   b=self.req('POST','/web-api/account/forgot',{'email':'httpaccount@example.test'})

@@ -67,6 +67,9 @@ private fun ParentsHome() {
             TextButton(onClick = { run {
                 FamilyApi(FamilyConnection(FamilyApi.server(server), "")).call("POST", "/v1/account/forgot", JSONObject().put("email", email)); message = "Falls möglich erhältst du einen Link zum Zurücksetzen. Bitte auch Spam prüfen."
             } }, enabled = !busy) { Text("Passwort vergessen") }
+            TextButton(onClick = { run {
+                FamilyApi(FamilyConnection(FamilyApi.server(server), "")).call("POST", "/v1/account/resend", JSONObject().put("email", email)); message = "Falls möglich erhältst du eine neue Bestätigung. Bitte auch Spam prüfen."
+            } }, enabled = !busy) { Text("Bestätigung erneut senden") }
             Text("Anmeldung gilt höchstens sieben Tage. Passwörter werden nicht gespeichert. Die E-Mail-Bestätigung und Passwortwahl erfolgen im Webportal.")
         } else if (selected == null) {
             OutlinedTextField(code, { code = it.uppercase().take(12) }, label = { Text("Kopplungscode vom Kindergerät") }, enabled = !busy)

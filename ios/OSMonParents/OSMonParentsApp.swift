@@ -57,6 +57,11 @@ struct ParentsHome: View {
                             let _: FamilyOK = try await FamilyAPI(connection: .init(server: base, token: "")).call("POST", "/v1/account/forgot", ["email": email])
                             message = "Falls möglich erhältst du einen Link zum Zurücksetzen. Bitte auch Spam prüfen."
                         } }
+                        Button("Bestätigung erneut senden") { run {
+                            let base = try FamilyAPI.server(server)
+                            let _: FamilyOK = try await FamilyAPI(connection: .init(server: base, token: "")).call("POST", "/v1/account/resend", ["email": email])
+                            message = "Falls möglich erhältst du eine neue Bestätigung. Bitte auch Spam prüfen."
+                        } }
                         Text("Anmeldung gilt höchstens sieben Tage. Passwörter werden nicht gespeichert. E-Mail-Bestätigung und Passwortwahl erfolgen im Webportal.").font(.footnote)
                     }
                 } else {

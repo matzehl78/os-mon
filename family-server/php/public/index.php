@@ -21,12 +21,12 @@ try {
     header('Strict-Transport-Security: max-age=15552000');
     $method=$_SERVER['REQUEST_METHOD']??'GET';$path=$_SERVER['REQUEST_URI']??'/';
     if (strlen($path)>256 || str_contains($path,'?') || str_contains($path,'%')) fail(400,'Ungültiger Pfad.');
-    $assets=['/'=>'index.html','/app.js'=>'app.js','/style.css'=>'style.css','/lumo.svg'=>'lumo.svg','/admin'=>'admin.html','/admin/'=>'admin.html','/admin.js'=>'admin.js','/admin.css'=>'admin.css'];
+    $assets=['/'=>'index.html','/app.js'=>'app.js','/style.css'=>'style.css','/lumo.svg'=>'lumo.svg','/garteninsel.jpg'=>'garteninsel.jpg','/admin'=>'admin.html','/admin/'=>'admin.html','/admin.js'=>'admin.js','/admin.css'=>'admin.css'];
     if ($method==='GET' && isset($assets[$path])) {
         $file=__DIR__.'/'.$assets[$path];
         if (!is_file($file)) $file=dirname(__DIR__,2).'/web/'.$assets[$path];
         if (!is_file($file)) fail(503,'Webdateien fehlen.');
-        $types=['html'=>'text/html; charset=utf-8','js'=>'text/javascript; charset=utf-8','css'=>'text/css; charset=utf-8','svg'=>'image/svg+xml'];
+        $types=['html'=>'text/html; charset=utf-8','js'=>'text/javascript; charset=utf-8','css'=>'text/css; charset=utf-8','svg'=>'image/svg+xml','jpg'=>'image/jpeg'];
         header('Content-Type: '.$types[pathinfo($file,PATHINFO_EXTENSION)]);readfile($file);exit;
     }
     if (!str_starts_with($path,'/v1/') && !str_starts_with($path,'/web-api/') && !str_starts_with($path,'/admin-api/')) fail(404,'Nicht gefunden.');

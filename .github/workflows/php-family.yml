@@ -39,6 +39,10 @@ jobs:
           coverage: none
       - name: PHP syntax
         run: find family-server/php -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Portal login gate and JavaScript syntax
+        run: |
+          node --check family-server/web/app.js
+          node family-server/web/tests/login_gate_test.cjs
       - name: Encrypted SMTP settings and validation
         run: php family-server/php/tests/mail_test.php
       - name: Store integration on MySQL 5.7

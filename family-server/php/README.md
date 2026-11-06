@@ -160,3 +160,10 @@ E-Mail-Adressen werden normalisiert in der Datenbank gespeichert, Passwörter nu
 Neue API (nur PHP): POST /v1/account/{register,resend,forgot,verify,reset,login}, GET /v1/account/status. Registrierung/Resend/Forgot benötigen email, Login email+password, Verify/Reset code+password. Register kann einen vorhandenen Eltern-Bearer zur Verknüpfung verwenden. Browser-Gegenstücke /web-api/account/... verwenden nur das vorhandene sichere Cookie und Origin-/Header-Prüfung; Login gibt im Browser kein Token zurück. Native Loginantwort enthält token/expires. Admin und Eltern bleiben getrennt.
 
 Validierung umfasst MySQL-Integration, Registrierung, Einmaligkeit/Ablauf, familienerhaltende Migration, Reset-Widerruf, Rollen/CSRF, Cookie-/Bearer-Verhalten sowie bestehende Family-/Setup-Tests. Echter Mailversand, iPhone/Android-Geräte und Zustellung im Mailprogramm müssen auf dem Hosting zusätzlich geprüft werden.
+
+
+## Portal nur nach Anmeldung
+
+Die öffentliche Startseite zeigt ausschließlich die Eltern-Anmeldung mit aufklappbarer Registrierung, Passwort-Hilfe und optionaler Anmeldung über einen Web-Anmeldecode. Navigation, Geräte, Aufgaben, Spielelimit, Einstellungen und Beispieldaten bleiben vor einer bestätigten Serversitzung verborgen. Bei Netzfehlern bleibt die Ansicht geschlossen. Abmelden oder HTTP 401 entfernt private Ansichts- und Dialoginhalte sowie Entwürfe. Beim Wiederherstellen einer Seite aus dem Browser-Zurück-Cache wird die Sitzung erneut geprüft. Die Daten-APIs prüfen weiterhin serverseitig den Elternzugang; die UI-Sperre ersetzt diese Prüfung nicht. Ein Adminname ist keine Eltern-E-Mail-Adresse.
+
+Das kleine Login-Ansicht-Update ersetzt nur public/index.html, public/app.js und public/style.css. Keine Änderung an Datenbank, SMTP, Konfiguration oder Apps notwendig. Browser anschließend vollständig neu laden.

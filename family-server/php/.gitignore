@@ -3,3 +3,5 @@ private/config.php
 .setup*
 private/.setup*
 private/setup-enable.txt
+
+private/.mail-*

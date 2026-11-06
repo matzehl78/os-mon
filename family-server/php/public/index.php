@@ -53,6 +53,13 @@ try {
         if (!is_string($adminToken) || strlen($adminToken)>100) fail(401,'Ungültige Admin-Sitzung.');
         try { $result=$admin->dispatch($method,$path,$adminToken,$body,$_SERVER['HTTP_X_OSMON_CSRF']??''); }
         catch(FamilyAPIError $e) { if($e->status===401 && $path==='/admin-api/status' && $method==='GET')$result=['authenticated'=>false];else throw $e; }
+        if(isset($result['mailAuthorized'])) {
+            require_once dirname(__DIR__).'/private/MailSettings.php';
+            $mail=new MailSettings(dirname(getenv('OSMON_CONFIG_FILE') ?: dirname(__DIR__).'/private/config.php'),adminKey($c));
+            if($method==='GET')$result=$mail->view();
+            elseif($method==='PUT')$result=$mail->save($body);
+            else {$mail->test(MailSettings::email($body['recipient']??null));$result=['ok'=>true];}
+        }
         if($path==='/admin-api/login' && $method==='POST') {
             header('Set-Cookie: __Host-osmon_admin='.$result['token'].'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=7200',false);unset($result['token']);$result['authenticated']=true;
         }

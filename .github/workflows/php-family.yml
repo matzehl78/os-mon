@@ -39,6 +39,8 @@ jobs:
           coverage: none
       - name: PHP syntax
         run: find family-server/php -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Encrypted SMTP settings and validation
+        run: php family-server/php/tests/mail_test.php
       - name: Store integration on MySQL 5.7
         run: php family-server/php/tests/store_test.php
       - name: Admin authentication, permissions and audit

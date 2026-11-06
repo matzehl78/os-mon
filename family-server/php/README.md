@@ -131,3 +131,13 @@ Bei Verlust von Passwort/Authenticator denselben CLI-Befehl mit identischem Admi
 - Admin-Cookie `__Host-osmon_admin`: HttpOnly, Secure, SameSite=Strict. Schreibaktionen benötigen Origin-Prüfung, eigenen Header und sitzungsgebundenes CSRF-Token. Eltern-Cookies/-Tokens erhalten keine Adminrechte, Adminzugänge sind keine Elternzugänge. Nach Arbeit abmelden. Regelmäßige Aktualisierung nur per Button, damit offene Tabs nicht automatisch die Inaktivitätsfrist verlängern.
 
 PHP benötigt zusätzlich OpenSSL. Der Adminbereich ist Bestandteil der PHP-Installation; der alternative Python-Server enthält diese Betreiberverwaltung nicht.
+
+## E-Mail-Einstellungen im Adminbereich (Update)
+
+Neue Funktion: `/admin` → E-Mail-Versand. SMTP-Hostname, Benutzername und Passwort aus den tatsächlichen Postfach-Einstellungen übernehmen. Unterstützt: TLS/465 oder STARTTLS/587 mit geprüften Zertifikaten, kein unverschlüsselter Versand. Absender noreply@ulmatti-studios.com und Support/Reply-To support@ulmatti-studios.com eintragen. Speichern, danach Test an eine eigene Adresse senden. SMTP-Annahme beweist nicht die Zustellung; Spamordner prüfen. SPF/DKIM/DMARC mit dem Mailanbieter einrichten. Kein Versand, bevor du Testmail absendest.
+
+Bestehende Installation OHNE SSH aktualisieren: Dateien aus dem Update-ZIP in die gleichnamigen public/private-Ordner kopieren und nur diese Programmdateien überschreiben. Vorher Backup dieser Programmdateien erstellen. config.php, .setup-complete und bestehende .mail-* Dateien niemals ersetzen/löschen. Keine SQL-Migration und kein erneutes /setup nötig. Adminseite neu laden. Der private Ordner muss weiterhin über jede Domain gesperrt sein. Für ein Rollback die gesicherten Programmdateien zurückkopieren; Mail-Einstellungen bleiben privat und ungenutzt erhalten.
+
+SMTP-Konfiguration wird mit dem bestehenden admin_key (AES-256-GCM, eigener Kontext smtp-v1) in private/.mail-settings gespeichert. config.php samt Schlüssel und die private Datei gemeinsam sichern. Passwort wird nie an den Browser zurückgegeben. Leeres Passwortfeld behält es bei. Geheimnisse sind weder in Fehlern noch im Verwaltungsprotokoll enthalten. Private Dateirechte 600; der PHP-Prozess braucht Schreibrechte im privaten Ordner. Testversand ist auf einen Versuch pro Minute begrenzt. SMTP-Ziele müssen öffentliche IP-Adressen besitzen; DNS wird einmal aufgelöst und die geprüfte Adresse für die Verbindung festgehalten. Der Hoster muss ausgehende Verbindungen auf 465 oder 587 erlauben.
+
+Dieses Update bereitet E-Mail-Versand vor. Eltern-Registrierung, E-Mail-Bestätigung und Passwort-Zurücksetzen sind noch separat zu implementieren; der bisherige Familienzugang funktioniert weiter.

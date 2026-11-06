@@ -31,6 +31,8 @@ try {
     }
     if (!str_starts_with($path,'/v1/') && !str_starts_with($path,'/web-api/') && !str_starts_with($path,'/admin-api/')) fail(404,'Nicht gefunden.');
     $db=connectFamily($c);$store=new FamilyStore($db);
+    require_once dirname(__DIR__).'/private/AccountStore.php';
+    $accounts=new AccountStore($db,$c['origin'],static function($to,$subject,$text)use($c){require_once dirname(__DIR__).'/private/MailSettings.php';$settings=new MailSettings(dirname(getenv('OSMON_CONFIG_FILE') ?: dirname(__DIR__).'/private/config.php'),adminKey($c));(new SMTPMailer())->send($settings->read(),$to,$subject,$text);});
     $store->rate($_SERVER['REMOTE_ADDR']??'unknown',$path,$c['rate_secret']);
     if (isset($_SERVER['HTTP_TRANSFER_ENCODING'])) fail(400,'Nicht unterstützte Übertragung.');
     $length=$_SERVER['CONTENT_LENGTH']??'0';
@@ -53,6 +55,7 @@ try {
         if (!is_string($adminToken) || strlen($adminToken)>100) fail(401,'Ungültige Admin-Sitzung.');
         try { $result=$admin->dispatch($method,$path,$adminToken,$body,$_SERVER['HTTP_X_OSMON_CSRF']??''); }
         catch(FamilyAPIError $e) { if($e->status===401 && $path==='/admin-api/status' && $method==='GET')$result=['authenticated'=>false];else throw $e; }
+        if(isset($result['installAccounts'])){$accounts->install();$result=['ok'=>true];}
         if(isset($result['mailAuthorized'])) {
             require_once dirname(__DIR__).'/private/MailSettings.php';
             $mail=new MailSettings(dirname(getenv('OSMON_CONFIG_FILE') ?: dirname(__DIR__).'/private/config.php'),adminKey($c));
@@ -69,10 +72,14 @@ try {
         $token=$_COOKIE['__Host-osmon_parent']??'';
         if (!is_string($token) || strlen($token)>100) fail(401,'Ungültige Sitzung.');
         $sub=substr($path,9);
-        if ($sub==='status' && $method==='GET') {
+        if(str_starts_with($sub,'account/')){
+            $result=$accounts->dispatch($method,substr($sub,8),$token,$body);
+            if(isset($result['token'])){browserCookie($result['token'],604800);unset($result['token']);}
+            if(in_array($sub,['account/verify','account/reset'],true)&&$method==='POST')browserCookie('',0);
+        } elseif ($sub==='status' && $method==='GET') {
             $store->cleanup();$authenticated=false;
             try { $store->parent($token);$authenticated=true; } catch (FamilyAPIError $e) { if ($e->status!==401) throw $e; }
-            $result=['configured'=>true,'authenticated'=>$authenticated];
+            $result=['configured'=>true,'authenticated'=>$authenticated,'accountsEnabled'=>$accounts->ready()];
         } elseif (in_array($sub,['access','login'],true) && $method==='POST') {
             $result=$store->dispatch('POST',$sub==='access'?'/v1/browser-access':'/v1/web-codes/redeem','',$body);
             // Rotate current browser session after successful sign-in.
@@ -86,7 +93,8 @@ try {
         } else fail(404,'Nicht gefunden.');
     } else {
         if (strlen($token)>100) fail(401,'Ungültiger Zugang.');
-        $result=$store->dispatch($method,$path,$token,$body);
+        if(str_starts_with($path,'/v1/account/'))$result=$accounts->dispatch($method,substr($path,12),$token,$body);
+        else $result=$store->dispatch($method,$path,$token,$body);
     }
     $status=200;
 } catch (FamilyAPIError $e) { $status=$e->status;$result=['error'=>$e->getMessage()]; }

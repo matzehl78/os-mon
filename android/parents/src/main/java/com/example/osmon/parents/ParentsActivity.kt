@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.example.osmon.family.*
 import java.util.UUID
 import kotlinx.coroutines.launch
@@ -29,7 +30,8 @@ private fun ParentsHome() {
     val ctx = LocalContext.current; val scope = rememberCoroutineScope()
     var connection by remember { mutableStateOf(FamilyVault.load(ctx)) }
     var webCode by remember { mutableStateOf("") }
-    var server by remember { mutableStateOf("") }; var code by remember { mutableStateOf("") }
+    var server by remember { mutableStateOf("https://parents.ulmatti-studios.com") }; var code by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }; var password by remember { mutableStateOf("") }
     var children by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var selected by remember { mutableStateOf<JSONObject?>(null) }
     var message by remember { mutableStateOf("") }; var busy by remember { mutableStateOf(false) }
@@ -51,11 +53,21 @@ private fun ParentsHome() {
         if (connection == null) {
             OutlinedTextField(server, { server = it }, label = { Text("HTTPS-Serveradresse") }, enabled = !busy)
             Text("Verwende denselben Familienserver wie auf dem Kindergerät. Der Zugang wird sicher auf diesem Elternhandy gespeichert.")
-            Button(onClick = { run {
+            OutlinedTextField(email, { email = it }, label = { Text("E-Mail") }, enabled = !busy, singleLine = true)
+            OutlinedTextField(password, { password = it }, label = { Text("Passwort") }, visualTransformation = PasswordVisualTransformation(), enabled = !busy, singleLine = true)
+            Button(onClick = { val pass = password; password = ""; run {
                 val base = FamilyApi.server(server)
-                val result = FamilyApi(FamilyConnection(base, "")).call("POST", "/v1/parents")
-                val c = FamilyConnection(base, result.getString("token")); FamilyVault.save(ctx, c); connection = c
-            } }, enabled = !busy) { Text("Elternzugang erstellen") }
+                val result = FamilyApi(FamilyConnection(base, "")).call("POST", "/v1/account/login", JSONObject().put("email", email).put("password", pass))
+                val c = FamilyConnection(base, result.getString("token")); FamilyVault.save(ctx, c); connection = c; refresh(); message = "Angemeldet."
+            } }, enabled = !busy) { Text("Anmelden") }
+            OutlinedButton(onClick = { run {
+                FamilyApi(FamilyConnection(FamilyApi.server(server), "")).call("POST", "/v1/account/register", JSONObject().put("email", email))
+                message = "Falls möglich wurde eine Bestätigung gesendet. Im Postfach den Link öffnen und Passwort festlegen. Bestehende Familie zuerst über ihren Web-Anmeldecode im Portal mit einem Konto verknüpfen."
+            } }, enabled = !busy) { Text("Mit E-Mail registrieren") }
+            TextButton(onClick = { run {
+                FamilyApi(FamilyConnection(FamilyApi.server(server), "")).call("POST", "/v1/account/forgot", JSONObject().put("email", email)); message = "Falls möglich erhältst du einen Link zum Zurücksetzen. Bitte auch Spam prüfen."
+            } }, enabled = !busy) { Text("Passwort vergessen") }
+            Text("Anmeldung gilt höchstens sieben Tage. Passwörter werden nicht gespeichert. Die E-Mail-Bestätigung und Passwortwahl erfolgen im Webportal.")
         } else if (selected == null) {
             OutlinedTextField(code, { code = it.uppercase().take(12) }, label = { Text("Kopplungscode vom Kindergerät") }, enabled = !busy)
             Text("Den zehn Minuten gültigen Code im PIN-geschützten Eltern-Bereich auf dem Kindergerät erstellen.")
@@ -63,6 +75,16 @@ private fun ParentsHome() {
                 FamilyApi(connection!!).call("POST", "/v1/claims", JSONObject().put("code", code)); code = ""; refresh(); message = "Gerät verbunden."
             } }, enabled = !busy) { Text("Verbinden") }
             HorizontalDivider()
+            Text("Elternkonto für bestehende Familie", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(email, { email = it }, label = { Text("E-Mail zur Kontoverknüpfung") }, enabled = !busy, singleLine = true)
+            OutlinedButton(onClick = { run {
+                FamilyApi(connection!!).call("POST", "/v1/account/register", JSONObject().put("email", email))
+                message = "Falls möglich erhältst du eine Bestätigung. Dort Passwort festlegen und anschließend hier neu anmelden. Geräte und Aufgaben bleiben erhalten. Bei bestehendem Konto: Webportal verwenden."
+            } }, enabled = !busy) { Text("Diese Familie mit E-Mail absichern") }
+            TextButton(onClick = { run {
+                val old = connection!!
+                try { FamilyApi(old).call("DELETE", "/v1/browser-session") } finally { server = old.server; password = ""; FamilyVault.clear(ctx); connection = null; children = emptyList(); webCode = "" }
+            } }, enabled = !busy) { Text("Abmelden / neu anmelden") }
             Text("Auch im Browser", style = MaterialTheme.typography.titleMedium)
             OutlinedButton(onClick = { run { webCode = FamilyApi(connection!!).call("POST", "/v1/web-codes").getString("code") } }, enabled = !busy) { Text("Web-Anmeldecode erstellen") }
             if (webCode.isNotEmpty()) Text(webCode, style = MaterialTheme.typography.headlineSmall)
@@ -72,7 +94,7 @@ private fun ParentsHome() {
             if (children.isEmpty()) Text("Noch kein Gerät verbunden.")
             children.forEach { c -> OutlinedButton(onClick = { selected = c }, enabled = !busy) { Text(c.getString("name")) } }
             Button(onClick = { run { refresh() } }, enabled = !busy) { Text("Aktualisieren") }
-            Text("Der Zugang gilt 90 Tage. Bei Verlust oder Ablauf am Kindergerät trennen und neu koppeln. Mehrere Elternkonten und Zugangswiederherstellung sind noch nicht enthalten.")
+            Text("Bestehende Zugänge ohne E-Mail-Konto gelten weiterhin 90 Tage. Verknüpfe sie mit einer E-Mail, bevor sie ablaufen. Ein Konto je Familie; mehrere Anmeldungen sind möglich.")
             TextButton(onClick = { confirm = true }, enabled = !busy) { Text("Zugang und alle Verbindungen löschen") }
         } else {
             DeviceEditor(selected!!, connection!!, onClose = { selected = null; run { refresh() } })

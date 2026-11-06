@@ -107,6 +107,7 @@ final class AdminStore {
         return $this->locked(function()use($m,$path,$raw,$body,$csrf){
             $a=$this->session($raw);
             if($m!=='GET'&&!hash_equals($this->csrf($raw),$csrf))fail(403,'Admin-Anfrage ungültig. Bitte neu laden.');
+            if($m==='POST'&&$path==='/admin-api/accounts/install')return ['installAccounts'=>true];
             if(($m==='GET'&&$path==='/admin-api/mail')||($m==='PUT'&&$path==='/admin-api/mail')||($m==='POST'&&$path==='/admin-api/mail/test'))return ['mailAuthorized'=>true];
             if($m==='GET'&&$path==='/admin-api/status')return ['authenticated'=>true,'username'=>$a['username'],'csrf'=>$this->csrf($raw),'expires'=>(float)$a['expires']];
             if($m==='DELETE'&&$path==='/admin-api/logout'){$this->q('DELETE FROM osmon_admin_sessions WHERE token=?',[tokenHash($raw)]);$this->audit($a['username'],'logout',$a['admin_id']);return ['ok'=>true];}

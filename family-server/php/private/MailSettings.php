@@ -61,6 +61,10 @@ final class SMTPMailer {
     }
     private function command($s,string $v,array $allowed): string {$this->write($s,$v."\r\n");return $this->reply($s,$allowed);}
     public function sendTest(array $c,string $recipient): void {
+        $this->send($c,$recipient,'OS-Mon SMTP-Test',"Der E-Mail-Versand deiner OS-Mon-Plattform funktioniert.\nDies ist eine manuell ausgelöste Testnachricht.\n");
+    }
+    public function send(array $c,string $recipient,string $subject,string $text): void {
+        if(!preg_match('/^[\x20-\x7e]{1,100}$/D',$subject)||strlen($text)>10000)fail(400,'Mailinhalt ungültig.');
         $c=MailSettings::validate($c);MailSettings::email($recipient);$s=null;
         try{
             // Resolve once, reject all non-public addresses and pin the chosen IP.
@@ -82,7 +86,7 @@ final class SMTPMailer {
                 $this->command($s,'AUTH LOGIN',[334]);$this->command($s,base64_encode($c['username']),[334]);$this->command($s,base64_encode($c['password']),[235]);
             }else throw new RuntimeException('SMTP AUTH unavailable');
             $this->command($s,'MAIL FROM:<'.$c['from'].'>',[250]);$this->command($s,'RCPT TO:<'.$recipient.'>',[250,251]);$this->command($s,'DATA',[354]);
-            $message='Date: '.gmdate('D, d M Y H:i:s').' +0000'."\r\n".'Message-ID: <'.bin2hex(random_bytes(16)).'@'.substr(strrchr($c['from'],'@'),1).">\r\n".'From: OS-Mon <'.$c['from'].">\r\nTo: <".$recipient.">\r\nReply-To: ".$c['support']."\r\nSubject: OS-Mon SMTP-Test\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n".chunk_split(base64_encode("Der E-Mail-Versand deiner OS-Mon-Plattform funktioniert.\nDies ist eine manuell ausgelöste Testnachricht.\n"),76,"\r\n");
+            $message='Date: '.gmdate('D, d M Y H:i:s').' +0000'."\r\n".'Message-ID: <'.bin2hex(random_bytes(16)).'@'.substr(strrchr($c['from'],'@'),1).">\r\n".'From: OS-Mon <'.$c['from'].">\r\nTo: <".$recipient.">\r\nReply-To: ".$c['support']."\r\nSubject: ".$subject."\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n".chunk_split(base64_encode($text),76,"\r\n");
             $this->write($s,$message.".\r\n");$this->reply($s,[250]);
             // Accepted DATA is success even if the connection closes before QUIT.
             @fwrite($s,"QUIT\r\n");

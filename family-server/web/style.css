@@ -8,3 +8,5 @@
 .unlink-button{margin-top:11px;font-size:10px;color:#6b8878}.stat strong small{font-size:14px;font-weight:450;color:var(--muted)}
 
 #modal-error{color:#a24d40;font-size:12px;margin:12px 0 0}#modal-error:empty{display:none}
+
+#account-login,#account-register,#account-forgot,#account-password{display:grid;gap:12px;margin-top:24px;max-width:500px}#account-login input,#account-register input,#account-forgot input,#account-password input{width:100%;box-sizing:border-box}.wide-card:has(#account-login),.wide-card:has(#account-password){margin-bottom:24px}

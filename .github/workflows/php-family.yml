@@ -45,9 +45,13 @@ jobs:
         run: php family-server/php/tests/store_test.php
       - name: Admin authentication, permissions and audit
         run: php family-server/php/tests/admin_test.php
+      - name: Parent accounts, verification, migration and reset
+        run: php family-server/php/tests/account_test.php
       - name: First-run setup, secret handling and permanent lock
         run: php family-server/php/tests/setup_test.php
       - name: HTTP cookies, CSRF, configuration and location flow
         run: python3 family-server/php/tests/http_test.py
+      - name: Account native tokens, browser cookies and CSRF
+        run: python3 family-server/php/tests/account_http_test.py
       - name: First installation through HTTP and locked installer
         run: python3 family-server/php/tests/setup_http_test.py

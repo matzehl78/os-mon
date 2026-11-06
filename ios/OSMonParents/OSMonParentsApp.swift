@@ -8,7 +8,9 @@ struct OSMonParentsApp: App {
 @MainActor
 struct ParentsHome: View {
     @State private var connection = FamilyVault.load()
-    @State private var server = ""
+    @State private var server = "https://parents.ulmatti-studios.com"
+    @State private var email = ""
+    @State private var password = ""
     @State private var code = ""
     @State private var webCode = ""
     @State private var children: [FamilyDevice] = []
@@ -37,13 +39,25 @@ struct ParentsHome: View {
                     Section("Elternzugang einrichten") {
                         TextField("HTTPS-Serveradresse", text: $server).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                         Text("Verwende denselben Familienserver wie auf dem Kindergerät. Der Zugang wird sicher auf diesem Elternhandy gespeichert.").font(.footnote)
-                        Button("Zugang erstellen") { run {
+                        TextField("E-Mail", text: $email).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.emailAddress).textContentType(.username)
+                        SecureField("Passwort", text: $password).textContentType(.password)
+                        Button("Anmelden") { let pass = password; password = ""; run {
                             let base = try FamilyAPI.server(server)
-                            let api = FamilyAPI(connection: .init(server: base, token: ""))
-                            let result: FamilyToken = try await api.call("POST", "/v1/parents")
+                            let result: FamilyToken = try await FamilyAPI(connection: .init(server: base, token: "")).call("POST", "/v1/account/login", ["email": email, "password": pass])
                             let c = FamilyConnection(server: base, token: result.token)
-                            try FamilyVault.save(c); connection = c; try await refresh()
+                            try FamilyVault.save(c); connection = c; try await refresh(); message = "Angemeldet."
                         } }
+                        Button("Mit E-Mail registrieren") { run {
+                            let base = try FamilyAPI.server(server)
+                            let _: FamilyOK = try await FamilyAPI(connection: .init(server: base, token: "")).call("POST", "/v1/account/register", ["email": email])
+                            message = "Falls möglich wurde eine Bestätigung gesendet. Im Postfach den Link öffnen und Passwort festlegen. Bestehende Familie zuerst über ihren Web-Anmeldecode im Portal mit einem Konto verknüpfen."
+                        } }
+                        Button("Passwort vergessen") { run {
+                            let base = try FamilyAPI.server(server)
+                            let _: FamilyOK = try await FamilyAPI(connection: .init(server: base, token: "")).call("POST", "/v1/account/forgot", ["email": email])
+                            message = "Falls möglich erhältst du einen Link zum Zurücksetzen. Bitte auch Spam prüfen."
+                        } }
+                        Text("Anmeldung gilt höchstens sieben Tage. Passwörter werden nicht gespeichert. E-Mail-Bestätigung und Passwortwahl erfolgen im Webportal.").font(.footnote)
                     }
                 } else {
                     Section("Kindergerät verbinden") {
@@ -53,6 +67,19 @@ struct ParentsHome: View {
                             guard let connection else { return }
                             let _: FamilyOK = try await FamilyAPI(connection: connection).call("POST", "/v1/claims", ["code": code])
                             code = ""; try await refresh(); message = "Gerät verbunden."
+                        } }
+                    }
+                    Section("Elternkonto für bestehende Familie") {
+                        TextField("E-Mail zur Kontoverknüpfung", text: $email).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.emailAddress)
+                        Button("Diese Familie mit E-Mail absichern") { run {
+                            guard let connection else { return }
+                            let _: FamilyOK = try await FamilyAPI(connection: connection).call("POST", "/v1/account/register", ["email": email])
+                            message = "Falls möglich erhältst du eine Bestätigung. Dort Passwort festlegen und anschließend hier neu anmelden. Geräte und Aufgaben bleiben erhalten. Bei bestehendem Konto: Webportal verwenden."
+                        } }
+                        Button("Abmelden / neu anmelden") { run {
+                            guard let old = connection else { return }
+                            defer { server = old.server; password = ""; FamilyVault.clear(); connection = nil; children = []; webCode = "" }
+                            let _: FamilyOK = try await FamilyAPI(connection: old).call("DELETE", "/v1/browser-session")
                         } }
                     }
                     Section("Auch im Browser") {
@@ -73,7 +100,7 @@ struct ParentsHome: View {
                     }
                     Section {
                         Button("Zugang und alle Verbindungen löschen", role: .destructive) { confirmDelete = true }
-                        Text("Der Zugang gilt 90 Tage. Bei Verlust oder Ablauf am Kindergerät trennen und neu koppeln. Mehrere Elternkonten und Passwort-Wiederherstellung sind noch nicht enthalten.").font(.footnote)
+                        Text("Bestehende Zugänge ohne E-Mail-Konto gelten weiterhin 90 Tage. Verknüpfe sie vor Ablauf mit einer E-Mail. Ein Konto je Familie; mehrere Anmeldungen sind möglich.").font(.footnote)
                     }
                 }
                 if !message.isEmpty { Section { Text(message).accessibilityLabel(message) } }

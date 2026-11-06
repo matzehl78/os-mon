@@ -4,7 +4,7 @@ import sys, zipfile
 root=Path(__file__).resolve().parent
 output=Path(sys.argv[1]).resolve()
 with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
-    private_files=['.htaccess','FamilyStore.php','AdminStore.php','MailSettings.php','bootstrap.php','config.example.php','schema.sql','install.php','cleanup.php','admin-setup.php','SetupWizard.php','SetupHTTP.php','setup-start.php','setup-enable.example.txt']
+    private_files=['.htaccess','FamilyStore.php','AdminStore.php','MailSettings.php','AccountStore.php','account-schema.sql','bootstrap.php','config.example.php','schema.sql','install.php','cleanup.php','admin-setup.php','SetupWizard.php','SetupHTTP.php','setup-start.php','setup-enable.example.txt']
     for name in private_files:
         p=root/'private'/name
         z.write(p,'osmon-parents/private/'+name)

@@ -1,0 +1,61 @@
+name: PHP Family API
+on:
+  pull_request:
+    paths: ['family-server/php/**', 'family-server/web/**', '.github/workflows/php-family.yml']
+  push:
+    paths: ['family-server/php/**', 'family-server/web/**', '.github/workflows/php-family.yml']
+  workflow_dispatch:
+jobs:
+  php-mysql:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.5']
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: test-only
+          MYSQL_DATABASE: osmon_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptest-only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      OSMON_TEST_DATABASE: osmon_test
+      OSMON_TEST_HOST: 127.0.0.1
+      OSMON_TEST_PORT: 3306
+      OSMON_TEST_USER: root
+      OSMON_TEST_PASSWORD: test-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '${{ matrix.php }}'
+          extensions: pdo_mysql, mbstring, openssl
+          coverage: none
+      - name: PHP syntax
+        run: find family-server/php -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Portal login gate and JavaScript syntax
+        run: |
+          node --check family-server/web/app.js
+          node family-server/web/tests/login_gate_test.cjs
+      - name: Encrypted SMTP settings and validation
+        run: php family-server/php/tests/mail_test.php
+      - name: Store integration on MySQL 5.7
+        run: php family-server/php/tests/store_test.php
+      - name: Admin authentication, permissions and audit
+        run: php family-server/php/tests/admin_test.php
+      - name: Parent accounts, verification, migration and reset
+        run: php family-server/php/tests/account_test.php
+      - name: First-run setup, secret handling and permanent lock
+        run: php family-server/php/tests/setup_test.php
+      - name: HTTP cookies, CSRF, configuration and location flow
+        run: python3 family-server/php/tests/http_test.py
+      - name: Account native tokens, browser cookies and CSRF
+        run: python3 family-server/php/tests/account_http_test.py
+      - name: First installation through HTTP and locked installer
+        run: python3 family-server/php/tests/setup_http_test.py

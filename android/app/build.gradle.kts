@@ -37,6 +37,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    sourceSets["main"].java.srcDir("../family")
     buildFeatures { compose = true }
     testOptions { unitTests.isReturnDefaultValues = true }
 }

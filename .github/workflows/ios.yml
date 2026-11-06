@@ -30,6 +30,8 @@ jobs:
           rc=$?
           grep -E "error:|Test Case .* failed|Executed [0-9]+ test|\*\* (BUILD|TEST)" xcodebuild.log | sort -u | head -200
           exit $rc
+      - name: Eltern-App bauen
+        run: xcodebuild build -project OSMon.xcodeproj -scheme OSMonParents -destination "id=$SIM" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO > parents.log 2>&1 || { cat parents.log; exit 1; }
       - name: Apple Watch bauen
         run: |
           set +e
@@ -46,3 +48,4 @@ jobs:
           path: |
             ios/xcodebuild.log
             ios/watch.log
+            ios/parents.log

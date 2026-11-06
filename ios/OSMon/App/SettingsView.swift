@@ -63,6 +63,10 @@ enum PetData {
     /// OS-Mon und bleiben unberührt; die Health-Leseerlaubnis kann nur die Person selbst zurücknehmen.
     @MainActor
     static func deleteAll(screen: ScreenTimeManager) async {
+        if let connection = FamilyVault.load() {
+            let _: FamilyOK? = try? await FamilyAPI(connection: connection).call("DELETE", "/v1/device")
+        }
+        FamilyVault.clear()
         screen.stopMonitoring()
         await screen.revokeAuthorization()
         await StepsProvider.shared.stopBackgroundDelivery()

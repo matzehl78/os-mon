@@ -22,7 +22,7 @@ jobs:
         with:
           gradle-version: "8.11.1"       # wie gradle-wrapper.properties (Wrapper-JAR liegt nicht im Repo)
       - name: Bauen
-        run: gradle --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug
+        run: gradle --no-daemon --stacktrace :app:assembleDebug :wear:assembleDebug :parents:assembleDebug
       - name: Unit-Tests
         run: gradle --no-daemon :app:testDebugUnitTest
       - name: Testübersicht
@@ -51,3 +51,4 @@ jobs:
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/wear/build/outputs/apk/debug/*.apk
+            android/parents/build/outputs/apk/debug/*.apk

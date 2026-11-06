@@ -10,7 +10,8 @@ cd "$(dirname "$0")/.."
 OLD="com.example.osmon"
 files=(ios/project.yml ios/OSMon/Shared/Logic/ScreenTimeShared.swift ios/OSMon/App/PushResponder.swift ios/OSMon/Shared/Sync/ExtrasStore.swift)
 for f in "${files[@]}"; do sed -i.bak "s/$OLD/$NEW/g" "$f" && rm -f "$f.bak"; done
-for f in android/app/build.gradle.kts android/wear/build.gradle.kts; do
+sed -i.bak "s/applicationId = \"$OLD.parents\"/applicationId = \"$NEW.parents\"/" android/parents/build.gradle.kts && rm -f android/parents/build.gradle.kts.bak
+for f in android/app/build.gradle.kts android/wear/build.gradle.kts android/parents/build.gradle.kts; do
   sed -i.bak "s/applicationId = \"$OLD\"/applicationId = \"$NEW\"/" "$f" && rm -f "$f.bak"
 done
 echo "Fertig: $OLD -> $NEW"

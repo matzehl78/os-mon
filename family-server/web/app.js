@@ -3,7 +3,7 @@ const $=s=>document.querySelector(s), esc=v=>String(v??'').replace(/[&<>"']/g,c=
 const clone=v=>JSON.parse(JSON.stringify(v));
 const repeats={once:'Einmal',daily:'Täglich',weekdays:'Mo–Fr',weekend:'Wochenende'};
 let mode='signedout',configured=false,devices=[],selected='',view='overview',draft={limit:2,tasks:[]},dirty=false,busy=false,draftVersion=1;
-let sessionChecked=false,sessionError='',pollTimer=null;
+let sessionChecked=false,sessionError='',pollTimer=null,webCodeInput='';
 let accountsEnabled=false,account=null,accountFlow=null;
 const accountLink=location.hash.match(/^#account-(verify|reset)=([A-Za-z0-9_-]{43})$/);
 if(accountLink){accountFlow={kind:accountLink[1],code:accountLink[2]};history.replaceState(null,'',location.pathname);}
@@ -14,7 +14,7 @@ function current(){return devices.find(d=>d.id===selected)}
 function pending(d){return d.applied!==d.version}
 function date(value){if(!value)return 'Noch keine Rückmeldung';return new Date(value*1000).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
 function button(text,action,cls='secondary',attrs=''){return `<button class="button ${cls}" data-action="${action}" ${attrs}>${text}</button>`}
-function expire(){account=null;authEpoch++;mode='signedout';devices=[];useDevice('');view='connection';if($('#modal').open)closeModal();$('#modal-content').innerHTML='';$('#modal-error').textContent='';render()}
+function expire(){webCodeInput='';account=null;authEpoch++;mode='signedout';devices=[];useDevice('');view='connection';if($('#modal').open)closeModal();$('#modal-content').innerHTML='';$('#modal-error').textContent='';render()}
 async function api(method,path,body){const response=await fetch('/web-api/'+path,{method,credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-OSMon-Web':'1'},...(body!==undefined?{body:JSON.stringify(body)}:{})});const result=await response.json();if(!response.ok){if(response.status===401&&mode==='live')expire();throw new Error(result.error||'Die Verbindung ist gerade nicht möglich.');}return result}
 async function perform(action){if(busy)return;busy=true;render();try{await action()}catch(e){toast(e.message||'Etwas hat nicht geklappt. Bitte erneut versuchen.')}finally{busy=false;render()}}
 function useDevice(id){selected=id;draft=clone(current()?.config||{limit:2,tasks:[]});dirty=false;draftVersion=current()?.version||1}
@@ -63,8 +63,8 @@ const actions={
  refresh:()=>perform(refresh),connection:()=>goto('connection'),
  simulate:()=>{current().applied=current().version;current().seen=Date.now()/1000;const t=current().config.tasks.find(t=>!current().completed.includes(t.id));if(t)current().completed.push(t.id);render();toast('Nur Vorschau: Kinder-Rückmeldung simuliert.')},
  pair:()=>{if(mode==='live'){goto('connection')}else{modal('Ein Beispielgerät verbinden','<p class="dialog-message">Nur Vorschau: Verwende einen beliebigen zehnstelligen Beispielcode. Es wird kein echtes Gerät gekoppelt.</p><label class="form-label" for="pair-code">Beispielcode</label><input id="pair-code" class="code-input" value="OSMON12345" maxlength="12">',async()=>{await claim($('#pair-code').value.toUpperCase());closeModal()},'Beispielgerät verbinden')}},
- 'claim-code':()=>perform(()=>claim($('#connection-code').value.toUpperCase())),
- 'login-code':()=>perform(async()=>{if(!configured)throw new Error('Der Familienserver ist noch nicht eingerichtet.');await api('POST','login',{code:$('#connection-code').value});authEpoch++;mode='live';devices=[];selected='';dirty=false;await refresh();goto('overview');toast('Mit deinem Elternzugang verbunden.')}),
+ 'claim-code':()=>{const code=readConnectionCode();return perform(()=>claim(code))},
+ 'login-code':()=>{const code=readConnectionCode();webCodeInput=code;return perform(async()=>{if(!configured)throw new Error('Der Familienserver ist noch nicht eingerichtet.');await api('POST','login',{code});webCodeInput='';authEpoch++;mode='live';devices=[];selected='';dirty=false;await refresh();goto('overview');toast('Mit deinem Elternzugang verbunden.')})},
  'create-access':()=>confirmModal('Neuen Webzugang erstellen?','Wenn du bereits die Eltern-App verwendest, nutze stattdessen deren Web-Anmeldecode. Ein neuer Zugang übernimmt keine bestehenden Geräte.',async()=>{await api('POST','access',{});authEpoch++;mode='live';devices=[];selected='';dirty=false;await refresh();closeModal();goto('connection')},'Neuen Zugang erstellen'),
  logout:()=>confirmModal('Diesen Browser abmelden?','Deine Geräte und die Eltern-App bleiben verbunden. Ungesendete Änderungen werden verworfen.',async()=>{await api('DELETE','logout');closeModal();expire();toast('Browser abgemeldet.')},'Abmelden'),
  'delete-access':()=>confirmModal('Elternzugang vollständig löschen?','Alle zugehörigen Verbindungen werden entfernt – auch der Zugang über die Eltern-App. Die Kindergeräte behalten ihre zuletzt übernommenen Einstellungen.',async()=>{if(mode==='live')await api('DELETE','parents');closeModal();expire();toast('Zugang entfernt. Bitte erneut anmelden.')},'Vollständig löschen'),
@@ -73,8 +73,9 @@ const actions={
 document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){goto(nav.dataset.view);return}const b=e.target.closest('[data-action]');if(!b||b.disabled)return;Promise.resolve().then(()=>actions[b.dataset.action]?.(b)).catch(err=>toast(err.message))});
 $('#connect-banner').onclick=()=>goto('connection');$('#account-button').onclick=()=>goto('settings');$('#modal-close').onclick=$('#modal-cancel').onclick=closeModal;$('#modal-form').onsubmit=async e=>{e.preventDefault();if(!dialogAction)return;const b=$('#modal-submit');b.disabled=true;try{await dialogAction()}catch(err){toast(err.message)}finally{b.disabled=false}};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+function readConnectionCode(){const code=String($('#connection-code')?.value||'').replace(/[\s\u200B\uFEFF-]/g,'').toUpperCase();if(!/^[A-Z0-9]{10}$/.test(code))throw new Error('Bitte den vollständigen Web- oder Kopplungscode mit 10 Zeichen eingeben.');return code;}
 function publicLogin(){
- const codeLogin=`<details class="auth-alternative" ${accountsEnabled?'':'open'}><summary>Mit Web-Anmeldecode anmelden</summary><p class="small-note">Für eine bestehende Familie: Web-Anmeldecode in der Eltern-App erstellen und hier einmalig einlösen. Das ist ebenfalls eine Anmeldung.</p><label class="form-label" for="connection-code">Web-Anmeldecode</label><input id="connection-code" class="code-input" maxlength="12" autocomplete="off" spellcheck="false" placeholder="ABCDE FGHIJ"><button class="button secondary" data-action="login-code" ${busy?'disabled':''}>Mit Eltern-App anmelden</button></details>`;
+ const codeLogin=`<details class="auth-alternative" ${!accountsEnabled||webCodeInput?'open':''}><summary>Mit Web-Anmeldecode anmelden</summary><p class="small-note">Für eine bestehende Familie: Web-Anmeldecode in der Eltern-App erstellen und hier einmalig einlösen. Das ist ebenfalls eine Anmeldung.</p><label class="form-label" for="connection-code">Web-Anmeldecode</label><input id="connection-code" class="code-input" maxlength="32" value="${esc(webCodeInput)}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE FGHIJ"><button class="button secondary" data-action="login-code" ${busy?'disabled':''}>Mit Eltern-App anmelden</button></details>`;
  return (accountsEnabled?accountPanel():'<section class="card card-pad"><h1>Bei OS-Mon Eltern anmelden</h1><p>E-Mail-Konten sind auf diesem Server noch nicht aktiviert. Verwende deinen Web-Anmeldecode.</p></section>')+(accountFlow?'':codeLogin)+'<p class="small-note auth-admin-note">Der Betreiberzugang ist getrennt von Elternkonten. Im E-Mail-Feld deine registrierte E-Mail-Adresse verwenden, keinen Adminnamen.</p>';
 }
 async function init(){

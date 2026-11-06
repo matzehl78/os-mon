@@ -34,6 +34,7 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(self.req('GET','/',headers={'X-Test-HTTP-Only':'1','X-Forwarded-Proto':'https'})[0],400)
         self.assertEqual(self.req('GET','/',headers={'Host':'evil.example'})[0],421)
         status,h,raw=self.req('GET','/');self.assertEqual(status,200);self.assertIn(b'OS-Mon Eltern',raw);self.assertIn("frame-ancestors 'none'",h['Content-Security-Policy'])
+        status,h,art=self.req('GET','/garteninsel.jpg');self.assertEqual(status,200);self.assertEqual(h['Content-Type'],'image/jpeg');self.assertTrue(art.startswith(b'\xff\xd8'))
         for path in ['/private/config.php','/config.php','/schema.sql','/index.php','/v1/children?token=x']:
             self.assertIn(self.req('GET',path)[0],[400,404])
     def test_02_json_and_size(self):

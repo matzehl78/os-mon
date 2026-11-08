@@ -160,6 +160,8 @@ struct ParentDeviceEditor: View {
             Section("Übertragung") {
                 Text(device.applied == device.version ? "Letzter gespeicherter Stand übernommen" : "Änderungen warten auf das Kindergerät")
                 if let seen = device.seen { Text("Letzte Rückmeldung: \(Date(timeIntervalSince1970: seen).formatted())").font(.footnote) }
+                Label(FamilyMeasuring.text(device.measuring), systemImage: device.measuring?.isOff == true ? "exclamationmark.triangle.fill" : "waveform.path.ecg")
+                    .foregroundStyle(device.measuring?.isOff == true ? Color.orange : Color.primary)
                 Text("Übernahme bei geöffneter Kinder-App. Ohne Internet gelten die zuletzt übernommenen Einstellungen.").font(.footnote)
             }
             Section("Zuletzt geteilter Standort") {

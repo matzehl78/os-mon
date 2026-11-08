@@ -633,14 +633,23 @@ fun HomeContent(
                     // 3D: drehbar mit dem Finger, Antippen wie in 2D (Ei: Risse, sonst Reaktion)
                     val egg = g?.stage == GrowthStage.EGG
                     var shakeAt by remember { mutableStateOf<Long?>(null) }
+                    var ready3d by remember { mutableStateOf(false) }
+                    // Bis WebGL bereit ist (Kaltstart kann Sekunden dauern): 2D-Figur statt leerer Fläche
+                    if (!ready3d) {
+                        if (egg) EggCanvas(figure, Growth.cracks(g?.eggTaps ?: 0), null, Modifier.size(if (hasScene) 260.dp else 220.dp))
+                        else PetAvatar(snap.mood, snap.overlays, state.evolution?.form, state.evolution?.branch,
+                            energy = snap.stats.e, rest = snap.stats.r, size = if (hasScene) 260.dp else 220.dp,
+                            reaction = reaction, accessory = head, glasses = outfit.glasses, stage = g?.stage)
+                    }
                     Pet3DView(
                         Pet3DState(figure.id, head, snap.mood, snap.overlays, snap.stats.e, snap.stats.r,
                             state.evolution?.form, state.evolution?.branch, g?.stage,
                             if (egg) Growth.cracks(g?.eggTaps ?: 0) else null, platform = !hasScene, glasses = outfit.glasses),
-                        Modifier.size(if (hasScene) 300.dp else 250.dp).semantics {
+                        Modifier.size(if (hasScene) 300.dp else 250.dp).alpha(if (ready3d) 1f else 0f).semantics {
                             contentDescription = if (egg) "Ei. Antippen, damit es schlüpft." else "Dein Wesen: ${moodTitle(snap.mood)}. Antippen für eine Reaktion, ziehen zum Drehen."
                         },
-                        reaction = if (egg) null else reaction, eggShakeAtMs = shakeAt
+                        reaction = if (egg) null else reaction, eggShakeAtMs = shakeAt,
+                        onReady = { ready3d = true }
                     ) {
                         if (egg) {
                             shakeAt = SystemClock.uptimeMillis()

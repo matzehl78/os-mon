@@ -13,6 +13,19 @@ struct FamilyLocation: Codable { var latitude: Double; var longitude: Double; va
 struct FamilyDevice: Codable, Identifiable {
     var id: String; var name: String; var paired: Bool; var config: FamilyConfig
     var version: Int; var applied: Int; var completed: [String]; var seen: Double?; var day: Int?; var location: FamilyLocation?; var locationSharing: Bool?; var locationRequest: FamilyLocationRequest?
+    var measuring: FamilyMeasuring? = nil
+}
+/// Werden Bildschirmzeit und Schritte am Kindergerät gemessen? Nur an/aus. Gleiche Texte wie Webportal und Android.
+struct FamilyMeasuring: Codable, Equatable {
+    var screen: Bool; var steps: Bool; var updated: Double?
+    var isOff: Bool { !screen || !steps }
+    static func text(_ m: FamilyMeasuring?) -> String {
+        guard let m else { return "Messung noch unbekannt (ältere OS-Mon-Version auf dem Kindergerät)" }
+        let off = [m.screen ? nil : "Bildschirmzeit", m.steps ? nil : "Schritte"].compactMap { $0 }
+        if off.isEmpty { return "Bildschirmzeit und Schritte werden gemessen" }
+        return off.joined(separator: " und ") + (off == ["Bildschirmzeit"] ? " wird" : " werden")
+            + " nicht gemessen – am Kindergerät in OS-Mon oder den Systemeinstellungen wieder erlauben"
+    }
 }
 struct FamilyConnection: Codable { var server: String; var token: String }
 struct FamilyPair: Decodable { let token: String; let code: String; let expires: Int }

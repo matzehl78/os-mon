@@ -70,6 +70,7 @@ enum PetData {
         BGTaskScheduler.shared.cancelAllTaskRequests()
         for key in ownKeys() { STShared.defaults.removeObject(forKey: key) }
         ParentStore.lockNow()                       // Eltern-PIN ist mit gelöscht
+        PhoneWatchBridge.shared.clear()             // Apple Watch verwirft ihren gespeicherten Stand
         try? FileManager.default.contentsOfDirectory(at: FileManager.default.temporaryDirectory,
                                                      includingPropertiesForKeys: nil)
             .filter { $0.lastPathComponent.hasPrefix("OS-Mon-Export") }

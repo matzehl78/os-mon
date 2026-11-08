@@ -47,6 +47,7 @@ function harness(options={}){
  const status=harness({authenticated:true});await status.run('init()');
  assert.match(status.run('measuringRow(current())'),/Messung noch unbekannt/);
  assert.match(status.run("measuringRow({measuring:{screen:false,steps:true,updated:1}})"),/Bildschirmzeit wird nicht gemessen/);
+ assert.match(status.run("measuringRow({measuring:{screen:true,steps:false,updated:1}})"),/Schritte werden nicht gemessen/);
  assert.match(status.run("measuringRow({measuring:{screen:false,steps:false,updated:1}})"),/Bildschirmzeit und Schritte werden nicht gemessen/);
  assert.match(status.run("measuringRow({measuring:{screen:true,steps:true,updated:1}})"),/werden gemessen/);
  assert.match(status.node('#main').innerHTML,/Messung noch unbekannt/);

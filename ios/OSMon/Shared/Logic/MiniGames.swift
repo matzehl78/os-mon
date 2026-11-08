@@ -125,11 +125,19 @@ enum MiniGames {
 
     static func stars(_ score: Int) -> Int { score >= 24 ? 3 : score >= 15 ? 2 : score >= 8 ? 1 : 0 }
 
+    /// Zählt der gespeicherte Zähler noch? Auch wenn die Uhr zurückgestellt wurde (lastDay liegt in der „Zukunft“),
+    /// damit das Tageslimit nicht durch Datum vor- und wieder zurückstellen neu beginnt.
+    private static func counts(_ lastDay: Int?, _ today: Int) -> Bool { lastDay.map { $0 >= today } ?? false }
+
     static func left(lastDay: Int?, playedThatDay: Int, today: Int, limit: Int) -> Int {
-        max(0, min(maxLimit, max(0, limit)) - (lastDay == today ? playedThatDay : 0))
+        max(0, min(maxLimit, max(0, limit)) - (counts(lastDay, today) ? playedThatDay : 0))
     }
 
-    static func afterPlay(lastDay: Int?, playedThatDay: Int, today: Int) -> Int { (lastDay == today ? playedThatDay : 0) + 1 }
+    /// Beim Start einer Runde: neuer Zähler (die Runde zählt sofort, auch wenn sie abgebrochen wird).
+    static func afterPlay(lastDay: Int?, playedThatDay: Int, today: Int) -> Int { (counts(lastDay, today) ? playedThatDay : 0) + 1 }
+
+    /// Tag, der zum Zähler gespeichert wird: nie rückwärts.
+    static func dayAfterPlay(lastDay: Int?, today: Int) -> Int { max(lastDay ?? today, today) }
 
     static func available(premium: Bool) -> [MiniGame] { MiniGame.allCases.filter { !$0.premium || premium } }
 

@@ -1,6 +1,6 @@
 // ParentUI.kt: Eltern-Bereich mit PIN. Gegenstück: ParentUI.swift.
 // PIN (nur als Hash, engine/ParentLock.kt), Wochenübersicht, Aufgaben fürs Kind (kann das Kind nicht löschen),
-// Einstellungen sperren (Ziele, Abend und Morgen, Daten löschen). Nach dem Entsperren 5 Minuten offen.
+// Einstellungen sperren (Ziele, Abend und Morgen, Bildschirmzeit und Schritte, Daten löschen). Nach dem Entsperren 5 Minuten offen.
 
 package com.example.osmon.ui
 
@@ -327,7 +327,7 @@ private fun ParentContent(onChanged: () -> Unit) {
     Text("Schutz", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     var lock by remember { mutableStateOf(ParentStore.lockSettings(ctx)) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("Einstellungen sperren (Ziele, Schlafenszeit, Daten löschen)", Modifier.weight(1f))
+        Text("Einstellungen sperren (Ziele, Schlafenszeit, Bildschirmzeit und Schritte, Daten löschen)", Modifier.weight(1f))
         Switch(lock, { lock = it; ParentStore.setLockSettings(ctx, it); onChanged() })
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

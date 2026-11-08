@@ -1,6 +1,6 @@
 // ParentUI.swift: Eltern-Bereich mit PIN. Gegenstück: ParentUI.kt.
 // PIN (nur als Hash, Shared/Logic/ParentLock.swift), Wochenübersicht, Aufgaben fürs Kind (kann das Kind nicht löschen),
-// Einstellungen sperren (Ziele, Abend und Morgen, Daten löschen). Nach dem Entsperren 5 Minuten offen.
+// Einstellungen sperren (Ziele, Abend und Morgen, Bildschirmzeit und Schritte, Daten löschen). Nach dem Entsperren 5 Minuten offen.
 
 import SwiftUI
 
@@ -212,7 +212,7 @@ private struct ParentContentView: View {
             Section("Eltern-App verbinden") { FamilyChildCard() }
             Section("Premium") { PremiumCard().listRowInsets(EdgeInsets()) }
             Section("Schutz") {
-                Toggle("Einstellungen sperren (Ziele, Schlafenszeit, Daten löschen)", isOn: $lock)
+                Toggle("Einstellungen sperren (Ziele, Schlafenszeit, Bildschirmzeit und Schritte, Daten löschen)", isOn: $lock)
                     .onChange(of: lock) { ParentStore.lockSettings = lock; onChanged() }
                 Button("Jetzt sperren") { ParentStore.lockNow(); onChanged() }
                 Button("PIN entfernen", role: .destructive) { ParentStore.removePin(); onChanged() }

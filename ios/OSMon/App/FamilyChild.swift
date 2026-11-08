@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreLocation
+import FamilyControls
 
 @MainActor
 enum FamilyChild {
@@ -23,8 +24,17 @@ enum FamilyChild {
         if old != local + remote { TaskStore.save(local + remote); NotificationCenter.default.post(name: .osmonTasksChanged, object: nil) }
         if GameStore.limit != device.config.limit { GameStore.setLimit(device.config.limit) }
         let completed = remote.filter { DayTasks.isDone($0, TaskStore.today) }.map { String($0.id.dropFirst(7)) }
-        let _: FamilyOK = try await api.call("POST", "/v1/device/ack", ["version": device.version, "completed": completed, "day": TaskStore.today])
+        let _: FamilyOK = try await api.call("POST", "/v1/device/ack", ["version": device.version, "completed": completed, "day": TaskStore.today,
+                                                                         "measuring": measuring()])
         PhoneWatchBridge.shared.push()
+    }
+
+    /// Ob Bildschirmzeit und Schritte gerade gemessen werden (nur an/aus, keine Werte), damit Eltern ein Abschalten sehen.
+    /// Schritte: iOS verrät nicht, ob die Health-Leseerlaubnis besteht, daher nur der Schalter in OS-Mon.
+    static func measuring() -> [String: Bool] {
+        let d = STShared.defaults
+        return ["screen": d.bool(forKey: "feature.screentime") && AuthorizationCenter.shared.authorizationStatus == .approved,
+                "steps": d.bool(forKey: "feature.steps")]
     }
 }
 
@@ -43,7 +53,7 @@ struct FamilyChildCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Mit OS-Mon Eltern verbinden").font(.headline)
-            Text("Optional: Aufgaben, Spielelimit und Erledigt-Status werden über euren Familienserver geteilt. Standort nur nach ausdrücklichem Teilen; keine Gesundheitsdaten. Beide Apps benötigen denselben HTTPS-Server.").font(.footnote)
+            Text("Optional: Aufgaben, Spielelimit, Erledigt-Status und ob Bildschirmzeit und Schritte gemessen werden (nur an/aus) werden über euren Familienserver geteilt. Standort nur nach ausdrücklichem Teilen; keine Gesundheitsdaten. Beide Apps benötigen denselben HTTPS-Server.").font(.footnote)
             if !linked {
                 TextField("HTTPS-Serveradresse", text: $server).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                 TextField("Gerätename (ohne echten Kindernamen)", text: $name).onChange(of: name) { name = String(name.prefix(40)) }

@@ -14,6 +14,15 @@ final class MiniGamesTests: XCTestCase {
         XCTAssertEqual(MiniGames.afterPlay(lastDay: 99, playedThatDay: 2, today: 100), 1)
     }
 
+    func testClockRollbackDoesNotResetLimit() {
+        // Datum vorgestellt (Tag 101), zwei Runden gespielt, Datum zurück auf Tag 100: keine neuen Runden
+        XCTAssertEqual(MiniGames.left(lastDay: 101, playedThatDay: 2, today: 100, limit: 2), 0)
+        XCTAssertEqual(MiniGames.afterPlay(lastDay: 101, playedThatDay: 1, today: 100), 2)
+        XCTAssertEqual(MiniGames.dayAfterPlay(lastDay: 101, today: 100), 101)
+        XCTAssertEqual(MiniGames.dayAfterPlay(lastDay: 99, today: 100), 100)
+        XCTAssertEqual(MiniGames.dayAfterPlay(lastDay: nil, today: 100), 100)
+    }
+
     func testStarsAndGames() {
         XCTAssertEqual([7, 8, 15, 24].map(MiniGames.stars), [0, 1, 2, 3])
         XCTAssertEqual(MiniGames.available(premium: false), [.stars, .bubbles])

@@ -104,9 +104,27 @@ final class FamilyStore {
         return ['id'=>$d['id'],'name'=>$d['name'],'paired'=>(bool)$d['owner'],'config'=>json_decode($d['config'],true,32,JSON_THROW_ON_ERROR),
             'version'=>(int)$d['version'],'applied'=>(int)$d['applied'],'completed'=>json_decode($d['completed'],true,32,JSON_THROW_ON_ERROR),
             'seen'=>$d['seen']===null?null:(float)$d['seen'],'day'=>$d['status_day']===null?null:(int)$d['status_day'],
-            'location'=>$loc,'locationSharing'=>(bool)$d['location_sharing'],'locationRequest'=>$this->request($d)];
+            'location'=>$loc,'locationSharing'=>(bool)$d['location_sharing'],'locationRequest'=>$this->request($d),
+            'measuring'=>$this->measuring($d['id'])];
+    }
+    /** Screen time / steps measured at the child's last sync. Null for older apps or before the table exists. */
+    private function measuring(string $id): ?array {
+        try { $r=$this->one('SELECT screen,steps,updated FROM osmon_device_status WHERE device_id=?',[$id]); }
+        catch (PDOException $e) { return null; }
+        return $r ? ['screen'=>(bool)$r['screen'],'steps'=>(bool)$r['steps'],'updated'=>(float)$r['updated']] : null;
+    }
+    public const STATUS_TABLE='CREATE TABLE IF NOT EXISTS osmon_device_status (
+ device_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+ screen TINYINT NOT NULL, steps TINYINT NOT NULL, updated DOUBLE NOT NULL,
+ CONSTRAINT osmon_status_device FOREIGN KEY(device_id) REFERENCES osmon_devices(id) ON DELETE CASCADE
+) ENGINE=InnoDB';
+    /** Hosted installs without SSH get the status table on first use. Runs outside the transaction: DDL commits implicitly. */
+    public function ensureStatusTable(): void {
+        try { if (!$this->db->query("SHOW TABLES LIKE 'osmon_device_status'")->fetch()) $this->db->exec(self::STATUS_TABLE); }
+        catch (PDOException $e) { /* optional feature; acks keep working without it */ }
     }
     public function dispatch(string $method,string $path,string $token,array $body): array {
+        if ($method==='POST' && $path==='/v1/device/ack' && isset($body['measuring'])) $this->ensureStatusTable();
         $this->cleanup(); // committed even when the following request is rejected
         return $this->locked(fn()=> $this->route($method,$path,$token,$body));
     }
@@ -201,8 +219,15 @@ final class FamilyStore {
                 $done=$b['completed']??null;$day=$b['day']??null;$allowed=array_column(json_decode($d['config'],true)['tasks'],'id');
                 if (!is_array($done) || !array_is_list($done) || count($done)>12 || !is_int($day) || $day< -2147483648 || $day>2147483647) fail(400,'Ungültiger Status.');
                 foreach ($done as $id) if (!is_string($id) || !in_array($id,$allowed,true)) fail(400,'Ungültiger Status.');
+                $measuring=$b['measuring']??null; // optional: older apps do not send it
+                if ($measuring!==null && (!exactKeys($measuring,['screen','steps']) || !is_bool($measuring['screen']) || !is_bool($measuring['steps']))) fail(400,'Ungültiger Status.');
                 $done=array_values(array_unique($done));sort($done);
-                $this->query('UPDATE osmon_devices SET applied=?,completed=?,seen=?,status_day=? WHERE id=?',[(int)$d['version'],encodeJSON($done),$now,$day,$d['id']]);return $ok;
+                $this->query('UPDATE osmon_devices SET applied=?,completed=?,seen=?,status_day=? WHERE id=?',[(int)$d['version'],encodeJSON($done),$now,$day,$d['id']]);
+                if ($measuring!==null) {
+                    try { $this->query('INSERT INTO osmon_device_status(device_id,screen,steps,updated) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE screen=VALUES(screen),steps=VALUES(steps),updated=VALUES(updated)',[$d['id'],(int)$measuring['screen'],(int)$measuring['steps'],$now]); }
+                    catch (PDOException $e) { /* status table unavailable: the ack itself still counts */ }
+                }
+                return $ok;
             }
         }
         if ($m==='DELETE' && $path==='/v1/parents') { $owner=$this->parent($token);$this->query('DELETE FROM osmon_parents WHERE token=?',[$owner]);return $ok; }

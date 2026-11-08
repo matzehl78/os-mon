@@ -80,11 +80,18 @@ object GameStore {
         val last = p(ctx).getLong("games.day", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
         return MiniGames.left(last, p(ctx).getInt("games.played", 0), TaskStore.today(), limit(ctx))
     }
-    fun recordPlay(ctx: Context) {
+    /** Beim Start einer Runde: zählt sofort fürs Tageslimit (Abbrechen gibt keine Runde zurück). */
+    fun recordStart(ctx: Context) {
         val last = p(ctx).getLong("games.day", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
         val today = TaskStore.today()
-        p(ctx).edit().putLong("games.day", today).putInt("games.played", MiniGames.afterPlay(last, p(ctx).getInt("games.played", 0), today))
-            .putInt("ach.games", p(ctx).getInt("ach.games", 0) + 1).apply()
+        p(ctx).edit().putLong("games.day", MiniGames.dayAfterPlay(last, today))
+            .putInt("games.played", MiniGames.afterPlay(last, p(ctx).getInt("games.played", 0), today)).commit()
+        ExtrasEvents.bump()
+    }
+
+    /** Nach einer zu Ende gespielten Runde: nur noch fürs Sammelalbum. */
+    fun recordFinish(ctx: Context) {
+        p(ctx).edit().putInt("ach.games", p(ctx).getInt("ach.games", 0) + 1).apply()
         ExtrasEvents.bump()
     }
 }
@@ -137,7 +144,9 @@ fun GameDialog(figureName: String, stage: GrowthStage?, onClose: (Int?, String?)
                                         Text(g.title, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                         Text(if (ok) g.hint else "💎 Premium (Eltern-Bereich)", color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.bodySmall)
                                     }
-                                    Button(onClick = { game = g; phase = Phase.PLAY }, enabled = ok && left > 0) { Text("Los") }
+                                    Button(onClick = {
+                                        if (GameStore.left(ctx) > 0) { GameStore.recordStart(ctx); left = GameStore.left(ctx); game = g; phase = Phase.PLAY }
+                                    }, enabled = ok && left > 0) { Text("Los") }
                                 }
                             }
                         }
@@ -148,7 +157,7 @@ fun GameDialog(figureName: String, stage: GrowthStage?, onClose: (Int?, String?)
                     }
                     Phase.PLAY -> GamePlay(game, stage) { score ->
                         result = score
-                        GameStore.recordPlay(ctx); left = GameStore.left(ctx)
+                        GameStore.recordFinish(ctx)
                         SoundPlayer.play(ctx, Sfx.GAME_END)
                         phase = Phase.RESULT
                     }

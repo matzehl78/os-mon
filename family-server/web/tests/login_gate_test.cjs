@@ -44,5 +44,12 @@ function harness(options={}){
  console.log('PASS child pairing code survives the loading render');
  const invalid=harness();await invalid.run('init()');invalid.node('#connection-code').value='short';assert.throws(()=>invalid.run("actions['login-code']()"),/10 Zeichen/);assert.ok(!invalid.calls.includes('/web-api/login'));
  console.log('PASS incomplete codes are rejected locally without consuming a server request');
+ const status=harness({authenticated:true});await status.run('init()');
+ assert.match(status.run('measuringRow(current())'),/Messung noch unbekannt/);
+ assert.match(status.run("measuringRow({measuring:{screen:false,steps:true,updated:1}})"),/Bildschirmzeit wird nicht gemessen/);
+ assert.match(status.run("measuringRow({measuring:{screen:false,steps:false,updated:1}})"),/Bildschirmzeit und Schritte werden nicht gemessen/);
+ assert.match(status.run("measuringRow({measuring:{screen:true,steps:true,updated:1}})"),/werden gemessen/);
+ assert.match(status.node('#main').innerHTML,/Messung noch unbekannt/);
+ console.log('PASS parents see when screen time or steps are not measured');
 
 })().catch(e=>{console.error(e);process.exitCode=1});

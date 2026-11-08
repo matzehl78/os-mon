@@ -30,20 +30,31 @@ oder eine eigene Uhr (Apple Watch / Wear OS) gekoppelt ist.</p>
 <p>Erinnerungen und Hinweise erzeugt die App lokal. Es gibt keinen Push-Server.</p>
 
 <h2>Kinder</h2>
-<p>OS-Mon ist für Familien gedacht. Die App erhebt keine personenbezogenen Daten von Kindern zur Weitergabe, zeigt keine Werbung,
+<p>OS-Mon ist für Familien gedacht. Ohne optionale Familienverbindung bleiben die Spieldaten lokal. Die App zeigt keine Werbung,
 enthält keine Links nach außen ohne Eltern-Schutz. Eltern können Einstellungen mit einem PIN sperren.</p>
 
+<h2>Optional: OS-Mon Eltern (Entwicklungsversion)</h2>
+<p>Wenn Eltern die Familienverbindung ausdrücklich aktivieren, werden Gerätealias, Aufgaben, Spielelimit,
+Erledigt-Status und Zeitpunkt des letzten Abgleichs über den von ihnen eingerichteten Familienserver geteilt.
+Keine Bildschirmzeit-, Schritt- oder Gesundheitsdaten werden dafür hochgeladen. Ein Standort wird nur nach gesondertem ausdrücklichem Teilen übertragen. Der Serverbetreiber
+kann die Aufgaben lesen; die Verbindung ist transportverschlüsselt, nicht Ende-zu-Ende-verschlüsselt.
+Die zuvor genannten Aussagen zur ausschließlich lokalen Speicherung gelten für den Modus ohne Familienverbindung.</p>
+<p>Die Verbindung kann auf beiden Seiten entfernt werden. Ohne Internet werden Serverdaten durch lokales
+Trennen nicht gelöscht; das Löschen muss anschließend in der Eltern-App erfolgen. Betreiber, Standort und
+Löschfristen des tatsächlich verwendeten Servers müssen vor der Veröffentlichung ergänzt werden.</p>
+<h2>Optionales Elternkonto</h2>
+<p>Für die Anmeldung im PHP-Elternportal und der Eltern-App werden E-Mail-Adresse, Passwort-Hash, Bestätigungsstatus und zeitlich begrenzte Sitzungsschlüssel gespeichert. Passwörter werden nicht im Klartext gespeichert. Bestätigungs- und Wiederherstellungslinks werden per E-Mail über den eingerichteten Mailanbieter versendet. Bestätigungslinks gelten 24 Stunden, Wiederherstellungslinks 30 Minuten und sind einmalig. Sitzungen gelten sieben Tage. Ein Passwort-Reset beendet bestehende Eltern-Sitzungen. Fehlversuchszähler und zeitweilige Anmeldesperren schützen den Zugang. Die verknüpfte Familie bleibt bis zur ausdrücklichen Löschung erhalten; das bisherige 90-Tage-Limit gilt nur für Zugänge ohne bestätigtes Konto. Betreiber- und Mailanbieterdaten sowie Backupfristen müssen vor Veröffentlichung ergänzt werden.</p>
 <h2>Käufe</h2>
 <p>„Premium“ ist ein optionaler Einmalkauf, erreichbar nur im Eltern-Bereich. Bezahlt wird über den App Store (Apple) bzw.
 Google Play; die Zahlungsdaten verarbeiten nur Apple bzw. Google nach deren Datenschutzbestimmungen. Die App erfährt nur,
 <b>ob</b> Premium gekauft wurde, und speichert das auf dem Gerät.</p>
 
 <h2>Deine Rechte</h2>
-<p>Alle Daten liegen bei dir. In den Einstellungen kannst du sie <b>exportieren</b> (lesbare JSON-Datei) und <b>vollständig löschen</b>.
+<p>Ohne Familienverbindung liegen die Spieldaten bei dir. In den Einstellungen kannst du sie <b>exportieren</b> (lesbare JSON-Datei) und <b>vollständig löschen</b>.
 Berechtigungen (Bildschirmzeit, Schritte, Mitteilungen) kannst du jederzeit in den Systemeinstellungen entziehen.
-Da wir keine Daten von dir erhalten, können wir sie auch nicht herausgeben oder löschen – das geschieht direkt auf deinem Gerät.
+Ohne Familienverbindung erfolgt die Löschung direkt auf deinem Gerät. Bei aktivierter Familienverbindung werden zusätzlich die beim Familienserver gespeicherten Daten über den Elternzugang gelöscht; bei fehlendem Internet muss dies nachgeholt werden.
 Bei Fragen: <span class="ph">[E-Mail]</span>. Du hast das Recht auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde.</p>
 
 <h2>Änderungen</h2>
 <p>Ändert sich etwas an dieser Erklärung, steht die neue Fassung hier und in der App.</p>
-</body></html>
+<section><h2>Optional einmalig geteilter Standort</h2><p>Auf einem gekoppelten Kindergerät kann im Elternbereich ausdrücklich ein aktueller Standort geteilt werden. Nach Standortberechtigung werden Koordinaten, Messzeitpunkt und Genauigkeit an den selbst eingerichteten Familienserver gesendet. Der verbundene Elternzugang kann diese in App und Webseite sehen. Optional können auf dem Kindergerät zusätzlich Standortanfragen des verbundenen Elternzugangs erlaubt werden. Bei geöffneter Kinder-App kann der Elternzugang dann eine einzelne Messung anfordern. Anfragen verfallen nach 90 Sekunden. Die Freigabe kann auf dem Kindergerät deaktiviert werden; dabei werden offene Anfrage und gespeicherter Standort gelöscht. Keine Hintergrundortung und kein Bewegungsverlauf. Nur der letzte Standort wird gespeichert, maximal 24 Stunden angezeigt und bei der nächsten Serveranfrage nach Ablauf gelöscht. Löschen ist auf dem Kindergerät möglich; bei fehlendem Internet muss es später wiederholt werden. Trennen der Verbindung löscht den Serverdatensatz. Beim Öffnen einer externen Karte erhält der gewählte Kartenanbieter die Koordinaten. Standortfreigabe ist freiwillig; OS-Mon funktioniert ohne sie. Die Datensicherung des Familienservers benötigt eine eigene Löschfrist.</p></section></body></html>

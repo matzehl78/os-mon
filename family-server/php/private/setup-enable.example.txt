@@ -1,0 +1,8 @@
+VORLAGE – DIESE DATEI AKTIVIERT NICHTS.
+
+Erstelle eine NEUE Textdatei namens setup-enable.txt im selben privaten Ordner.
+Ihr Inhalt darf NUR ein eigener zufälliger Einrichtungscode sein:
+32 bis 100 Zeichen, A-Z a-z 0-9 sowie Bindestrich oder Unterstrich.
+Code mit einem Passwortgenerator erzeugen, keinen Beispielcode übernehmen.
+Kein Datenbank-/Adminpasswort verwenden. Nicht öffentlich ablegen oder teilen.
+Anschließend /setup im eigenen HTTPS-Browser öffnen und denselben Code eingeben.

@@ -1,0 +1,8 @@
+Options -Indexes
+DirectoryIndex index.php
+RewriteEngine On
+# Preserve bearer authentication with PHP-FPM/FastCGI.
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+# Every public request is allowlisted by index.php, including static assets.
+RewriteRule ^index\.php$ - [L]
+RewriteRule ^ index.php [L]

@@ -386,6 +386,16 @@ fun HomeScreen(
             }
         }
     }
+    val familyOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val familyContext = LocalContext.current.applicationContext
+    LaunchedEffect(familyOwner) {
+        familyOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) {
+                try { if (com.example.osmon.family.FamilyVault.load(familyContext) != null) { FamilyChild.sync(familyContext); vm.refresh() } } catch (_: Exception) { /* Retain last applied values offline. */ }
+                kotlinx.coroutines.delay(15_000)
+            }
+        }
+    }
     HomeContent(
         state = state,
         onPat = vm::pat,
@@ -575,6 +585,9 @@ fun HomeContent(
             // Warnungen (grob behandelt, Rückfall droht) als eigene Zeile
             state.growth?.takeIf { hasGrowthAlerts(it) }?.let { Glass(hasScene) { GrowthAlerts(it, hasScene) } }
 
+            if (FamilyLocation.sharing) {
+                Text(if (FamilyLocation.busy) "Standortanfrage wird bearbeitet …" else "Standortanfragen für deinen Elternzugang sind freigegeben.")
+            }
             // Sprechblase über der Figur: Reaktionstext 2,6 s, sonst Stimmungssatz
             val now by produceState(SystemClock.uptimeMillis(), reaction) {
                 while (reaction?.saying(value) == true) { value = SystemClock.uptimeMillis(); delay(200) }

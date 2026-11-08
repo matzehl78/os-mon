@@ -92,6 +92,8 @@ struct LockedByParentRow: View {
 
 /// PIN festlegen / eingeben, danach der Eltern-Bereich.
 struct ParentView: View {
+    @Environment(\.scenePhase) private var familyPhase
+    @State private var wasUnlocked = ParentStore.isUnlocked
     @Environment(\.dismiss) private var dismiss
     @State private var version = 0
 
@@ -103,6 +105,14 @@ struct ParentView: View {
                 else { ParentContentView { version += 1 } }
             }
             .id(version)
+            .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+                let unlocked = ParentStore.isUnlocked
+                if wasUnlocked && !unlocked { version += 1 }
+                wasUnlocked = unlocked
+            }
+            .onChange(of: familyPhase) { _, p in
+                if p == .background { ParentStore.lockNow(); wasUnlocked = false; version += 1 }
+            }
             .navigationTitle("Eltern-Bereich")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
@@ -199,6 +209,7 @@ private struct ParentContentView: View {
                 .pickerStyle(.segmented)
                 .onChange(of: gameLimit) { _, n in GameStore.setLimit(n) }
             } header: { Text("Mini-Spiele") } footer: { Text("Jede Runde dauert 30 Sekunden. Standard: 2 Runden am Tag.") }
+            Section("Eltern-App verbinden") { FamilyChildCard() }
             Section("Premium") { PremiumCard().listRowInsets(EdgeInsets()) }
             Section("Schutz") {
                 Toggle("Einstellungen sperren (Ziele, Schlafenszeit, Daten löschen)", isOn: $lock)

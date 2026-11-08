@@ -15,3 +15,5 @@ dependencyResolutionManagement {
 rootProject.name = "OSMon"
 include(":app")
 include(":wear")          // Wear-OS-Uhr
+
+include(":parents")

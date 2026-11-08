@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS osmon_devices (
  INDEX(owner), INDEX(location_at), INDEX(expires),
  CONSTRAINT osmon_device_owner FOREIGN KEY(owner) REFERENCES osmon_parents(token) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS osmon_device_status (
+ device_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+ screen TINYINT NOT NULL, steps TINYINT NOT NULL, updated DOUBLE NOT NULL,
+ CONSTRAINT osmon_status_device FOREIGN KEY(device_id) REFERENCES osmon_devices(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS osmon_web_codes (
  code CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
  owner CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

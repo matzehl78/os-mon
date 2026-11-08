@@ -26,6 +26,19 @@ $tests['tenant isolation']=function(){[$p,$o,$pair,$d]=paired();eq(callAPI('GET'
 $tests['config version and status']=function(){[$p,$o,$pair,$d]=paired();$id=newUUID();$body=['version'=>1,'config'=>['limit'=>0,'tasks'=>[['id'=>$id,'title'=>'Zähne putzen','repeat'=>'daily']]]];callAPI('PUT','/v1/children/'.$d['id'].'/config',$p,$body);rejected(409,fn()=>callAPI('PUT','/v1/children/'.$d['id'].'/config',$p,$body));rejected(409,fn()=>callAPI('POST','/v1/device/ack',$pair['token'],['version'=>1,'completed'=>[],'day'=>1]));callAPI('POST','/v1/device/ack',$pair['token'],['version'=>2,'completed'=>[$id],'day'=>1]);$r=callAPI('GET','/v1/children',$p)['children'][0];eq([$r['version'],$r['applied'],$r['completed'],$r['config']['limit']],[2,2,[$id],0]);};
 $tests['config validation']=function(){[$p,$o,$pair,$d]=paired();foreach([['limit'=>true,'tasks'=>[]],['limit'=>4,'tasks'=>[]],['limit'=>2,'tasks'=>[[]]],['limit'=>2,'tasks'=>[],'extra'=>1]] as $c)rejected(400,fn()=>callAPI('PUT','/v1/children/'.$d['id'].'/config',$p,['version'=>1,'config'=>$c]));};
 $tests['ack rejects foreign task']=function(){[$p,$o,$pair]=paired();rejected(400,fn()=>callAPI('POST','/v1/device/ack',$pair['token'],['version'=>1,'completed'=>['foreign'],'day'=>1]));};
+$tests['measuring status created on first use, validated and cascaded']=function(){global $db,$now;
+ $db->exec('DROP TABLE IF EXISTS osmon_device_status'); // existing hosted installs: no SQL migration step
+ [$p,$o,$pair,$d]=paired();
+ callAPI('POST','/v1/device/ack',$pair['token'],['version'=>1,'completed'=>[],'day'=>1]);
+ eq(callAPI('GET','/v1/children',$p)['children'][0]['measuring'],null); // older app without status
+ foreach([['screen'=>true],['screen'=>1,'steps'=>true],['screen'=>true,'steps'=>false,'extra'=>1],'off'] as $bad)
+  rejected(400,fn()=>callAPI('POST','/v1/device/ack',$pair['token'],['version'=>1,'completed'=>[],'day'=>1,'measuring'=>$bad]));
+ callAPI('POST','/v1/device/ack',$pair['token'],['version'=>1,'completed'=>[],'day'=>1,'measuring'=>['screen'=>false,'steps'=>true]]);
+ eq(callAPI('GET','/v1/children',$p)['children'][0]['measuring'],['screen'=>false,'steps'=>true,'updated'=>$now]);
+ $now+=60;callAPI('POST','/v1/device/ack',$pair['token'],['version'=>1,'completed'=>[],'day'=>1,'measuring'=>['screen'=>true,'steps'=>true]]);
+ eq(callAPI('GET','/v1/device',$pair['token'])['measuring'],['screen'=>true,'steps'=>true,'updated'=>$now]);
+ callAPI('DELETE','/v1/children/'.$d['id'],$p);eq((int)$db->query('SELECT count(*) FROM osmon_device_status')->fetchColumn(),0);
+};
 $tests['device revoke']=function(){[$p,$o,$pair,$d]=paired();callAPI('DELETE','/v1/children/'.$d['id'],$p);rejected(401,fn()=>callAPI('GET','/v1/device',$pair['token']));};
 $tests['parent deletion cascades']=function(){global $db;[$p,$o,$pair]=paired();$code=callAPI('POST','/v1/web-codes',$p)['code'];$web=callAPI('POST','/v1/web-codes/redeem','',['code'=>$code])['token'];callAPI('DELETE','/v1/parents',$p);rejected(401,fn()=>callAPI('GET','/v1/children',$web));rejected(401,fn()=>callAPI('GET','/v1/device',$pair['token']));eq((int)$db->query('SELECT count(*) FROM osmon_devices')->fetchColumn(),0);};
 $tests['parent expiry persists cleanup on rejected auth']=function(){global $now,$db;[$p,$o,$pair]=paired();$now+=91*86400;rejected(401,fn()=>callAPI('GET','/v1/device',$pair['token']));eq((int)$db->query('SELECT count(*) FROM osmon_devices')->fetchColumn(),0);};

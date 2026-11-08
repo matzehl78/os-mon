@@ -37,9 +37,17 @@ object FamilyChild {
             if (old != local + remote) { TaskStore.save(ctx, local + remote); TaskEvents.changed() }
             if (GameStore.limit(ctx) != config.getInt("limit")) GameStore.setLimit(ctx, config.getInt("limit"))
             val done = JSONArray(remote.filter { DayTasks.isDone(it, TaskStore.today()) }.map { it.id.removePrefix("family:") })
-            api.call("POST", "/v1/device/ack", JSONObject().put("version",device.getInt("version")).put("completed",done).put("day",TaskStore.today()))
+            api.call("POST", "/v1/device/ack", JSONObject().put("version",device.getInt("version")).put("completed",done).put("day",TaskStore.today())
+                .put("measuring", measuring(ctx)))
             PhoneWearBridge.push(ctx)
         } finally { mutex.unlock() }
+    }
+
+    /** Ob Bildschirmzeit und Schritte gerade gemessen werden (nur an/aus, keine Werte), damit Eltern ein Abschalten sehen. */
+    private suspend fun measuring(ctx: Context): JSONObject {
+        val steps = com.example.osmon.PetSync.flag(ctx, "feature.steps") &&
+            (runCatching { com.example.osmon.Steps.client(ctx)?.let { com.example.osmon.Steps.hasPermission(it) } }.getOrNull() ?: false)
+        return JSONObject().put("screen", com.example.osmon.PetSync.screenUsable(ctx)).put("steps", steps)
     }
 }
 
@@ -57,7 +65,7 @@ fun FamilyChildCard() {
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Mit OS-Mon Eltern verbinden", style = MaterialTheme.typography.titleMedium)
-        Text("Optional: Aufgaben, Spielelimit und Erledigt-Status werden über euren Familienserver geteilt. Standort nur nach ausdrücklichem Teilen; keine Gesundheitsdaten. Beide Apps brauchen denselben HTTPS-Server.")
+        Text("Optional: Aufgaben, Spielelimit, Erledigt-Status und ob Bildschirmzeit und Schritte gemessen werden (nur an/aus) werden über euren Familienserver geteilt. Standort nur nach ausdrücklichem Teilen; keine Gesundheitsdaten. Beide Apps brauchen denselben HTTPS-Server.")
         if (!linked) {
             OutlinedTextField(server, { server = it }, label = { Text("HTTPS-Serveradresse") }, enabled = !busy)
             OutlinedTextField(name, { name = it.take(40) }, label = { Text("Gerätename (ohne echten Kindernamen)") }, enabled = !busy)

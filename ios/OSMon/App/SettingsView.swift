@@ -124,8 +124,12 @@ struct SettingsView: View {
                 else { SleepSettingsSection() }
                 FestivalSettingsSection()
                 sensorSection
-                screenTimeSection
-                stepsSection
+                // Messungen, auf denen Elternregeln und Wesen beruhen: mit PIN gesperrt (Meldungen bleiben frei)
+                if locked { Section("Bildschirmzeit und Schritte") { LockedByParentRow(title: "Bildschirmzeit und Schritte") { showParent = true } } }
+                else {
+                    screenTimeSection
+                    stepsSection
+                }
                 pushSection
                 if locked { Section("Ziele") { LockedByParentRow(title: "Ziele") { showParent = true } } } else { goalSection }
                 storageSection
@@ -161,7 +165,7 @@ struct SettingsView: View {
         }
     }
 
-    /// Eltern-Bereich (PIN) – sperrt Ziele, Schlafenszeit und Daten löschen.
+    /// Eltern-Bereich (PIN) – sperrt Ziele, Schlafenszeit, Bildschirmzeit/Schritte und Daten löschen.
     private var parentSection: some View {
         Section {
             Button { showParent = true } label: {

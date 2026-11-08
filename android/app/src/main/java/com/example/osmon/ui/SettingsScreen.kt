@@ -304,6 +304,8 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
             Info("💾 Speicher", "Nur der Anteil freien Speichers. Keine Inhalte.")
         }
 
+        // Messungen, auf denen Elternregeln und Wesen beruhen: mit PIN gesperrt (Meldungen bleiben frei)
+        if (locked) LockedByParent("Bildschirmzeit und Schritte") { showParent = true } else {
         Card(null, "OS-Mon speichert nur Minuten pro Kategorie, keine App-Namen. Ohne Bildschirmzeit bleibt „Ruhe“ leer und es gibt keine Bildschirmzeit- und Nacht-Meldungen.") {
             ToggleRow("🌙 Bildschirmzeit", screenOn, enabled = !busy) { on ->
                 screenOn = on
@@ -355,6 +357,7 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
                         modifier = Modifier.fillMaxWidth()) { Text("Freigaben in Health Connect") }
                 }
             }
+        }
         }
 
         Card("Meldungen", "Nie zwischen 22 und 8 Uhr (außer wenn du nachts am Handy bist). Wenn du Meldungen ignorierst, meldet sich dein Wesen seltener.") {

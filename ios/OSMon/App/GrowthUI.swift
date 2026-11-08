@@ -43,7 +43,10 @@ enum GrowthStore {
         let t = today
         if s.hatched && s.lastDay < t - 1 {
             for d in max(s.lastDay + 1, t - Growth.maxCatchUp)..<t {
-                s = Growth.closeDay(s, day: d, avgWellbeing: DayLog.average(day: d), rough: rough(d))
+                let avg = DayLog.average(day: d), r = rough(d)
+                // Für „Wieder aufgepäppelt“: es gab einen gemessenen Tag, an dem das Wachsen pausiert hat
+                if avg != nil && Growth.delta(avg, rough: r) == 0 { STShared.defaults.set(true, forKey: "growth.dropped") }
+                s = Growth.closeDay(s, day: d, avgWellbeing: avg, rough: r)
             }
             GrowthStorage.save(s)
         }
@@ -77,11 +80,11 @@ enum GrowthStore {
 
     static func ackStage() {
         var s = load()
-        // Sammelalbum „Wieder aufgepäppelt“: nach einem Rückfall wieder eine Stufe gewachsen
+        // Sammelalbum „Wieder aufgepäppelt“: nach einer Wachstumspause wieder eine Stufe gewachsen
+        // (Schlüssel heißt aus Kompatibilität noch growth.dropped; einen Rückfall gibt es nicht mehr)
         if s.pendingStage != nil {
             let d = STShared.defaults
-            if s.pendingDown == true { d.set(true, forKey: "growth.dropped") }
-            else if d.bool(forKey: "growth.dropped") { d.set(false, forKey: "growth.dropped"); AchievementStore.addComeback() }
+            if d.bool(forKey: "growth.dropped") { d.set(false, forKey: "growth.dropped"); AchievementStore.addComeback() }
         }
         s.pendingStage = nil; s.pendingDown = nil; GrowthStorage.save(s)
     }

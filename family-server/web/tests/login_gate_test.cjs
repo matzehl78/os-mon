@@ -52,5 +52,12 @@ function harness(options={}){
  assert.match(status.run("measuringRow({measuring:{screen:true,steps:true,updated:1}})"),/werden gemessen/);
  assert.match(status.node('#main').innerHTML,/Messung noch unbekannt/);
  console.log('PASS parents see when screen time or steps are not measured');
+ assert.match(status.node('#main').innerHTML,/Lob schicken/);assert.equal((status.run('praiseCard()').match(/data-action="praise"/g)||[]).length,5);
+ status.run("current().praise={id:'p1',sticker:'heart',sent:1,seen:true}");assert.match(status.run('praiseCard()'),/Herz · angekommen/);
+ status.run("current().praise={id:'p2',sticker:'star',sent:2,seen:false}");assert.match(status.run('praiseCard()'),/wartet auf das Kindergerät/);
+ await status.run("actions.praise({dataset:{sticker:'trophy'}})");const sent=status.requests.find(r=>r.url.endsWith('/praise'));
+ assert.equal(sent.url,'/web-api/children/child-1/praise');assert.deepEqual(sent.body,{sticker:'trophy'});
+ const before=status.requests.length;await status.run("actions.praise({dataset:{sticker:'unknown'}})");assert.equal(status.requests.filter(r=>r.url.endsWith('/praise')).length,1);
+ console.log('PASS parents can send a fixed praise sticker and see whether it arrived');
 
 })().catch(e=>{console.error(e);process.exitCode=1});

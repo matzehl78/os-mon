@@ -17,7 +17,7 @@ So wird gesunder Umgang mit dem Handy zu einem Spiel für die ganze Familie.
 
 **Vom Ei zum Erwachsenen**
 Such dir ein Ei aus, tippe es an, bis es schlüpft – und begleite dein Wesen in etwa drei Monaten vom Baby zum Erwachsenen.
-Gute Pflege lässt es wachsen. Schlechte Pflege und grobes Verhalten lassen es wieder schrumpfen.
+Gute Pflege lässt es wachsen. An schlechten Tagen macht es einfach eine Pause, kleiner wird es nie.
 
 **Was OS-Mon kann**
 • 11 Figuren in 3D, zum Drehen mit dem Finger

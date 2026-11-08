@@ -32,7 +32,7 @@ object Achievements {
         Achievement("fest5", "🎊", "Feierbiest", "Feiere 5 verschiedene Feste.", Metric.FESTIVALS, 5),
         Achievement("scene3", "🗺️", "Entdecker", "Schalte 3 Hintergründe frei.", Metric.SCENES, 3),
         Achievement("scene10", "🌍", "Weltreisender", "Schalte alle 10 Hintergründe frei.", Metric.SCENES, 10),
-        Achievement("comeback", "🩹", "Wieder aufgepäppelt", "Hilf deinem Wesen nach einem Rückfall wieder zu wachsen.", Metric.COMEBACK, 1),
+        Achievement("comeback", "🩹", "Wieder aufgepäppelt", "Lass dein Wesen nach einer Pause wieder eine Stufe wachsen.", Metric.COMEBACK, 1),
         Achievement("days100", "💯", "100 Tage zusammen", "Seid 100 Tage zusammen.", Metric.DAYS, 100),
         Achievement("game1", "🎮", "Spielkind", "Spiel ein Mini-Spiel mit deinem Wesen.", Metric.GAMES, 1),
         Achievement("game20", "🕹️", "Spiele-Fan", "Spiel 20 Mini-Spiele.", Metric.GAMES, 20)

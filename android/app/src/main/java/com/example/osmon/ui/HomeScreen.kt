@@ -96,6 +96,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -530,7 +532,13 @@ fun HomeContent(
                 Festivals.adventNumber(day, Festivals.firstAdvent(Festivals.ymd(day).y)))
             SceneThemeLayer(props, if (state.seasonsOn && hasScene) SceneTheme.tint(state.season).argb else null,
                 feetY = stageY + stageH * 0.92f, garlandY = headerBottom + with(density) { 6.dp.toPx() }, modifier = layerMod)
-            SceneTheme.particles(state.festival, state.season, state.seasonsOn)?.let { FestivalDecor(it, celebrateAt, layerMod) }
+            // Teilchen nur im Bereich der Figur (zwischen Kopfzeile und Ringen), damit Texte lesbar bleiben
+            val decorTop = headerBottom; val decorBottom = ringsBottom - ringsH
+            SceneTheme.particles(state.festival, state.season, state.seasonsOn)?.let {
+                FestivalDecor(it, celebrateAt, layerMod.drawWithContent {
+                    if (decorBottom > decorTop) clipRect(top = decorTop, bottom = decorBottom) { this@drawWithContent.drawContent() }
+                })
+            }
         }
         Column(
             modifier = Modifier
@@ -567,8 +575,8 @@ fun HomeContent(
                             // Figurenname bleibt sichtbar; die Entwicklungsform steht dahinter
                             // Entwicklungsform nur als Abzeichen (passt immer in die Zeile)
                             state.growth?.let { growthLabel(figure.name, it) } ?: figure.name,
-                            style = MaterialTheme.typography.bodyMedium, maxLines = 1,
-                            color = if (hasScene) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1,
+                            color = if (hasScene) Color.White else MaterialTheme.colorScheme.onSurface   // voller Kontrast (Kinder, Szenenbild)
                         )
                         state.growth?.let { GrowthProgress(it, hasScene) }
                     }
@@ -727,6 +735,17 @@ fun HomeContent(
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Heute", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     state.quests.forEach { QuestCard(it) }
+                }
+            }
+
+            // Lob von den Eltern (FamilyChild.kt): Drehung + Konfetti und eine Sprechblase
+            val praise = PraiseEvents.latest.value
+            LaunchedEffect(praise) {
+                praise?.let { (sticker, _) ->
+                    reaction = ActiveReaction(ReactionKind.SPIN, SystemClock.uptimeMillis(),
+                        com.example.osmon.family.FamilyPraise.line(sticker, figure.name))
+                    celebrateAt = System.currentTimeMillis()
+                    PraiseEvents.latest.value = null
                 }
             }
 
@@ -927,8 +946,8 @@ fun StatusRing(
         }
         Text(value?.let { "${it.roundToInt()}" } ?: "–", style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold)
-        Text(title, style = MaterialTheme.typography.labelSmall,
-            color = if (onScene) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium,
+            color = if (onScene) Color.White else MaterialTheme.colorScheme.onSurface)   // voller Kontrast statt 85 % bzw. onSurfaceVariant
     }
 }
 

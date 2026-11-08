@@ -36,7 +36,7 @@ enum Achievements {
         Achievement(id: "fest5", emoji: "🎊", title: "Feierbiest", hint: "Feiere 5 verschiedene Feste.", metric: .festivals, target: 5),
         Achievement(id: "scene3", emoji: "🗺️", title: "Entdecker", hint: "Schalte 3 Hintergründe frei.", metric: .scenes, target: 3),
         Achievement(id: "scene10", emoji: "🌍", title: "Weltreisender", hint: "Schalte alle 10 Hintergründe frei.", metric: .scenes, target: 10),
-        Achievement(id: "comeback", emoji: "🩹", title: "Wieder aufgepäppelt", hint: "Hilf deinem Wesen nach einem Rückfall wieder zu wachsen.", metric: .comeback, target: 1),
+        Achievement(id: "comeback", emoji: "🩹", title: "Wieder aufgepäppelt", hint: "Lass dein Wesen nach einer Pause wieder eine Stufe wachsen.", metric: .comeback, target: 1),
         Achievement(id: "days100", emoji: "💯", title: "100 Tage zusammen", hint: "Seid 100 Tage zusammen.", metric: .days, target: 100),
         Achievement(id: "game1", emoji: "🎮", title: "Spielkind", hint: "Spiel ein Mini-Spiel mit deinem Wesen.", metric: .games, target: 1),
         Achievement(id: "game20", emoji: "🕹️", title: "Spiele-Fan", hint: "Spiel 20 Mini-Spiele.", metric: .games, target: 20)

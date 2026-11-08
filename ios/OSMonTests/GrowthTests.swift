@@ -27,47 +27,43 @@ final class GrowthTests: XCTestCase {
         s = Growth.closeDay(s, day: d0 + 3, avgWellbeing: 80)
         XCTAssertEqual(s.goodDays, 2)
         s = Growth.closeDay(s, day: d0 + 4, avgWellbeing: 39.9)
-        XCTAssertEqual(s.goodDays, 1)
+        XCTAssertEqual(s.goodDays, 2)
         s = Growth.closeDay(s, day: d0 + 5, avgWellbeing: 10)
-        XCTAssertEqual(s.goodDays, 0)
+        XCTAssertEqual(s.goodDays, 2)
         XCTAssertEqual(s.lastDay, d0 + 5)
         XCTAssertEqual(Growth.stage(s), .baby)
-        XCTAssertEqual(([nil, 40, 39, 19] as [Float?]).map { Growth.delta($0) }, [0, 1, -1, -2])
+        XCTAssertEqual(([nil, 40, 39, 19] as [Float?]).map { Growth.delta($0) }, [0, 1, 0, 0])
     }
 
-    func testDropsBackWithBuffer() {
+    func testBadDaysPauseButNeverDrop() {
         var s = GrowthState(hatched: true, goodDays: 14, lastDay: d0, stage: .child)
-        s = Growth.closeDay(s, day: d0 + 1, avgWellbeing: 30)
-        XCTAssertEqual(Growth.stage(s), .child); XCTAssertNil(s.pendingStage)
-        XCTAssertEqual(Growth.risk(s), GrowthRisk(badDaysLeft: 3, to: .baby))
-        s = Growth.closeDay(s, day: d0 + 2, avgWellbeing: 30)
-        s = Growth.closeDay(s, day: d0 + 3, avgWellbeing: 30)
-        XCTAssertEqual(Growth.stage(s), .child); XCTAssertEqual(Growth.risk(s)?.badDaysLeft, 1)
-        s = Growth.closeDay(s, day: d0 + 4, avgWellbeing: 30)
-        XCTAssertEqual(Growth.stage(s), .baby)
-        XCTAssertEqual(s.pendingStage, .baby); XCTAssertEqual(s.pendingDown, true)
-        XCTAssertNil(Growth.risk(s))
-        s.pendingStage = nil; s.pendingDown = nil
-        for i in 5...8 { s = Growth.closeDay(s, day: d0 + i, avgWellbeing: 70) }
-        XCTAssertEqual(s.goodDays, 14); XCTAssertEqual(Growth.stage(s), .child); XCTAssertEqual(s.pendingDown, false)
+        for i in 1...30 { s = Growth.closeDay(s, day: d0 + i, avgWellbeing: 10) }
+        XCTAssertEqual(s.goodDays, 14); XCTAssertEqual(Growth.stage(s), .child)
+        XCTAssertNil(s.pendingStage); XCTAssertNotEqual(s.pendingDown, true); XCTAssertNil(Growth.risk(s))
+        for i in 31...58 { s = Growth.closeDay(s, day: d0 + i, avgWellbeing: 70) }
+        XCTAssertEqual(Growth.stage(s), .teen); XCTAssertEqual(s.pendingStage, .teen)
     }
 
-    func testAdultCanFallBackToTeen() {
+    func testAdultStaysAdult() {
         var s = GrowthState(hatched: true, goodDays: 84, lastDay: d0, stage: .adult)
         XCTAssertNil(Growth.progress(s))
-        for i in 1...2 { s = Growth.closeDay(s, day: d0 + i, avgWellbeing: 10) }
-        XCTAssertEqual(Growth.stage(s), .teen); XCTAssertEqual(s.pendingDown, true)
+        for i in 1...10 { s = Growth.closeDay(s, day: d0 + i, avgWellbeing: 10) }
+        XCTAssertEqual(Growth.stage(s), .adult); XCTAssertNotEqual(s.pendingDown, true)
+    }
+
+    func testOldStateBelowStageMinimumKeepsStage() {
+        let s = Growth.closeDay(GrowthState(hatched: true, goodDays: 12, lastDay: d0, stage: .child), day: d0 + 1, avgWellbeing: 10)
+        XCTAssertEqual(Growth.stage(s), .child); XCTAssertNil(Growth.risk(s))
     }
 
     func testRoughBehaviour() {
         XCTAssertEqual(Growth.delta(80, rough: 2), 1)
-        XCTAssertEqual(Growth.delta(80, rough: 3), -1)
-        XCTAssertEqual(Growth.delta(nil, rough: 3), -1)
-        XCTAssertEqual(Growth.delta(30, rough: 3), -2)
-        XCTAssertEqual(Growth.delta(10, rough: 5), -3)
+        XCTAssertEqual(Growth.delta(80, rough: 3), 0)
+        XCTAssertEqual(Growth.delta(nil, rough: 3), 0)
+        XCTAssertEqual(Growth.delta(10, rough: 5), 0)
         var s = GrowthState(hatched: true, goodDays: 5, lastDay: d0, stage: .baby)
         s = Growth.closeDay(s, day: d0 + 1, avgWellbeing: 80, rough: 4)
-        XCTAssertEqual(s.goodDays, 4)
+        XCTAssertEqual(s.goodDays, 5)
     }
 
     func testEggDoesNotGrow() {

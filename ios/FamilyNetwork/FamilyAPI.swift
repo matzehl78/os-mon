@@ -14,6 +14,19 @@ struct FamilyDevice: Codable, Identifiable {
     var id: String; var name: String; var paired: Bool; var config: FamilyConfig
     var version: Int; var applied: Int; var completed: [String]; var seen: Double?; var day: Int?; var location: FamilyLocation?; var locationSharing: Bool?; var locationRequest: FamilyLocationRequest?
     var measuring: FamilyMeasuring? = nil
+    var praise: FamilyPraise? = nil
+}
+/// Lob von den Eltern: ein fester Sticker (kein Freitext). Gleiche Sticker wie Webportal und Android.
+struct FamilyPraise: Codable, Equatable {
+    var id: String; var sticker: String; var sent: Double; var seen: Bool
+    static let stickers: [String: (emoji: String, label: String)] = [
+        "star": ("⭐", "einen Stern"), "heart": ("💖", "ein Herz"), "thumbs": ("👍", "einen Daumen hoch"),
+        "trophy": ("🏆", "einen Pokal"), "rainbow": ("🌈", "einen Regenbogen"),
+    ]
+    static func line(_ sticker: String, pet: String) -> String {
+        let s = stickers[sticker] ?? ("⭐", "ein Lob")
+        return "\(s.emoji) Deine Eltern schicken dir \(s.label)! \(pet) freut sich riesig."
+    }
 }
 /// Werden Bildschirmzeit und Schritte am Kindergerät gemessen? Nur an/aus. Gleiche Texte wie Webportal und Android.
 struct FamilyMeasuring: Codable, Equatable {

@@ -17,7 +17,11 @@ import kotlinx.coroutines.sync.Mutex
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** Lob von den Eltern ist angekommen: (Sticker-ID, Zeitpunkt); die Startseite lässt das Wesen sich freuen. */
+object PraiseEvents { val latest = mutableStateOf<Pair<String, Long>?>(null) }
+
 object FamilyChild {
+    private const val PRAISE_KEY = "pet.praise.last"   // zuletzt gezeigtes Lob (Datei „pet“, wird mit „Alle Daten löschen“ geleert)
     private val mutex = Mutex()
     suspend fun sync(ctx: Context) {
         if (!mutex.tryLock()) return
@@ -26,6 +30,15 @@ object FamilyChild {
             val api = FamilyApi(c); val device = api.call("GET", "/v1/device")
             if (!device.getBoolean("paired")) return
             FamilyLocation.handle(ctx, c, device)
+            // Lob von den Eltern: einmal zeigen (Startseite: Wesen freut sich), dann als gesehen melden
+            device.optJSONObject("praise")?.let { p ->
+                val id = p.optString("id"); val prefs = com.example.osmon.PetSync.prefs(ctx)
+                if (id.isNotEmpty() && !p.optBoolean("seen", true) && prefs.getString(PRAISE_KEY, null) != id) {
+                    prefs.edit().putString(PRAISE_KEY, id).apply()
+                    PraiseEvents.latest.value = p.optString("sticker") to System.currentTimeMillis()
+                    runCatching { api.call("POST", "/v1/device/praise-seen", JSONObject().put("id", id)) }
+                }
+            }
             val config = device.getJSONObject("config"); val a = config.getJSONArray("tasks")
             val old = TaskStore.load(ctx); val local = old.filterNot { it.id.startsWith("family:") }
             check(local.size + a.length() <= DayTasks.MAX_TASKS) { "Lokal und aus der Eltern-App zusammen sind höchstens 12 Aufgaben möglich." }

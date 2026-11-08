@@ -19,14 +19,8 @@ import WidgetKit
 // MARK: - Löschen und Exportieren
 
 enum PetData {
-    /// Alle Schlüssel, die OS-Mon in der App Group anlegt.
-    static let prefixes = ["pet.", "st.", "steps.", "daylog.", "push.", "goal.", "feature.", "onboarding.", "sel."]
-
-    static func ownKeys() -> [String] {
-        STShared.defaults.dictionaryRepresentation().keys
-            .filter { key in prefixes.contains { key.hasPrefix($0) } }
-            .sorted()
-    }
+    /// Alle Schlüssel, die OS-Mon in der App Group anlegt (Regeln: Shared/Logic/OwnDataKeys.swift).
+    static func ownKeys() -> [String] { OwnDataKeys.keys(in: STShared.defaults, suite: STShared.appGroup) }
 
     /// Lesbarer JSON-Export aller eigenen Daten. Codierte Werte (Snapshot, Evolution, Push-Zustand) werden
     /// aufgelöst; die Bildschirmzeit-Auswahl ist ein von Apple verschlüsseltes Token und bleibt unlesbar.
@@ -75,6 +69,7 @@ enum PetData {
         center.removeAllDeliveredNotifications()
         BGTaskScheduler.shared.cancelAllTaskRequests()
         for key in ownKeys() { STShared.defaults.removeObject(forKey: key) }
+        ParentStore.lockNow()                       // Eltern-PIN ist mit gelöscht
         try? FileManager.default.contentsOfDirectory(at: FileManager.default.temporaryDirectory,
                                                      includingPropertiesForKeys: nil)
             .filter { $0.lastPathComponent.hasPrefix("OS-Mon-Export") }

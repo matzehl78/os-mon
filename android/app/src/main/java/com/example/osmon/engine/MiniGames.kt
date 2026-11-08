@@ -127,10 +127,17 @@ object MiniGames {
 
     /** Runden heute noch übrig. played = (Tag, Anzahl) des letzten Spiels. */
     fun left(lastDay: Long?, playedThatDay: Int, today: Long, limit: Int): Int =
-        (limit.coerceIn(0, MAX_LIMIT) - if (lastDay == today) playedThatDay else 0).coerceAtLeast(0)
+        (limit.coerceIn(0, MAX_LIMIT) - if (counts(lastDay, today)) playedThatDay else 0).coerceAtLeast(0)
 
-    /** Nach einer Runde: neuer Zähler für heute. */
-    fun afterPlay(lastDay: Long?, playedThatDay: Int, today: Long): Int = (if (lastDay == today) playedThatDay else 0) + 1
+    /** Beim Start einer Runde: neuer Zähler (die Runde zählt sofort, auch wenn sie abgebrochen wird). */
+    fun afterPlay(lastDay: Long?, playedThatDay: Int, today: Long): Int = (if (counts(lastDay, today)) playedThatDay else 0) + 1
+
+    /** Tag, der zum Zähler gespeichert wird: nie rückwärts. */
+    fun dayAfterPlay(lastDay: Long?, today: Long): Long = maxOf(lastDay ?: today, today)
+
+    /** Zählt der gespeicherte Zähler noch? Auch wenn die Uhr zurückgestellt wurde (lastDay liegt in der „Zukunft“),
+     *  damit das Tageslimit nicht durch Datum vor- und wieder zurückstellen neu beginnt. */
+    private fun counts(lastDay: Long?, today: Long) = lastDay != null && lastDay >= today
 
     fun available(premium: Boolean) = MiniGame.entries.filter { !it.premium || premium }
 

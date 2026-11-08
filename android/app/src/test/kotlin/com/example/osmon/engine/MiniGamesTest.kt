@@ -18,6 +18,15 @@ class MiniGamesTest {
         assertEquals(1, MiniGames.afterPlay(99, 2, 100))
     }
 
+    @Test fun clockRollbackDoesNotResetLimit() {
+        // Datum vorgestellt (Tag 101), zwei Runden gespielt, Datum zurück auf Tag 100: keine neuen Runden
+        assertEquals(0, MiniGames.left(101, 2, 100, 2))
+        assertEquals(2, MiniGames.afterPlay(101, 1, 100))
+        assertEquals(101L, MiniGames.dayAfterPlay(101, 100))
+        assertEquals(100L, MiniGames.dayAfterPlay(99, 100))
+        assertEquals(100L, MiniGames.dayAfterPlay(null, 100))
+    }
+
     @Test fun starsAndGames() {
         assertEquals(listOf(0, 1, 2, 3), listOf(7, 8, 15, 24).map { MiniGames.stars(it) })
         assertEquals(listOf(MiniGame.STARS, MiniGame.BUBBLES), MiniGames.available(false))

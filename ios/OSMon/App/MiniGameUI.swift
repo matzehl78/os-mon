@@ -40,7 +40,7 @@ struct GameView: View {
                 case .choose: choose
                 case .play: GamePlayView(game: game, stage: stage) { s in
                         score = s
-                        GameStore.recordPlay(); left = GameStore.left
+                        GameStore.recordFinish()
                         SoundPlayer.shared.play(.gameEnd)
                         phase = .result
                     }
@@ -80,7 +80,7 @@ struct GameView: View {
                         Text(ok ? g.hint : "💎 Premium (Eltern-Bereich)").font(.footnote).opacity(0.75)
                     }
                     Spacer()
-                    Button("Los") { game = g; phase = .play }.buttonStyle(.borderedProminent).disabled(!ok || left == 0)
+                    Button("Los") { guard GameStore.left > 0 else { return }; GameStore.recordStart(); left = GameStore.left; game = g; phase = .play }.buttonStyle(.borderedProminent).disabled(!ok || left == 0)
                 }
                 .padding(14)
                 .background(.white.opacity(ok ? 0.12 : 0.05), in: RoundedRectangle(cornerRadius: 16))

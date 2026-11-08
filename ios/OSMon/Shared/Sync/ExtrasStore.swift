@@ -52,10 +52,16 @@ enum GameStore {
     static var left: Int {
         MiniGames.left(lastDay: d.object(forKey: "games.day") as? Int, playedThatDay: d.integer(forKey: "games.played"), today: EpochDay.of(.now), limit: limit)
     }
-    static func recordPlay() {
-        let today = EpochDay.of(.now)
-        d.set(MiniGames.afterPlay(lastDay: d.object(forKey: "games.day") as? Int, playedThatDay: d.integer(forKey: "games.played"), today: today), forKey: "games.played")
-        d.set(today, forKey: "games.day")
+    /// Beim Start einer Runde: zählt sofort fürs Tageslimit (Abbrechen gibt keine Runde zurück).
+    static func recordStart() {
+        let today = EpochDay.of(.now), last = d.object(forKey: "games.day") as? Int
+        d.set(MiniGames.afterPlay(lastDay: last, playedThatDay: d.integer(forKey: "games.played"), today: today), forKey: "games.played")
+        d.set(MiniGames.dayAfterPlay(lastDay: last, today: today), forKey: "games.day")
+        NotificationCenter.default.post(name: .osmonExtrasChanged, object: nil)
+    }
+
+    /// Nach einer zu Ende gespielten Runde: nur noch fürs Sammelalbum.
+    static func recordFinish() {
         d.set(d.integer(forKey: "ach.games") + 1, forKey: "ach.games")
         NotificationCenter.default.post(name: .osmonExtrasChanged, object: nil)
     }

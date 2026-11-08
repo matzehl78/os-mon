@@ -130,6 +130,7 @@ private fun DeviceEditor(device: JSONObject, connection: FamilyConnection, onClo
     val completed = remember(device) { device.getJSONArray("completed").let { a -> (0 until a.length()).map { a.getString(it) }.toSet() } }
     Text(device.getString("name"), style = MaterialTheme.typography.titleLarge)
     Text(if (device.getInt("applied") == device.getInt("version")) "Letzter gespeicherter Stand übernommen" else "Wartet auf Übernahme am Kindergerät")
+    Text(FamilyStatus.measuringText(device), color = if (FamilyStatus.measuringOff(device)) MaterialTheme.colorScheme.error else androidx.compose.ui.graphics.Color.Unspecified)
     Text("Übernahme bei geöffneter Kinder-App. Ohne Internet bleiben die zuletzt übernommenen Einstellungen gültig.")
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var sharing by remember(device) { mutableStateOf(device.optBoolean("locationSharing", false)) }

@@ -89,9 +89,14 @@ object PremiumStore {
         if (PRODUCT !in p.products) return
         when (p.purchaseState) {
             Purchase.PurchaseState.PURCHASED -> {
-                set(ctx, true); onStatus("Danke! Premium ist freigeschaltet.")
-                if (!p.isAcknowledged) connected(ctx) { c ->
-                    c.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(p.purchaseToken).build()) {}
+                // Erst nach Bestätigung bei Google freischalten: unbestätigte Käufe erstattet Google nach 3 Tagen.
+                // Schlägt die Bestätigung fehl, versucht es restore() beim nächsten Start bzw. „Kauf wiederherstellen“ erneut.
+                if (p.isAcknowledged) { set(ctx, true); onStatus("Danke! Premium ist freigeschaltet.") }
+                else connected(ctx) { c ->
+                    c.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(p.purchaseToken).build()) { r ->
+                        if (r.responseCode == BillingClient.BillingResponseCode.OK) { set(ctx, true); onStatus("Danke! Premium ist freigeschaltet.") }
+                        else onStatus("Kauf eingegangen, Bestätigung bei Google noch offen. Später „Kauf wiederherstellen“ tippen.")
+                    }
                 }
             }
             Purchase.PurchaseState.PENDING -> onStatus("Kauf wartet noch auf die Zahlung.")

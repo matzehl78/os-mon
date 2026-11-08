@@ -18,6 +18,25 @@ import org.json.JSONObject
 
 data class FamilyConnection(val server: String, val token: String)
 
+/** Text für die Eltern: werden Bildschirmzeit und Schritte am Kindergerät gemessen? Gleiche Texte wie Webportal und iOS. */
+object FamilyStatus {
+    /** null = das Kindergerät meldet es (noch) nicht (ältere App-Version). */
+    fun measuringText(screen: Boolean?, steps: Boolean?): String {
+        if (screen == null || steps == null) return "Messung noch unbekannt (ältere OS-Mon-Version auf dem Kindergerät)"
+        val off = listOfNotNull("Bildschirmzeit".takeIf { !screen }, "Schritte".takeIf { !steps })
+        return if (off.isEmpty()) "Bildschirmzeit und Schritte werden gemessen"
+        else off.joinToString(" und ") + (if (off == listOf("Bildschirmzeit")) " wird" else " werden") + " nicht gemessen – am Kindergerät in OS-Mon oder den Systemeinstellungen wieder erlauben"
+    }
+    fun measuringOff(screen: Boolean?, steps: Boolean?) = screen == false || steps == false
+
+    fun measuringText(device: JSONObject): String = device.optJSONObject("measuring").let { m ->
+        measuringText(m?.takeIf { it.has("screen") }?.optBoolean("screen"), m?.takeIf { it.has("steps") }?.optBoolean("steps"))
+    }
+    fun measuringOff(device: JSONObject): Boolean = device.optJSONObject("measuring").let { m ->
+        m != null && (!m.optBoolean("screen", true) || !m.optBoolean("steps", true))
+    }
+}
+
 object FamilyVault {
     private const val ALIAS = "osmon.family.connection"
     private fun key(): SecretKey {

@@ -35,6 +35,15 @@ final class PhoneWatchBridge: NSObject, WCSessionDelegate {
         try? s.updateApplicationContext([WatchPayload.key: data])
     }
 
+    /// Nach „Alle Daten löschen“: Uhr verwirft ihren Stand. applicationContext kommt auch an, wenn die Uhr gerade nicht erreichbar ist.
+    func clear() {
+        accessory = nil; form = nil
+        guard supported else { return }
+        let s = WCSession.default
+        guard s.activationState == .activated, s.isPaired, s.isWatchAppInstalled else { return }
+        try? s.updateApplicationContext([WatchReset.key: Date().timeIntervalSince1970])
+    }
+
     static func payload(snapshot: PetSnapshot?, accessory: Accessory?, form: PetForm?, now: Date = .now) -> WatchPayload? {
         guard let snap = snapshot ?? PetSync.lastSnapshot()?.snapshot else { return nil }
         let day = EpochDay.of(now)

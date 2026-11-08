@@ -32,6 +32,8 @@ struct Pet3DView: UIViewRepresentable {
     let state: Pet3DState
     var reaction: ActiveReaction? = nil
     var eggShakeAt: Date? = nil
+    /// Erst wenn WebGL läuft und die eigene Figur gesetzt ist; bis dahin zeigt die Startseite die 2D-Figur.
+    var onReady: () -> Void = {}
     var onTap: () -> Void = {}
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -56,6 +58,7 @@ struct Pet3DView: UIViewRepresentable {
     func updateUIView(_ web: WKWebView, context: Context) {
         let c = context.coordinator
         c.onTap = onTap
+        c.onReady = onReady
         c.apply(state)
         if let r = reaction, r.start != c.lastReaction {
             c.lastReaction = r.start
@@ -71,6 +74,7 @@ struct Pet3DView: UIViewRepresentable {
     final class Coordinator: NSObject, WKScriptMessageHandler {
         weak var web: WKWebView?
         var onTap: () -> Void = {}
+        var onReady: () -> Void = {}
         var ready = false
         var current: Pet3DState?
         var sent = ""
@@ -80,7 +84,13 @@ struct Pet3DView: UIViewRepresentable {
 
         func userContentController(_ uc: WKUserContentController, didReceive message: WKScriptMessage) {
             switch message.body as? String {
-            case "ready": ready = true; sent = ""; if let s = current { apply(s) }
+            case "ready":
+                ready = true; sent = ""
+                // Erst nach dem Setzen der eigenen Figur zeigen (sonst blitzt kurz die Standard-Figur auf)
+                if let s = current, let web {
+                    current = s; sent = script(s, shake: false)
+                    web.evaluateJavaScript(sent) { [weak self] _, _ in DispatchQueue.main.async { self?.onReady() } }
+                } else { onReady() }
             case "tap": onTap()
             case "error": STShared.defaults.set(true, forKey: Pet3D.failedKey)   // nächster Aufbau zeigt 2D
             default: break

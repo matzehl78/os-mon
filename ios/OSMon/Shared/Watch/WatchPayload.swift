@@ -33,6 +33,9 @@ struct WatchPayload: Codable, Equatable {
 }
 
 /// Aktionen von der Uhr ans iPhone (sendMessage, sonst transferUserInfo).
+/// „Alle Daten löschen“ auf dem iPhone: Uhr verwirft ihren gespeicherten Stand (Wert: Zeitpunkt, damit der Kontext neu ist).
+enum WatchReset { static let key = "osmon.reset" }
+
 enum WatchAction {
     static let kind = "action"
     static let toggleTask = "toggleTask"     // + "id"

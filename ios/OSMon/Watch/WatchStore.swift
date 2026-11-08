@@ -64,15 +64,25 @@ final class WatchStore: NSObject, WCSessionDelegate {
 
     // MARK: WCSessionDelegate
 
+    /// iPhone hat „Alle Daten löschen“ ausgeführt: nichts Altes mehr zeigen (App und Widget).
+    private func clear() {
+        payload = nil; cheer = nil
+        STShared.defaults.removeObject(forKey: WatchPayload.key)
+        WidgetCenter.shared.reloadTimelines(ofKind: Self.widgetKind)
+    }
+
+    private func receive(_ context: [String: Any]) {
+        if context[WatchReset.key] != nil { DispatchQueue.main.async { self.clear() }; return }
+        guard let d = context[WatchPayload.key] as? Data, let p = WatchPayload.decode(d) else { return }
+        DispatchQueue.main.async { self.apply(p) }
+    }
+
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        if let d = session.receivedApplicationContext[WatchPayload.key] as? Data, let p = WatchPayload.decode(d) {
-            DispatchQueue.main.async { self.apply(p) }
-        }
+        receive(session.receivedApplicationContext)
         if activationState == .activated { requestUpdate() }
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        guard let d = applicationContext[WatchPayload.key] as? Data, let p = WatchPayload.decode(d) else { return }
-        DispatchQueue.main.async { self.apply(p) }
+        receive(applicationContext)
     }
 }

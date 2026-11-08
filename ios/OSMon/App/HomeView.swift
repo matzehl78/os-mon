@@ -298,6 +298,7 @@ struct HomeContent: View {
     private var head: Accessory? { Wardrobe.hat(festival: state.festival?.accessory, outfit: outfit) }
     @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
     @AppStorage(Pet3D.failedKey, store: STShared.defaults) private var failed3D = false
+    @State private var ready3D = false                  // 3D-Ansicht hat die eigene Figur gezeichnet
     @StateObject private var shake = ShakeMonitor()
     @Environment(\.scenePhase) private var scenePhase
     @State private var topInset: CGFloat = 0
@@ -518,13 +519,21 @@ struct HomeContent: View {
                             energy: snap.stats.e, rest: snap.stats.r, form: state.evolution?.form, branch: state.evolution?.branch,
                             stage: g?.stage, eggCracks: egg ? Growth.cracks(g?.eggTaps ?? 0) : nil, platform: !hasScene,
                             glasses: outfit.glasses)
-        return Pet3DView(state: st, reaction: reaction, eggShakeAt: eggShakeAt) {
-            if egg {
-                eggShakeAt = .now
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                onTapEgg()
-            } else { tapPet() }
+        return ZStack {
+            // Bis WebGL bereit ist (Kaltstart kann Sekunden dauern): 2D-Figur statt leerer Fläche
+            if !ready3D {
+                if egg { PetEggView(cracks: Growth.cracks(g?.eggTaps ?? 0), shakeAt: eggShakeAt) } else { petFigure }
+            }
+            Pet3DView(state: st, reaction: reaction, eggShakeAt: eggShakeAt, onReady: { ready3D = true }) {
+                if egg {
+                    eggShakeAt = .now
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onTapEgg()
+                } else { tapPet() }
+            }
+            .opacity(ready3D ? 1 : 0)
         }
+        .onChange(of: use3D) { _, _ in ready3D = false }
         .frame(width: hasScene ? 300 : 250, height: hasScene ? 300 : 250)
         .overlay { if let r = reaction, !egg { ReactionParticles(reaction: r) } }
         .accessibilityElement()

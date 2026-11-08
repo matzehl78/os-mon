@@ -64,13 +64,19 @@ private class Pet3DController(val web: WebView) {
     var lastShake = -1L
     var onTap: () -> Unit = {}
     var onError: () -> Unit = {}
+    var onReady: () -> Unit = {}
     private val main = Handler(Looper.getMainLooper())
 
     @JavascriptInterface
     fun post(m: String) {
         main.post {
             when (m) {
-                "ready" -> { ready = true; sent = ""; state?.let { apply(it) } }
+                // Erst nach dem Setzen der eigenen Figur zeigen (sonst blitzt kurz die Standard-Figur auf)
+                "ready" -> {
+                    ready = true
+                    val s = state
+                    if (s == null) onReady() else { sent = script(s, false); web.evaluateJavascript(sent) { onReady() } }
+                }
                 "tap" -> onTap()
                 "error" -> onError()
             }
@@ -126,6 +132,7 @@ fun Pet3DView(
     modifier: Modifier = Modifier,
     reaction: ActiveReaction? = null,
     eggShakeAtMs: Long? = null,
+    onReady: () -> Unit = {},          // WebGL läuft und die eigene Figur ist gesetzt (bis dahin 2D zeigen)
     onTap: () -> Unit = {}
 ) {
     val holder = remember { arrayOfNulls<Pet3DController>(1) }
@@ -149,6 +156,7 @@ fun Pet3DView(
         update = {
             val c = holder[0] ?: return@AndroidView
             c.onTap = onTap
+            c.onReady = onReady
             c.apply(state)
             if (reaction != null && reaction.startMs != c.lastReaction) { c.lastReaction = reaction.startMs; c.react(reaction) }
             if (eggShakeAtMs != null && eggShakeAtMs != c.lastShake) { c.lastShake = eggShakeAtMs; c.apply(state, shake = true) }

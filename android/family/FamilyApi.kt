@@ -18,6 +18,16 @@ import org.json.JSONObject
 
 data class FamilyConnection(val server: String, val token: String)
 
+/** Lob von den Eltern: feste Sticker (kein Freitext). Gleiche Sticker wie Webportal und iOS. */
+object FamilyPraise {
+    val stickers = mapOf("star" to ("⭐" to "einen Stern"), "heart" to ("💖" to "ein Herz"), "thumbs" to ("👍" to "einen Daumen hoch"),
+        "trophy" to ("🏆" to "einen Pokal"), "rainbow" to ("🌈" to "einen Regenbogen"))
+    fun line(sticker: String, pet: String): String {
+        val (emoji, label) = stickers[sticker] ?: ("⭐" to "ein Lob")
+        return "$emoji Deine Eltern schicken dir $label! $pet freut sich riesig."
+    }
+}
+
 /** Text für die Eltern: werden Bildschirmzeit und Schritte am Kindergerät gemessen? Gleiche Texte wie Webportal und iOS. */
 object FamilyStatus {
     /** null = das Kindergerät meldet es (noch) nicht (ältere App-Version). */

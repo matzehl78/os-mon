@@ -108,7 +108,12 @@ object GrowthStore {
         val t = today()
         if (s.hatched && s.lastDay < t - 1) {
             val from = maxOf(s.lastDay + 1, t - Growth.MAX_CATCH_UP)
-            for (d in from until t) s = Growth.closeDay(s, d, DayLog.average(ctx, d), rough(ctx, d))
+            for (d in from until t) {
+                val avg = DayLog.average(ctx, d); val r = rough(ctx, d)
+                // Für „Wieder aufgepäppelt“: es gab einen gemessenen Tag, an dem das Wachsen pausiert hat
+                if (avg != null && Growth.delta(avg, r) == 0) p(ctx).edit().putBoolean("growth.dropped", true).apply()
+                s = Growth.closeDay(s, d, avg, r)
+            }
             save(ctx, s)
         }
         return info(ctx, s)
@@ -140,10 +145,10 @@ object GrowthStore {
 
     fun ackStage(ctx: Context) {
         val s = load(ctx)
-        // Sammelalbum „Wieder aufgepäppelt“: nach einem Rückfall wieder eine Stufe gewachsen
-        if (s.pendingStage != null) {
-            if (s.pendingDown) p(ctx).edit().putBoolean("growth.dropped", true).apply()
-            else if (p(ctx).getBoolean("growth.dropped", false)) { p(ctx).edit().putBoolean("growth.dropped", false).apply(); AchievementStore.addComeback(ctx) }
+        // Sammelalbum „Wieder aufgepäppelt“: nach einer Wachstumspause wieder eine Stufe gewachsen
+        // (Schlüssel heißt aus Kompatibilität noch growth.dropped; einen Rückfall gibt es nicht mehr)
+        if (s.pendingStage != null && p(ctx).getBoolean("growth.dropped", false)) {
+            p(ctx).edit().putBoolean("growth.dropped", false).apply(); AchievementStore.addComeback(ctx)
         }
         save(ctx, s.copy(pendingStage = null, pendingDown = false))
     }

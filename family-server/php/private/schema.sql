@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS osmon_device_status (
  screen TINYINT NOT NULL, steps TINYINT NOT NULL, updated DOUBLE NOT NULL,
  CONSTRAINT osmon_status_device FOREIGN KEY(device_id) REFERENCES osmon_devices(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS osmon_device_praise (
+ device_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+ id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, sticker VARCHAR(16) CHARACTER SET ascii NOT NULL,
+ sent DOUBLE NOT NULL, seen DOUBLE NULL,
+ CONSTRAINT osmon_praise_device FOREIGN KEY(device_id) REFERENCES osmon_devices(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS osmon_web_codes (
  code CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
  owner CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

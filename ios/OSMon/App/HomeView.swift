@@ -357,6 +357,19 @@ struct HomeContent: View {
                                         garlandY: topInset + headerFrame.maxY + 6)
                         if let decor = SceneTheme.particles(festival: state.festival, season: state.season, seasons: state.seasonsOn) {
                             FestivalDecor(decor: decor, burst: celebrateAt)
+                                // Teilchen nie über Kopfzeile und Ringen: dort ausgespart, damit Text lesbar bleibt
+                                .mask {
+                                    ZStack(alignment: .topLeading) {
+                                        Color.black
+                                        ForEach([headerFrame, ringsFrame].filter { $0.height > 0 }, id: \.minY) { r in
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .frame(width: r.width + 16, height: r.height + 16)
+                                                .offset(x: r.minX - 8, y: topInset + r.minY - 8)
+                                                .blendMode(.destinationOut)
+                                        }
+                                    }
+                                    .compositingGroup()
+                                }
                         }
                     }
                     .frame(height: layerH)
@@ -420,6 +433,11 @@ struct HomeContent: View {
             }, demoGame: demoGame)
         }
         .onReceive(NotificationCenter.default.publisher(for: .osmonExtrasChanged)) { _ in extrasV += 1 }
+        .onReceive(NotificationCenter.default.publisher(for: .osmonPraise)) { n in
+            guard let sticker = n.object as? String else { return }
+            cheer(true, FamilyPraise.line(sticker, pet: PetFigure.byID(figureID).name))   // Drehung + Konfetti
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
         // Geräusche und Stimme: Brabbeln zur Sprechblase, sonst ein kurzer Ton je Reaktion
         .onChange(of: reaction) { _, r in
             guard let r else { return }
@@ -619,7 +637,7 @@ struct HomeContent: View {
                 let name = PetFigure.byID(figureID).name
                 // Entwicklungsform nur als Abzeichen (passt immer in die Zeile)
                 Text(state.growth.map { growthLabel(name, $0) } ?? name)
-                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.75)
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1).minimumScaleFactor(0.75)
                 if let g = state.growth { GrowthProgressView(g: g) }
             }
             Spacer()
@@ -749,7 +767,8 @@ struct StatusRing: View {
             .frame(width: size, height: size)
             Text(value.map { "\(Int($0.rounded()))" } ?? "–")
                 .font(.subheadline.monospacedDigit().bold())
-            Text(title).font(.caption2).foregroundStyle(.secondary)
+            // Volle Textfarbe: auf Szenenbild und halbtransparenten Karten war .secondary zu kontrastarm
+            Text(title).font(.caption.weight(.medium)).foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity)
 

@@ -1,13 +1,12 @@
-// Growth.kt: Wachsen vom Ei bis zum Erwachsenen – und zurück bei schlechter Pflege (reines Kotlin).
+// Growth.kt: Wachsen vom Ei bis zum Erwachsenen (reines Kotlin).
 // Gegenstück: Growth.swift (gleiche Regeln, gleiche Tests).
 //
 // Ei → (antippen bis es schlüpft) → Baby → Kind → Jugend → Erwachsen.
-// Wachstumstage je abgeschlossenem Tag (mittleres Wohlbefinden): gut (>= 40) +1, kränklich (20–39) −1,
-// Winterschlaf (< 20) −2, ohne Messung 0. Grobes Verhalten (wildes Antippen, Schütteln): ab ROUGH_LIMIT
-// groben Aktionen am Tag zählt der Tag als schlecht (höchstens −1, ein ohnehin schlechter Tag eine Stufe schlimmer).
+// Wachstumstage je abgeschlossenem Tag (mittleres Wohlbefinden): gut (>= 40) +1, sonst 0 (Pause).
+// Grobes Verhalten (wildes Antippen, Schütteln) ab ROUGH_LIMIT Aktionen am Tag: der Tag zählt nicht (0).
 // Aufstieg, sobald die Grenze der nächsten Stufe erreicht ist.
-// Rückfall um eine Stufe, wenn die Tage mehr als DROP_BUFFER unter die Grenze der aktuellen Stufe fallen
-// (Puffer gegen Hin und Her). Nie zurück ins Ei; Baby ist das Minimum.
+// Kein Rückfall: Schlechte Tage pausieren nur das Wachsen (keine Verlustangst, keine Bestrafung von Kindern).
+// Das Wesen zeigt schlechte Tage über Stimmung und Müdigkeit, nie über eine niedrigere Stufe.
 // Bei lauter guten Tagen ist das Wesen nach 12 Wochen erwachsen, realistisch nach etwa 3 Monaten.
 // Die Wesensart (Form, EvolutionTracker) ist davon unabhängig und erscheint ab Tag 11 als Abzeichen.
 
@@ -38,8 +37,6 @@ data class GrowthRisk(val badDaysLeft: Int, val to: GrowthStage)
 
 object Growth {
     const val GOOD_MIN = 40f         // ab hier „nicht kränklich“ (Mood.SICK liegt darunter)
-    const val SEVERE_MAX = 20f       // darunter Winterschlaf → doppelt schlecht
-    const val DROP_BUFFER = 3
     const val ROUGH_LIMIT = 3        // grobe Aktionen pro Tag, ab denen der Tag schlecht zählt
     const val EGG_TAPS = 5
     const val MAX_CATCH_UP = 120
@@ -52,31 +49,17 @@ object Growth {
     fun isGood(avgWellbeing: Float?) = avgWellbeing != null && avgWellbeing >= GOOD_MIN
 
     /** Änderung der Wachstumstage für einen Tag (rough = grobe Aktionen an diesem Tag). */
-    fun delta(avgWellbeing: Float?, rough: Int = 0): Int {
-        val base = when {
-            avgWellbeing == null -> 0
-            avgWellbeing >= GOOD_MIN -> 1
-            avgWellbeing < SEVERE_MAX -> -2
-            else -> -1
-        }
-        if (rough < ROUGH_LIMIT) return base
-        return if (base < 0) base - 1 else -1
-    }
+    fun delta(avgWellbeing: Float?, rough: Int = 0): Int =
+        if (isGood(avgWellbeing) && rough < ROUGH_LIMIT) 1 else 0
 
-    /** Tag abschließen (aufsteigend). Bereits ausgewertete Tage und Tage vor dem Schlüpfen werden ignoriert. */
+    /** Tag abschließen (aufsteigend). Bereits ausgewertete Tage und Tage vor dem Schlüpfen werden ignoriert. Nie abwärts. */
     fun closeDay(s: GrowthState, day: Long, avgWellbeing: Float?, rough: Int = 0): GrowthState {
         if (!s.hatched || day <= s.lastDay) return s
         val cur = stage(s)
-        val days = (s.goodDays + delta(avgWellbeing, rough)).coerceAtLeast(0)
+        val days = s.goodDays + delta(avgWellbeing, rough)
         val nx = cur.next
-        val prev = cur.previous
-        val new = when {
-            nx != null && days >= nx.minDays -> nx
-            prev != null && days < cur.minDays - DROP_BUFFER -> prev
-            else -> cur
-        }
-        return if (new == cur) s.copy(goodDays = days, lastDay = day, stage = cur)
-        else s.copy(goodDays = days, lastDay = day, stage = new, pendingStage = new, pendingDown = new.ordinal < cur.ordinal)
+        return if (nx != null && days >= nx.minDays) s.copy(goodDays = days, lastDay = day, stage = nx, pendingStage = nx, pendingDown = false)
+        else s.copy(goodDays = days, lastDay = day, stage = cur)
     }
 
     /** Schlüpfen (nach EGG_TAPS Tippern). Der Schlüpftag selbst zählt noch nicht. */
@@ -98,13 +81,9 @@ object Growth {
         return ((s.goodDays - st.minDays) / span).coerceIn(0f, 1f) to (nx.minDays - s.goodDays)
     }
 
-    /** Unter der Grenze der aktuellen Stufe: wie viele schlechte (kränkliche) Tage bis zum Rückfall? Sonst null. */
-    fun risk(s: GrowthState): GrowthRisk? {
-        if (!s.hatched) return null
-        val st = stage(s); val prev = st.previous ?: return null
-        if (s.goodDays >= st.minDays) return null
-        return GrowthRisk(s.goodDays - (st.minDays - DROP_BUFFER) + 1, prev)
-    }
+    /** Früher: Warnung vor einem Rückfall. Es gibt keinen Rückfall mehr, daher immer null (Oberfläche zeigt keine Warnung). */
+    @Suppress("UNUSED_PARAMETER")
+    fun risk(s: GrowthState): GrowthRisk? = null
 
     fun look(stage: GrowthStage?): GrowthLook = when (stage) {
         GrowthStage.BABY -> GrowthLook(0.66f, 0.60f, 1.25f, 0.62f, 1.18f)

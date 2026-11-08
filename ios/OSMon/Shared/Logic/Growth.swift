@@ -1,13 +1,12 @@
-// Growth.swift: Wachsen vom Ei bis zum Erwachsenen – und zurück bei schlechter Pflege.
+// Growth.swift: Wachsen vom Ei bis zum Erwachsenen.
 // Gegenstück: Growth.kt (gleiche Regeln, gleiche Tests).
 //
 // Ei → (antippen bis es schlüpft) → Baby → Kind → Jugend → Erwachsen.
-// Wachstumstage je abgeschlossenem Tag (mittleres Wohlbefinden): gut (>= 40) +1, kränklich (20–39) −1,
-// Winterschlaf (< 20) −2, ohne Messung 0. Grobes Verhalten (wildes Antippen, Schütteln): ab roughLimit
-// groben Aktionen am Tag zählt der Tag als schlecht (höchstens −1, ein ohnehin schlechter Tag eine Stufe schlimmer).
+// Wachstumstage je abgeschlossenem Tag (mittleres Wohlbefinden): gut (>= 40) +1, sonst 0 (Pause).
+// Grobes Verhalten (wildes Antippen, Schütteln) ab roughLimit Aktionen am Tag: der Tag zählt nicht (0).
 // Aufstieg, sobald die Grenze der nächsten Stufe erreicht ist.
-// Rückfall um eine Stufe, wenn die Tage mehr als dropBuffer unter die Grenze der aktuellen Stufe fallen.
-// Nie zurück ins Ei; Baby ist das Minimum.
+// Kein Rückfall: Schlechte Tage pausieren nur das Wachsen (keine Verlustangst, keine Bestrafung von Kindern).
+// Das Wesen zeigt schlechte Tage über Stimmung und Müdigkeit, nie über eine niedrigere Stufe.
 
 import Foundation
 import CoreGraphics
@@ -44,8 +43,6 @@ struct GrowthRisk: Equatable { let badDaysLeft: Int; let to: GrowthStage }
 
 enum Growth {
     static let goodMin: Float = 40
-    static let severeMax: Float = 20
-    static let dropBuffer = 3
     static let roughLimit = 3
     static let eggTaps = 5
     static let maxCatchUp = 120
@@ -58,27 +55,17 @@ enum Growth {
 
     static func isGood(_ avg: Float?) -> Bool { (avg ?? -1) >= goodMin }
 
-    static func delta(_ avg: Float?, rough: Int = 0) -> Int {
-        let base: Int
-        if let avg { base = avg >= goodMin ? 1 : avg < severeMax ? -2 : -1 } else { base = 0 }
-        guard rough >= roughLimit else { return base }
-        return base < 0 ? base - 1 : -1
-    }
+    static func delta(_ avg: Float?, rough: Int = 0) -> Int { isGood(avg) && rough < roughLimit ? 1 : 0 }
 
+    /// Tag abschließen (aufsteigend). Nie abwärts.
     static func closeDay(_ s: GrowthState, day: Int, avgWellbeing: Float?, rough: Int = 0) -> GrowthState {
         guard s.hatched, day > s.lastDay else { return s }
         let cur = stage(s)
         var c = s
-        c.goodDays = max(0, s.goodDays + delta(avgWellbeing, rough: rough))
+        c.goodDays = s.goodDays + delta(avgWellbeing, rough: rough)
         c.lastDay = day
-        var new = cur
-        if let nx = cur.next, c.goodDays >= nx.minDays { new = nx }
-        else if let prev = cur.previous, c.goodDays < cur.minDays - dropBuffer { new = prev }
-        c.stage = new
-        if new != cur {
-            c.pendingStage = new
-            c.pendingDown = GrowthStage.allCases.firstIndex(of: new)! < GrowthStage.allCases.firstIndex(of: cur)!
-        }
+        c.stage = cur
+        if let nx = cur.next, c.goodDays >= nx.minDays { c.stage = nx; c.pendingStage = nx; c.pendingDown = false }
         return c
     }
 
@@ -100,12 +87,8 @@ enum Growth {
         return (min(1, max(0, Double(s.goodDays - st.minDays) / span)), nx.minDays - s.goodDays)
     }
 
-    static func risk(_ s: GrowthState) -> GrowthRisk? {
-        guard s.hatched else { return nil }
-        let st = stage(s)
-        guard let prev = st.previous, s.goodDays < st.minDays else { return nil }
-        return GrowthRisk(badDaysLeft: s.goodDays - (st.minDays - dropBuffer) + 1, to: prev)
-    }
+    /// Früher: Warnung vor einem Rückfall. Es gibt keinen Rückfall mehr, daher immer nil (Oberfläche zeigt keine Warnung).
+    static func risk(_ s: GrowthState) -> GrowthRisk? { nil }
 
     static func look(_ stage: GrowthStage?) -> GrowthLook {
         switch stage {

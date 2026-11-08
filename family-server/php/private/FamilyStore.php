@@ -105,8 +105,21 @@ final class FamilyStore {
             'version'=>(int)$d['version'],'applied'=>(int)$d['applied'],'completed'=>json_decode($d['completed'],true,32,JSON_THROW_ON_ERROR),
             'seen'=>$d['seen']===null?null:(float)$d['seen'],'day'=>$d['status_day']===null?null:(int)$d['status_day'],
             'location'=>$loc,'locationSharing'=>(bool)$d['location_sharing'],'locationRequest'=>$this->request($d),
-            'measuring'=>$this->measuring($d['id'])];
+            'measuring'=>$this->measuring($d['id']),'praise'=>$this->praise($d['id'])];
     }
+    /** Latest praise sticker a parent sent; seen once the child app showed it. Null before the table exists. */
+    private function praise(string $id): ?array {
+        try { $r=$this->one('SELECT id,sticker,sent,seen FROM osmon_device_praise WHERE device_id=?',[$id]); }
+        catch (PDOException $e) { return null; }
+        return $r ? ['id'=>$r['id'],'sticker'=>$r['sticker'],'sent'=>(float)$r['sent'],'seen'=>$r['seen']!==null] : null;
+    }
+    public const STICKERS=['star','heart','thumbs','trophy','rainbow'];
+    public const PRAISE_TABLE='CREATE TABLE IF NOT EXISTS osmon_device_praise (
+ device_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+ id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, sticker VARCHAR(16) CHARACTER SET ascii NOT NULL,
+ sent DOUBLE NOT NULL, seen DOUBLE NULL,
+ CONSTRAINT osmon_praise_device FOREIGN KEY(device_id) REFERENCES osmon_devices(id) ON DELETE CASCADE
+) ENGINE=InnoDB';
     /** Screen time / steps measured at the child's last sync. Null for older apps or before the table exists. */
     private function measuring(string $id): ?array {
         try { $r=$this->one('SELECT screen,steps,updated FROM osmon_device_status WHERE device_id=?',[$id]); }
@@ -118,13 +131,16 @@ final class FamilyStore {
  screen TINYINT NOT NULL, steps TINYINT NOT NULL, updated DOUBLE NOT NULL,
  CONSTRAINT osmon_status_device FOREIGN KEY(device_id) REFERENCES osmon_devices(id) ON DELETE CASCADE
 ) ENGINE=InnoDB';
-    /** Hosted installs without SSH get the status table on first use. Runs outside the transaction: DDL commits implicitly. */
-    public function ensureStatusTable(): void {
-        try { if (!$this->db->query("SHOW TABLES LIKE 'osmon_device_status'")->fetch()) $this->db->exec(self::STATUS_TABLE); }
-        catch (PDOException $e) { /* optional feature; acks keep working without it */ }
+    /** Hosted installs without SSH get optional tables on first use. Runs outside the transaction: DDL commits implicitly. */
+    private function ensureTable(string $name,string $ddl): void {
+        try { if (!$this->db->query("SHOW TABLES LIKE '$name'")->fetch()) $this->db->exec($ddl); }
+        catch (PDOException $e) { /* optional feature; the main request keeps working without it */ }
     }
+    public function ensureStatusTable(): void { $this->ensureTable('osmon_device_status',self::STATUS_TABLE); }
+    public function ensurePraiseTable(): void { $this->ensureTable('osmon_device_praise',self::PRAISE_TABLE); }
     public function dispatch(string $method,string $path,string $token,array $body): array {
         if ($method==='POST' && $path==='/v1/device/ack' && isset($body['measuring'])) $this->ensureStatusTable();
+        if ($method==='POST' && preg_match('~^/v1/children/[a-fA-F0-9-]{36}/praise$~D',$path)) $this->ensurePraiseTable();
         $this->cleanup(); // committed even when the following request is rejected
         return $this->locked(fn()=> $this->route($method,$path,$token,$body));
     }
@@ -163,7 +179,7 @@ final class FamilyStore {
         if ($m==='GET' && $path==='/v1/children') {
             $owner=$this->parent($token);$rows=$this->query('SELECT * FROM osmon_devices WHERE owner=? ORDER BY name',[$owner])->fetchAll();return ['children'=>array_map(fn($d)=>$this->output($d),$rows)];
         }
-        if (preg_match('~^/v1/children/([a-fA-F0-9-]{36})(?:/(config|location-request))?$~D',$path,$parts)) {
+        if (preg_match('~^/v1/children/([a-fA-F0-9-]{36})(?:/(config|location-request|praise))?$~D',$path,$parts)) {
             $owner=$this->parent($token);$id=$parts[1];$sub=$parts[2]??'';
             $d=$this->one('SELECT * FROM osmon_devices WHERE id=? AND owner=?',[$id,$owner]);if (!$d) fail(404,'Gerät nicht gefunden.');
             if ($m==='DELETE' && $sub==='') { $this->query('DELETE FROM osmon_devices WHERE id=?',[$id]);return $ok; }
@@ -178,6 +194,22 @@ final class FamilyStore {
                 if ($old && $now-$old['created']<30) fail(429,'Bitte 30 Sekunden zwischen Anfragen warten.');
                 $r=['id'=>newUUID(),'created'=>$now,'expires'=>$now+90,'state'=>'pending'];$this->query('UPDATE osmon_devices SET location_request=? WHERE id=?',[encodeJSON($r),$id]);return ['request'=>$r];
             }
+            if ($m==='POST' && $sub==='praise') {
+                // Lob von den Eltern: ein fester Sticker, kein Freitext (keine Nachrichten zwischen Fremden möglich)
+                if (!$d['owner']) fail(409,'Noch nicht gekoppelt.');
+                if (!exactKeys($b,['sticker']) || !in_array($b['sticker'],self::STICKERS,true)) fail(400,'Unbekannter Sticker.');
+                $old=$this->praise($id);if ($old && $now-$old['sent']<10) fail(429,'Bitte kurz warten, bevor du wieder lobst.');
+                $p=['id'=>newUUID(),'sticker'=>$b['sticker'],'sent'=>$now,'seen'=>false];
+                try { $this->query('INSERT INTO osmon_device_praise(device_id,id,sticker,sent,seen) VALUES (?,?,?,?,NULL) ON DUPLICATE KEY UPDATE id=VALUES(id),sticker=VALUES(sticker),sent=VALUES(sent),seen=NULL',[$id,$p['id'],$p['sticker'],$now]); }
+                catch (PDOException $e) { fail(503,'Lob ist auf diesem Server noch nicht verfügbar.'); }
+                return ['praise'=>$p];
+            }
+        }
+        if ($path==='/v1/device/praise-seen' && $m==='POST') {
+            $d=$this->device($token);if (!exactKeys($b,['id']) || !is_string($b['id'])) fail(400,'Ungültige Angabe.');
+            try { $this->query('UPDATE osmon_device_praise SET seen=? WHERE device_id=? AND id=? AND seen IS NULL',[$now,$d['id'],$b['id']]); }
+            catch (PDOException $e) { /* table missing: nothing to mark */ }
+            return $ok;
         }
         if ($path==='/v1/device/location-sharing' && $m==='PUT') {
             $d=$this->device($token);if (!$d['owner']) fail(409,'Zuerst koppeln.');

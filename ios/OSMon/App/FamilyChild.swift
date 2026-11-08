@@ -2,9 +2,15 @@ import SwiftUI
 import CoreLocation
 import FamilyControls
 
+extension Notification.Name {
+    /// Lob von den Eltern ist angekommen (object: Sticker-ID)
+    static let osmonPraise = Notification.Name("osmon.praise")
+}
+
 @MainActor
 enum FamilyChild {
     static var syncing = false
+    static let praiseKey = "pet.praise.last"            // zuletzt gezeigtes Lob (wird mit „Alle Daten löschen“ entfernt)
     static func sync() async throws {
         guard !syncing, let connection = FamilyVault.load() else { return }
         syncing = true; defer { syncing = false }
@@ -12,6 +18,12 @@ enum FamilyChild {
         let device: FamilyDevice = try await api.call("GET", "/v1/device")
         guard device.paired else { return }
         FamilyLocationSender.shared.handle(device, connection: connection)
+        // Lob von den Eltern: einmal zeigen (Startseite: Wesen freut sich), dann als gesehen melden
+        if let p = device.praise, !p.seen, STShared.defaults.string(forKey: praiseKey) != p.id {
+            STShared.defaults.set(p.id, forKey: praiseKey)
+            NotificationCenter.default.post(name: .osmonPraise, object: p.sticker)
+            let _: FamilyOK? = try? await api.call("POST", "/v1/device/praise-seen", ["id": p.id])
+        }
         let old = TaskStore.load()
         let local = old.filter { !$0.id.hasPrefix("family:") }
         guard local.count + device.config.tasks.count <= DayTasks.maxTasks else { throw FamilyError(text: "Zu viele Aufgaben. Lokal und aus der Eltern-App zusammen sind höchstens 12 möglich.") }

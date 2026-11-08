@@ -30,49 +30,45 @@ class GrowthTest {
         s = Growth.closeDay(s, d0 + 3, null)               // keine Messung 0
         s = Growth.closeDay(s, d0 + 3, 80f)                // doppelt → ignoriert
         assertEquals(2, s.goodDays)
-        s = Growth.closeDay(s, d0 + 4, 39.9f)              // kränklich −1
-        assertEquals(1, s.goodDays)
-        s = Growth.closeDay(s, d0 + 5, 10f)                // Winterschlaf −2, nie unter 0
-        assertEquals(0, s.goodDays)
+        s = Growth.closeDay(s, d0 + 4, 39.9f)              // kränklich: Pause
+        assertEquals(2, s.goodDays)
+        s = Growth.closeDay(s, d0 + 5, 10f)                // Winterschlaf: ebenfalls nur Pause
+        assertEquals(2, s.goodDays)
         assertEquals(d0 + 5, s.lastDay)
-        assertEquals(GrowthStage.BABY, Growth.stage(s))    // Baby ist das Minimum
-        assertEquals(listOf(0, 1, -1, -2), listOf(null, 40f, 39f, 19f).map { Growth.delta(it) })
-    }
-
-    @Test fun dropsBackWithBuffer() {
-        var s = GrowthState(hatched = true, goodDays = 14, lastDay = d0, stage = GrowthStage.CHILD)
-        s = Growth.closeDay(s, d0 + 1, 30f)                // 13: unter der Grenze, aber im Puffer
-        assertEquals(GrowthStage.CHILD, Growth.stage(s)); assertNull(s.pendingStage)
-        assertEquals(GrowthRisk(3, GrowthStage.BABY), Growth.risk(s))
-        s = Growth.closeDay(s, d0 + 2, 30f)                // 12
-        s = Growth.closeDay(s, d0 + 3, 30f)                // 11 = Grenze − 3, noch Kind
-        assertEquals(GrowthStage.CHILD, Growth.stage(s)); assertEquals(1, Growth.risk(s)!!.badDaysLeft)
-        s = Growth.closeDay(s, d0 + 4, 30f)                // 10 → Rückfall
         assertEquals(GrowthStage.BABY, Growth.stage(s))
-        assertEquals(GrowthStage.BABY, s.pendingStage); assertEquals(true, s.pendingDown)
-        assertNull(Growth.risk(s))                         // Baby kann nicht weiter fallen
-        // Wieder wachsen: bis 14 gute Tage
-        s = s.copy(pendingStage = null, pendingDown = false)
-        for (i in 5..8) s = Growth.closeDay(s, d0 + i, 70f)
-        assertEquals(14, s.goodDays); assertEquals(GrowthStage.CHILD, Growth.stage(s)); assertEquals(false, s.pendingDown)
+        assertEquals(listOf(0, 1, 0, 0), listOf(null, 40f, 39f, 19f).map { Growth.delta(it) })
     }
 
-    @Test fun adultCanFallBackToTeen() {
+    @Test fun badDaysPauseButNeverDrop() {
+        var s = GrowthState(hatched = true, goodDays = 14, lastDay = d0, stage = GrowthStage.CHILD)
+        for (i in 1..30) s = Growth.closeDay(s, d0 + i, 10f)
+        assertEquals(14, s.goodDays); assertEquals(GrowthStage.CHILD, Growth.stage(s))
+        assertNull(s.pendingStage); assertEquals(false, s.pendingDown); assertNull(Growth.risk(s))
+        for (i in 31..58) s = Growth.closeDay(s, d0 + i, 70f)     // 28 gute Tage → 42 = Jugend
+        assertEquals(GrowthStage.TEEN, Growth.stage(s)); assertEquals(GrowthStage.TEEN, s.pendingStage)
+    }
+
+    @Test fun adultStaysAdult() {
         var s = GrowthState(hatched = true, goodDays = 84, lastDay = d0, stage = GrowthStage.ADULT)
         assertNull(Growth.progress(s))
-        for (i in 1..2) s = Growth.closeDay(s, d0 + i, 10f)   // −4 → 80 < 81
-        assertEquals(GrowthStage.TEEN, Growth.stage(s)); assertEquals(true, s.pendingDown)
+        for (i in 1..10) s = Growth.closeDay(s, d0 + i, 10f)
+        assertEquals(GrowthStage.ADULT, Growth.stage(s)); assertEquals(false, s.pendingDown)
+    }
+
+    @Test fun oldStateBelowStageMinimumKeepsStage() {
+        // Aus der Zeit mit Rückfall-Puffer: weniger Tage als die Stufe verlangt, Stufe bleibt
+        val s = Growth.closeDay(GrowthState(hatched = true, goodDays = 12, lastDay = d0, stage = GrowthStage.CHILD), d0 + 1, 10f)
+        assertEquals(GrowthStage.CHILD, Growth.stage(s)); assertNull(Growth.risk(s))
     }
 
     @Test fun roughBehaviour() {
-        assertEquals(1, Growth.delta(80f, 2))              // 2× grob: noch kein Abzug
-        assertEquals(-1, Growth.delta(80f, 3))             // guter Tag wird schlecht
-        assertEquals(-1, Growth.delta(null, 3))            // auch ohne Messung
-        assertEquals(-2, Growth.delta(30f, 3))             // kränklich + grob
-        assertEquals(-3, Growth.delta(10f, 5))             // Winterschlaf + grob
+        assertEquals(1, Growth.delta(80f, 2))              // 2× grob: zählt noch
+        assertEquals(0, Growth.delta(80f, 3))              // ab 3× grob: Tag zählt nicht
+        assertEquals(0, Growth.delta(null, 3))
+        assertEquals(0, Growth.delta(10f, 5))
         var s = GrowthState(hatched = true, goodDays = 5, lastDay = d0, stage = GrowthStage.BABY)
         s = Growth.closeDay(s, d0 + 1, 80f, rough = 4)
-        assertEquals(4, s.goodDays)
+        assertEquals(5, s.goodDays)
     }
 
     @Test fun eggDoesNotGrow() {

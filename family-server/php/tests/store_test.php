@@ -39,6 +39,24 @@ $tests['measuring status created on first use, validated and cascaded']=function
  eq(callAPI('GET','/v1/device',$pair['token'])['measuring'],['screen'=>true,'steps'=>true,'updated'=>$now]);
  callAPI('DELETE','/v1/children/'.$d['id'],$p);eq((int)$db->query('SELECT count(*) FROM osmon_device_status')->fetchColumn(),0);
 };
+$tests['praise sticker: created on first use, isolated, rate limited, seen, cascaded']=function(){global $db,$now;
+ $db->exec('DROP TABLE IF EXISTS osmon_device_praise'); // hosted installs: created on first praise
+ [$p,$o,$pair,$d]=paired();
+ eq(callAPI('GET','/v1/device',$pair['token'])['praise'],null);
+ rejected(400,fn()=>callAPI('POST','/v1/children/'.$d['id'].'/praise',$p,['sticker'=>'unknown']));
+ rejected(400,fn()=>callAPI('POST','/v1/children/'.$d['id'].'/praise',$p,['sticker'=>'star','text'=>'hi']));
+ rejected(404,fn()=>callAPI('POST','/v1/children/'.$d['id'].'/praise',$o,['sticker'=>'star'])); // other family
+ $first=callAPI('POST','/v1/children/'.$d['id'].'/praise',$p,['sticker'=>'star'])['praise'];
+ eq([$first['sticker'],$first['seen']],['star',false]);
+ rejected(429,fn()=>callAPI('POST','/v1/children/'.$d['id'].'/praise',$p,['sticker'=>'heart']));
+ $v=callAPI('GET','/v1/device',$pair['token'])['praise'];eq([$v['id'],$v['sticker'],$v['seen']],[$first['id'],'star',false]);
+ callAPI('POST','/v1/device/praise-seen',$pair['token'],['id'=>'wrong']);eq(callAPI('GET','/v1/children',$p)['children'][0]['praise']['seen'],false);
+ callAPI('POST','/v1/device/praise-seen',$pair['token'],['id'=>$first['id']]);eq(callAPI('GET','/v1/children',$p)['children'][0]['praise']['seen'],true);
+ $now+=11;$second=callAPI('POST','/v1/children/'.$d['id'].'/praise',$p,['sticker'=>'heart'])['praise'];
+ $v=callAPI('GET','/v1/device',$pair['token'])['praise'];eq([$v['id'],$v['sticker'],$v['seen']],[$second['id'],'heart',false]);
+ rejected(401,fn()=>callAPI('POST','/v1/device/praise-seen',$p,['id'=>$second['id']])); // parent token is not a device
+ callAPI('DELETE','/v1/children/'.$d['id'],$p);eq((int)$db->query('SELECT count(*) FROM osmon_device_praise')->fetchColumn(),0);
+};
 $tests['device revoke']=function(){[$p,$o,$pair,$d]=paired();callAPI('DELETE','/v1/children/'.$d['id'],$p);rejected(401,fn()=>callAPI('GET','/v1/device',$pair['token']));};
 $tests['parent deletion cascades']=function(){global $db;[$p,$o,$pair]=paired();$code=callAPI('POST','/v1/web-codes',$p)['code'];$web=callAPI('POST','/v1/web-codes/redeem','',['code'=>$code])['token'];callAPI('DELETE','/v1/parents',$p);rejected(401,fn()=>callAPI('GET','/v1/children',$web));rejected(401,fn()=>callAPI('GET','/v1/device',$pair['token']));eq((int)$db->query('SELECT count(*) FROM osmon_devices')->fetchColumn(),0);};
 $tests['parent expiry persists cleanup on rejected auth']=function(){global $now,$db;[$p,$o,$pair]=paired();$now+=91*86400;rejected(401,fn()=>callAPI('GET','/v1/device',$pair['token']));eq((int)$db->query('SELECT count(*) FROM osmon_devices')->fetchColumn(),0);};

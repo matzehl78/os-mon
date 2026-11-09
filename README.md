@@ -50,6 +50,7 @@ Wichtig vor dem Store:
 | `osmon-prototyp.html` | Klickbarer Prototyp, Quelle für Figuren-Formen und -Farben |
 | `gen_figures.mjs` | `node gen_figures.mjs osmon-prototyp.html` → neue `PetFigureData.*` und `figures.json` |
 | `golden_*.py` | Erzeugen die Test-Referenzen (`python3 golden_reference.py` usw.) |
+| `schlupf3d/schlupf.html` | 3D-Film: Ei → Schlüpfen → Baby → Kind → Jugend → Erwachsen (offline, im Browser öffnen; Knopf „Video“ nimmt WebM auf). Quelle `schlupf-body.html`, danach `./build.sh` |
 
 Erzeugte Dateien danach an ihren Platz kopieren:
 `PetFigureData.kt` → `android/app/src/main/java/com/example/osmon/figure/`,

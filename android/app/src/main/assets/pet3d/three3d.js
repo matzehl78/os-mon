@@ -17,6 +17,9 @@ window.make3D = () => (() => {
   const LOOK = { baby: [0.66, 0.60, 1.25, 0.62, 1.18], child: [0.78, 0.74, 1.14, 0.78, 1.10], teen: [0.90, 0.89, 1.05, 0.92, 1.04] };
   let STAGE = null, EGG = null, eggGroup = null, eggKey = "", eggShake = 0, eggShakeAt = 0;
   let rotY = 0, dragging = false, lastX = 0, blinkUntil = 0, nextBlink = 2, running = false;
+  // Muster B–D: etwas größere Augen, Hüpfer im Leerlauf, Herzen beim Streicheln
+  const EYE_CUTE = 1.1;
+  let nextHop = 4, hopStart = -10, hearts = [];
 
   const phys = (color, extra = {}) => new T.MeshPhysicalMaterial(Object.assign({ color, roughness: 0.28, metalness: 0,
     clearcoat: 1, clearcoatRoughness: 0.12 }, extra));
@@ -68,9 +71,14 @@ window.make3D = () => (() => {
     g.lineWidth = 0.06; g.strokeStyle = C.line; g.stroke(p);
     heartTex.needsUpdate = true;
   }
-  function drawEye(open, lid, radiant) {
+  function drawEye(open, lid, radiant, happy) {
     const g = eyeCtx, cx = 128, cy = 128, R = 116;
     g.clearRect(0, 0, 256, 256);
+    if (happy) {                           // glücklich (Streicheln, Freude): Bogen nach oben „^“
+      g.lineWidth = 18; g.lineCap = "round"; g.strokeStyle = C.line;
+      g.beginPath(); g.moveTo(cx - 76, cy + 26); g.quadraticCurveTo(cx, cy - 70, cx + 76, cy + 26); g.stroke();
+      eyeTex.needsUpdate = true; return;
+    }
     if (open < 0.08) {                     // geschlossen (Blinzeln, Winterschlaf): nur ein Bogen
       g.lineWidth = 14; g.lineCap = "round"; g.strokeStyle = C.line;
       g.beginPath(); g.moveTo(cx - 78, cy); g.quadraticCurveTo(cx, cy + 52, cx + 78, cy); g.stroke();
@@ -78,11 +86,17 @@ window.make3D = () => (() => {
     }
     g.save();
     g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fillStyle = "#ffffff"; g.fill(); g.clip();
-    g.fillStyle = C.irisDark; g.beginPath(); g.arc(cx, cy + 8, 84, 0, Math.PI * 2); g.fill();
-    g.fillStyle = C.iris; g.beginPath(); g.arc(cx, cy + 8, 70, 0, Math.PI * 2); g.fill();
-    g.fillStyle = C.line; g.beginPath(); g.arc(cx, cy + 10, 44, 0, Math.PI * 2); g.fill();
-    g.fillStyle = "#ffffff"; g.fillRect(cx + 12, cy - 34, 30, 30);
-    if (radiant) g.fillRect(cx - 42, cy + 28, 15, 15);
+    g.fillStyle = C.irisDark; g.beginPath(); g.arc(cx, cy + 8, 88, 0, Math.PI * 2); g.fill();
+    // Iris mit Verlauf: unten heller, wirkt feucht und glänzend (Muster B)
+    const ig = g.createRadialGradient(cx, cy + 44, 6, cx, cy + 8, 76);
+    ig.addColorStop(0, "#ffffff"); ig.addColorStop(0.18, C.iris); ig.addColorStop(1, C.irisDark);
+    g.globalAlpha = 0.35; g.fillStyle = ig; g.beginPath(); g.arc(cx, cy + 8, 76, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+    g.fillStyle = C.iris; g.beginPath(); g.arc(cx, cy + 8, 62, 0, Math.PI * 2); g.fill();
+    g.fillStyle = C.line; g.beginPath(); g.arc(cx, cy + 10, 42, 0, Math.PI * 2); g.fill();
+    // Zwei Glanzpunkte: großes Quadrat (Lumo-Vorgabe) und kleiner runder unten links
+    g.fillStyle = "#ffffff"; g.fillRect(cx + 10, cy - 38, 36, 36);
+    g.beginPath(); g.arc(cx - 30, cy + 38, 13, 0, Math.PI * 2); g.fill();
+    if (radiant) g.fillRect(cx - 50, cy - 18, 14, 14);
     if (open < 0.98) {                     // Lid von oben, leicht gewölbte Kante
       const edge = cy - R + 2 * R * (1 - open);
       g.fillStyle = lid;
@@ -404,8 +418,8 @@ window.make3D = () => (() => {
     const eyeMat = new T.MeshBasicMaterial({ map: eyeTex, transparent: true, depthWrite: false });
     [-1, 1].forEach(sd => {
       const x = sd * face.eyeX, z = fz(x, face.eyeY);
-      const m = new T.Mesh(new T.CircleGeometry(face.eyeR, 48), eyeMat);
-      m.position.set(x, hy(face.eyeY), z + 0.06);
+      const m = new T.Mesh(new T.CircleGeometry(face.eyeR * EYE_CUTE, 48), eyeMat);   // etwas größere Augen (Muster B)
+      m.position.set(x, hy(face.eyeY), z + 0.06 + 0.5 * face.eyeR * (EYE_CUTE - 1) * 2);   // größere Scheibe etwas weiter vor, sonst schneidet der Kopf oben ab
       m.rotation.y = sd * 0.8 * Math.atan2(face.eyeX, Math.max(z, 0.2));
       m.renderOrder = 2; hg.add(m); p.eyes.push(m);
     });
@@ -559,6 +573,12 @@ window.make3D = () => (() => {
     zz = textSprite(54, "#1b1e4b"); zz.scale.setScalar(0.7); setSpriteText(zz, "z Z"); scene.add(zz);
     badge = textSprite(80, "#000"); badge.scale.setScalar(0.6); badge.position.set(1.2, 2.95, 0.2); scene.add(badge);
     branchSprite = textSprite(70, "#000"); branchSprite.scale.setScalar(0.5); scene.add(branchSprite);
+    // Herzen, die beim Streicheln aufsteigen (Muster D)
+    hearts = ["💖", "💗", "💕"].map((h, k) => {
+      const s = textSprite(84, "#000"); setSpriteText(s, h); s.scale.setScalar(0.42); s.visible = false;
+      s.userData.x = [-0.95, 1.0, 0.1][k]; s.userData.y = [2.0, 2.3, 3.0][k]; s.userData.delay = k * 0.12;
+      scene.add(s); return s;
+    });
   }
 
   function resize() {
@@ -574,6 +594,7 @@ window.make3D = () => (() => {
       const k = EGG + "|" + C.body;
       if (k !== eggKey) { eggKey = k; buildEgg(EGG); }
       root.visible = false; zz.visible = badge.visible = branchSprite.visible = false;
+      hearts.forEach(s => { s.visible = false; });
       eggGroup.visible = true;
       const tt = ms / 1000;
       const sh = eggShake * Math.max(0, 1 - (performance.now() - eggShakeAt) / 500);   // klingt nach dem Antippen ab
@@ -599,11 +620,15 @@ window.make3D = () => (() => {
       if (t > nextBlink) { blinkUntil = t + 0.13; nextBlink = t + 3 + Math.random() * 2.5; }
       if (t < blinkUntil) open = 0;
     }
-    cur.open += (open - cur.open) * (open === 0 && t < blinkUntil ? 0.6 : 0.18);
-    cur.chubby += ((chubby ? 1 : 0) - cur.chubby) * 0.1;
-    cur.tilt += ((slug ? 0.13 : 0) - cur.tilt) * 0.08;
+    // Annäherung nach Zeit statt pro Bild: bei wenigen Bildern pro Sekunde (Simulator, Stromsparen) öffnen sich
+    // die Augen sonst zwischen zwei Blinzlern nie ganz und das Wesen wirkt dauernd verschlafen
+    const dt = Math.min(0.5, Math.max(0, (ms - (cur.lastMs || ms)) / 1000)); cur.lastMs = ms;
+    const k = (perFrame) => 1 - Math.pow(1 - perFrame, dt * 60);
+    cur.open += (open - cur.open) * k(open === 0 && t < blinkUntil ? 0.6 : 0.18);
+    cur.chubby += ((chubby ? 1 : 0) - cur.chubby) * k(0.1);
+    cur.tilt += ((slug ? 0.13 : 0) - cur.tilt) * k(0.08);
     const glow = p.energy == null ? 0 : p.energy / 100;
-    cur.glow += (glow - cur.glow) * 0.08;
+    cur.glow += (glow - cur.glow) * k(0.08);
 
     // Körper
     const b = Q.torsoBase;
@@ -633,8 +658,10 @@ window.make3D = () => (() => {
     root.position.y = slug ? -0.05 : 0;
     const lid = open > 0.08 && open < 0.95 ? C.lid : (md === "sick" ? C.bodySick : C.body);
     const oq = Math.round(cur.open * 20) / 20;
-    const eyeKey = oq + "|" + lid + "|" + (md === "radiant") + "|" + C.iris;
-    if (eyeKey !== lastEye) { lastEye = eyeKey; drawEye(oq, lid, md === "radiant"); }
+    // Freude (Streicheln, Drehen, Morgen …): glückliche „^“-Augen statt Schlitzen (Muster D)
+    const happyEyes = HAPPY && !(t < blinkUntil);
+    const eyeKey = oq + "|" + lid + "|" + (md === "radiant") + "|" + C.iris + "|" + happyEyes;
+    if (eyeKey !== lastEye) { lastEye = eyeKey; drawEye(oq, lid, md === "radiant", happyEyes); }
     const worried = stress || md === "sick";
     Q.brows.normal.forEach(x => x.visible = !worried && md !== "hibernation");
     Q.brows.worried.forEach(x => x.visible = worried);
@@ -657,7 +684,19 @@ window.make3D = () => (() => {
       mesh.material.roughness = isOn ? 0.28 : 0.65;
     });
     const wob = stress && !reduce ? 0.09 * Math.sin(t * 14) : 0;
-    Q.antL.rotation.z = 0.08 + wob; Q.antR.rotation.z = -0.08 - wob;
+    // Antennen leben mit der Stimmung (Muster C): sanft schwingen, müde/krank hängen sie nach außen,
+    // nach Hüpfer und Drehung schwingen sie nach (Muster B/D)
+    const droop = md === "tired" || md === "sick" ? 0.32 : md === "hibernation" ? 0.42 : 0;
+    const swayF = droop ? 1.1 : 2.2;
+    const sway = reduce ? 0 : 0.05 * Math.sin(t * swayF);
+    const swayR = reduce ? 0 : 0.05 * Math.sin(t * swayF + 0.9);
+    const hu = (t - hopStart) / 0.95;
+    const whipHop = !reduce && hu >= 0 && hu < 1.6 ? 0.22 * Math.sin(hu * Math.PI * 3.2) * Math.max(0, 1.6 - hu) / 1.6 : 0;
+    const ru0 = reactType && !reduce ? (ms - reactStart) / reactDur : 2;
+    const whipReact = (reactType === "spin" || reactType === "surprise") && ru0 >= 0 && ru0 < 1.4
+      ? 0.3 * Math.sin(ru0 * Math.PI * 3) * Math.max(0, 1.4 - ru0) / 1.4 : 0;
+    const whip = whipHop + whipReact;
+    Q.antL.rotation.z = 0.08 + droop + sway + wob + whip; Q.antR.rotation.z = -0.08 - droop - swayR - wob - whip;
 
     // Herz = Energie
     const hf = Math.round(p.energy == null ? 0 : p.energy);
@@ -677,7 +716,7 @@ window.make3D = () => (() => {
     branchSprite.position.set(p.branch === "wild" ? -0.95 : -1.15, p.branch === "wild" ? 0.25 : 2.1, 0.4);
 
     // Leben: Atmen, leichtes Pendeln, Drehen per Finger
-    const slow = slug || md === "sick" || md === "hibernation";
+    const slow = slug || md === "sick" || md === "hibernation" || md === "tired";
     const br = reduce ? 0 : Math.sin(t * (slow ? 1.7 : 2.8));
     Q.bodyGroup.scale.set(1 - 0.012 * br, 1 + 0.018 * br, 1);
     Q.headGroup.position.y = Q.pivotY + 0.02 * br;
@@ -697,7 +736,36 @@ window.make3D = () => (() => {
       else if (reactType === "noon") root.position.y += Math.abs(Math.sin(ru * Math.PI * 2)) * 0.2;
       else if (reactType === "evening") root.rotation.z = 0.12 * Math.sin(ru * Math.PI * 2) * (1 - ru * 0.3);   // sanftes Wiegen
       else root.position.x = 0.05 * Math.sin(ru * Math.PI * 16) * (1 - ru);
+      // Drehen/Überraschung mit Ausholen und weicher Landung (Stauchen und Strecken, Muster D)
+      if (reactType === "spin" || reactType === "surprise") {
+        const sq = ru < 0.15 ? Math.sin(ru / 0.15 * Math.PI) * 0.12 : ru > 0.78 ? Math.sin((ru - 0.78) / 0.22 * Math.PI) * 0.1 : 0;
+        const st = ru >= 0.15 && ru <= 0.78 ? Math.sin((ru - 0.15) / 0.63 * Math.PI) * 0.06 : 0;
+        root.scale.set(1 + sq - st * 0.6, 1 - sq + st, 1 + sq - st * 0.6);
+      }
     }
+    // Leerlauf: gut gelaunt hüpft das Wesen ab und zu mit Stauchen und Strecken (Muster B);
+    // strahlend wippt es zusätzlich leicht (Muster C). Nie während Reaktion, Ziehen oder bei „Bewegung reduzieren“.
+    const idle = !reduce && !(ru >= 0 && ru < 1) && !dragging && !slow && (md === "radiant" || md === "content");
+    if (idle && t > nextHop && t - hopStart > 1.6) { hopStart = t; nextHop = t + (md === "radiant" ? 5 : 8) + Math.random() * 3; }
+    const hp = (t - hopStart) / 0.95;
+    if (!reduce && hp >= 0 && hp < 1) {
+      const up = hp > 0.18 && hp < 0.78 ? Math.sin((hp - 0.18) / 0.6 * Math.PI) : 0;
+      const sq = hp <= 0.18 ? Math.sin(hp / 0.18 * Math.PI) * 0.11 : hp >= 0.78 ? Math.sin((hp - 0.78) / 0.22 * Math.PI) * 0.09 : 0;
+      root.position.y += up * 0.28;                     // so hoch, dass die Antennen im Bild bleiben
+      root.scale.x *= 1 + sq - up * 0.04; root.scale.y *= 1 - sq + up * 0.06; root.scale.z *= 1 + sq - up * 0.04;
+    } else if (!reduce && md === "radiant" && !(ru >= 0 && ru < 1)) {
+      root.position.y += 0.035 * Math.abs(Math.sin(t * 2.1));
+    }
+    // Herzen beim Streicheln (giggle): steigen auf und verblassen
+    const hearting = reactType === "giggle" && ru >= 0 && ru < 1.3;
+    hearts.forEach(s => {
+      const u = (ru - s.userData.delay) / 1.0;
+      s.visible = hearting && !reduce && u >= 0 && u < 1;
+      if (!s.visible) return;
+      s.position.set(s.userData.x + 0.1 * Math.sin(u * Math.PI * 2), s.userData.y + u * 0.9, 0.5);
+      s.material.opacity = u < 0.2 ? u / 0.2 : 1 - (u - 0.2) / 0.8;
+      s.scale.setScalar(0.3 + 0.18 * Math.min(1, u * 3));
+    });
     // Wachstum: kleiner und gedrungener, Kopf/Gesicht größer, Antennen kürzer
     const L = Array.isArray(STAGE) ? STAGE : LOOK[STAGE];
     if (L) {

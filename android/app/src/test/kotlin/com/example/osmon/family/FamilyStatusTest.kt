@@ -16,6 +16,12 @@ class FamilyStatusTest {
         assertTrue(FamilyStatus.measuringText(false, false).startsWith("Bildschirmzeit und Schritte werden nicht gemessen"))
     }
 
+    @Test fun praiseButtonsCoverAllStickers() {
+        // Eltern-App zeigt die Knöpfe in dieser Reihenfolge; jeder Sticker braucht Emoji und Text (Server: FamilyStore::STICKERS)
+        assertEquals(listOf("star", "heart", "thumbs", "trophy", "rainbow"), FamilyPraise.order)
+        assertEquals(FamilyPraise.order.toSet(), FamilyPraise.stickers.keys)
+    }
+
     @Test fun offOnlyWhenReported() {
         assertFalse(FamilyStatus.measuringOff(null, null))
         assertFalse(FamilyStatus.measuringOff(true, true))

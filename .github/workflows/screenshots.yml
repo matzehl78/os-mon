@@ -88,8 +88,8 @@ jobs:
           shot 36_baby_lumo             light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lumo -OSMonMood radiant -OSMonStage baby
           shot 37_kind_lila             light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila -OSMonMood content -OSMonStage child -OSMonGrowUp YES
           shot 38_jugend_glut           light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure glut -OSMonMood radiant -OSMonStage teen
-          shot 39_rueckfall_minto       light -OSMonDemo home -OSMonScene zen         -OSMonFigure minto -OSMonMood sick -OSMonStage child -OSMonDown YES
-          shot 40_warnung_kasto         light -OSMonDemo home -OSMonScene raumstation -OSMonFigure kasto -OSMonMood tired -OSMonStage teen -OSMonRisk YES -OSMonRough 2
+          shot 39_wachstumspause_minto  light -OSMonDemo home -OSMonScene zen         -OSMonFigure minto -OSMonMood content -OSMonStage child -OSMonRough 3
+          shot 40_lob_verlegen_lumo     light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lumo -OSMonMood radiant -OSMonPraise heart
           shot 41_3d_lumo               light -OSMonDemo home -OSMonScene neonstadt   -OSMonFigure lumo -OSMonMood radiant -OSMon3D YES
           shot 42_3d_glut_kind          light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure glut -OSMonMood content -OSMon3D YES -OSMonStage child -OSMonFestival christmas -OSMonSeason winter
           shot 43_3d_ei                 light -OSMonDemo home -OSMonScene garteninsel -OSMonFigure lila -OSMonMood radiant -OSMon3D YES -OSMonStage egg -OSMonEggTaps 3
@@ -109,6 +109,7 @@ jobs:
           shot 57_spiel_sterne          dark  -OSMonDemo games -OSMonFigure sunni -OSMonGame stars
           shot 58_spiel_seifenblasen    dark  -OSMonDemo games -OSMonFigure minto -OSMonGame bubbles
           shot 59_kasto_gaehnt_2d       light -OSMonDemo home -OSMonScene raumstation -OSMonFigure kasto -OSMonMood tired
+          shot 60_lob_verlegen_3d_lila  light -OSMonDemo home -OSMonScene zauberwald  -OSMonFigure lila -OSMonMood radiant -OSMon3D YES -OSMonPraise star
           shot 09_einstellungen         light -OSMonDemo settings
           shot 10_onboarding            light -OSMonDemo onboarding
       - name: In Branch "screenshots" ablegen

@@ -26,6 +26,7 @@ import kotlinx.coroutines.tasks.await
 object WearStore {
     private const val PREFS = "wear"
     private const val KEY = "payload"
+    private const val KEY_RESET = "resetAt"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _payload = MutableStateFlow<WearPayload?>(null)
@@ -43,6 +44,10 @@ object WearStore {
             runCatching {
                 val buf = Wearable.getDataClient(ctx).dataItems.await()
                 try {
+                    // Erst ein verpasstes Löschen anwenden, dann den Stand (der nach dem Löschen neu sein kann)
+                    buf.firstOrNull { it.uri.path == WearPayload.PATH_RESET }?.let {
+                        reset(ctx, DataMapItem.fromDataItem(it).dataMap.getLong(WearPayload.KEY_AT))
+                    }
                     buf.firstOrNull { it.uri.path == WearPayload.PATH_STATE }?.let {
                         DataMapItem.fromDataItem(it).dataMap.getString(WearPayload.KEY_JSON)
                     }
@@ -56,7 +61,24 @@ object WearStore {
         val p = WearPayload.fromJson(json) ?: return
         val cur = _payload.value
         if (cur != null && cur.updatedAtMs > p.updatedAtMs) return
+        if (p.updatedAtMs <= prefs(ctx).getLong(KEY_RESET, 0L)) return        // Stand von vor dem Löschen
         save(ctx, p)
+    }
+
+    /** Handy hat „Alle Daten löschen“ ausgeführt (Zeitpunkt at): gespeicherten Stand verwerfen, Complication leeren. */
+    fun reset(ctx: Context, at: Long) {
+        val pr = prefs(ctx)
+        if (at <= pr.getLong(KEY_RESET, 0L)) return
+        pr.edit().putLong(KEY_RESET, at).apply()
+        val cur = _payload.value ?: load(ctx)
+        if (cur != null && cur.updatedAtMs > at) return                       // schon neuer Stand nach dem Löschen
+        _payload.value = null
+        cheer.value = null
+        pr.edit().remove(KEY).apply()
+        runCatching {
+            ComplicationDataSourceUpdateRequester.create(ctx.applicationContext,
+                ComponentName(ctx.applicationContext, PetComplicationService::class.java)).requestUpdateAll()
+        }
     }
 
     private fun save(ctx: Context, p: WearPayload) {
@@ -102,6 +124,9 @@ class WearDataListener : WearableListenerService() {
         events.forEach { e ->
             if (e.type == DataEvent.TYPE_CHANGED && e.dataItem.uri.path == WearPayload.PATH_STATE) {
                 DataMapItem.fromDataItem(e.dataItem).dataMap.getString(WearPayload.KEY_JSON)?.let { WearStore.apply(applicationContext, it) }
+            }
+            if (e.type == DataEvent.TYPE_CHANGED && e.dataItem.uri.path == WearPayload.PATH_RESET) {
+                WearStore.reset(applicationContext, DataMapItem.fromDataItem(e.dataItem).dataMap.getLong(WearPayload.KEY_AT))
             }
         }
     }

@@ -27,7 +27,15 @@ struct FamilyPraise: Codable, Equatable {
         let s = stickers[sticker] ?? ("⭐", "ein Lob")
         return "\(s.emoji) Deine Eltern schicken dir \(s.label)! \(pet) freut sich riesig."
     }
+    /// Reihenfolge der Sticker-Knöpfe (wie im Webportal und auf dem Server)
+    static let order = ["star", "heart", "thumbs", "trophy", "rainbow"]
+    /// Status für die Eltern: zuletzt gesendet und ob das Kindergerät es schon gezeigt hat.
+    static func status(_ p: FamilyPraise?) -> String {
+        guard let p, let s = stickers[p.sticker] else { return "Noch kein Lob gesendet." }
+        return "Zuletzt gesendet: \(s.emoji) · " + (p.seen ? "angekommen ✓" : "wartet auf das Kindergerät")
+    }
 }
+struct FamilyPraiseResult: Decodable { let praise: FamilyPraise }
 /// Werden Bildschirmzeit und Schritte am Kindergerät gemessen? Nur an/aus. Gleiche Texte wie Webportal und Android.
 struct FamilyMeasuring: Codable, Equatable {
     var screen: Bool; var steps: Bool; var updated: Double?

@@ -60,6 +60,8 @@ data class WearPayload(
     companion object {
         const val PATH_STATE = "/osmon/state"          // DataItem: aktueller Stand
         const val PATH_ACTION = "/osmon/action"        // Message: Aktion der Uhr
+        const val PATH_RESET = "/osmon/reset"          // DataItem: „Alle Daten löschen“ am Handy; Uhr leert sich (KEY_AT = Zeitpunkt)
+        const val KEY_AT = "at"
         const val KEY_JSON = "json"
         const val ACTION_TOGGLE = "toggleTask"         // Nachricht: "toggleTask:<id>"
         const val ACTION_KIND = "kindDone"

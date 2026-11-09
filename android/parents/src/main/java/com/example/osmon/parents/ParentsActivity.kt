@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.example.osmon.family.*
@@ -132,6 +134,26 @@ private fun DeviceEditor(device: JSONObject, connection: FamilyConnection, onClo
     Text(if (device.getInt("applied") == device.getInt("version")) "Letzter gespeicherter Stand übernommen" else "Wartet auf Übernahme am Kindergerät")
     Text(FamilyStatus.measuringText(device), color = if (FamilyStatus.measuringOff(device)) MaterialTheme.colorScheme.error else androidx.compose.ui.graphics.Color.Unspecified)
     Text("Übernahme bei geöffneter Kinder-App. Ohne Internet bleiben die zuletzt übernommenen Einstellungen gültig.")
+    // Lob schicken: feste Sticker wie im Webportal; das Wesen auf dem Kindergerät wird verlegen und freut sich
+    var praise by remember(device) { mutableStateOf(device.optJSONObject("praise")) }
+    Text("Lob schicken", style = MaterialTheme.typography.titleMedium)
+    Text("Ein Sticker für dein Kind. Das Wesen freut sich sichtbar mit.")
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        FamilyPraise.order.forEach { key ->
+            val (emoji, label) = FamilyPraise.stickers.getValue(key)
+            OutlinedButton(onClick = { busy = true; scope.launch {
+                try {
+                    praise = FamilyApi(connection).call("POST", "/v1/children/${device.getString("id")}/praise", JSONObject().put("sticker", key)).optJSONObject("praise")
+                    message = "$emoji Lob gesendet. Es erscheint beim nächsten Öffnen der Kinder-App."
+                } catch (e: Exception) { message = e.message ?: "Lob konnte nicht gesendet werden." }
+                busy = false
+            } }, enabled = !busy && device.optBoolean("paired", true), contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.weight(1f).semantics { contentDescription = "$label schicken" }) {
+                Text(emoji, style = MaterialTheme.typography.titleLarge)
+            }
+        }
+    }
+    Text(FamilyPraise.status(praise), style = MaterialTheme.typography.bodySmall)
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var sharing by remember(device) { mutableStateOf(device.optBoolean("locationSharing", false)) }
     var locationRequest by remember(device) { mutableStateOf(device.optJSONObject("locationRequest")) }
@@ -139,6 +161,7 @@ private fun DeviceEditor(device: JSONObject, connection: FamilyConnection, onClo
     suspend fun refreshLocation() {
         val a = FamilyApi(connection).call("GET", "/v1/children").getJSONArray("children")
         val updated = (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.getString("id") == device.getString("id") }
+        updated?.optJSONObject("praise")?.let { praise = it }
         location = updated?.optJSONObject("location"); sharing = updated?.optBoolean("locationSharing", false) == true; locationRequest = updated?.optJSONObject("locationRequest")
     }
     LaunchedEffect(device) {

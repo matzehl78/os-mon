@@ -129,8 +129,8 @@ struct GrowthAlertsView: View {
         VStack(alignment: .leading, spacing: 6) {
             if g.roughToday > 0 {
                 row("hand.raised.fill", .pink, g.roughToday >= Growth.roughLimit
-                    ? "Heute zu grob behandelt – der Tag zählt als schlecht."
-                    : "Heute \(g.roughToday)× grob behandelt. Ab \(Growth.roughLimit)× zählt der Tag als schlecht.")
+                    ? "Heute zu grob behandelt – dein Wesen macht heute eine Wachstumspause."
+                    : "Heute \(g.roughToday)× grob behandelt. Ab \(Growth.roughLimit)× macht dein Wesen heute eine Wachstumspause.")
             }
             if let r = g.risk {
                 row("exclamationmark.triangle.fill", .orange,

@@ -67,3 +67,7 @@ Erzeugte Dateien danach an ihren Platz kopieren:
 Kein Teil wurde hier kompiliert (kein Android-SDK und kein Xcode in der Erstellungsumgebung).
 Geprüft wurden: Engine-Formeln gegen Python-Referenzen, der Android-Figuren-Renderer gegen den Prototyp
 (pixelgleich, auch alle Antipp-Reaktionen), `PetProgress.kt` mit kotlinc (11/11 Tests grün), XML/YAML-Syntax. Beim ersten Build sind kleine Anpassungen an API-Signaturen möglich.
+
+## Video (Marketing)
+
+`video/` – 3D-Schlüpf- und Evolutions-Loop für TikTok/Reels (Remotion + Three.js), siehe `video/README.md`.

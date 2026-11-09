@@ -1,0 +1,31 @@
+{
+  "name": "osmon-evolution-video",
+  "version": "1.0.0",
+  "description": "OS-Mon: 3D-Schlüpf- und Evolutions-Loop (Remotion + Three.js)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "cutout": "python3 scripts/cutout.py",
+    "render": "remotion render src/index.ts OsMonEvolution out/osmon-evolution.mp4",
+    "render:square": "remotion render src/index.ts OsMonEvolutionSquare out/osmon-evolution-square.mp4",
+    "render:gif": "remotion render src/index.ts OsMonEvolution out/osmon-evolution.gif --codec=gif --every-nth-frame=2 --scale=0.4",
+    "still": "remotion still src/index.ts OsMonEvolution out/still.png --frame=300",
+    "typecheck": "tsc"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@react-three/fiber": "^9.8.2",
+    "@remotion/cli": "^4.0.542",
+    "@remotion/fonts": "^4.0.542",
+    "@remotion/three": "^4.0.542",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.542",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "typescript": "^5.9.3"
+  },
+  "private": true
+}

@@ -6,7 +6,8 @@ Zwei fertige Projekte mit allen Quelldateien an ihrem Platz, plus Werkzeuge.
 osmon-projekt/
 ├─ android/   Android-Studio-Projekt (Kotlin, Compose, Glance-Widget, WorkManager)
 ├─ ios/       Xcode-Projekt als XcodeGen-Beschreibung (App, Widget, Bildschirmzeit-Monitor, Tests)
-└─ tools/     Prototyp, Figuren-Generator, Python-Referenzen für die Testdaten
+├─ tools/     Prototyp, Figuren-Generator, Python-Referenzen für die Testdaten
+└─ video/     Remotion + Three.js: 3D-Schlupf-Video (Hochformat, Quadrat), siehe video/README.md
 ```
 
 ## Android

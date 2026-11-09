@@ -175,6 +175,9 @@ object PetFigureRenderer {
         c.translate(-VB_X, -VB_Y)
         if (bm != null) {                                   // Reaktion bewegt die ganze Figur (Drehpunkt Mitte unten)
             c.translate(110f + bm.dx, 210f + bm.dy); c.rotate(bm.rot); c.scale(bm.sx, bm.sy); c.translate(-110f, -210f)
+        } else if (t != null && !slow && (md == Mood.RADIANT || md == Mood.CONTENT)) {   // gut gelaunt: ab und zu ein Hüpfer
+            val im = ReactionMotion.idle(t, md == Mood.RADIANT)
+            c.translate(110f, 212f + im.dy); c.scale(im.sx, im.sy); c.translate(-110f, -212f)
         }
         // Wachstum: kleiner und gedrungener, Kopf/Gesicht größer, Antennen kürzer (um die Füße skaliert)
         val L = Growth.look(p.stage)
@@ -220,9 +223,14 @@ object PetFigureRenderer {
 
         fun antennas() {
             val A = S.ant
+            // Antennen leben mit der Stimmung (Muster C): müde/krank hängen sie nach außen, sonst schwingen sie sanft
+            val droop = if (md == Mood.TIRED || md == Mood.SICK) 14f else if (md == Mood.HIBERNATION) 18f else 0f
+            val baseY = A.y + (A.beads.maxOfOrNull { it.oy } ?: 0f) + 6f
             for (sd in listOf(-1f, 1f)) {
                 c.save()
-                if (wobble != 0f) c.rotate(wobble, 110 + sd * A.dx, A.y + 10)
+                val sway = t?.let { (3 * sin(it * (if (droop > 0f) 1.1 else 2.2) + (if (sd > 0f) 0.9 else 0.0))).toFloat() } ?: 0f
+                val ang = wobble + sd * droop + sd * sway
+                if (ang != 0f) c.rotate(ang, 110 + sd * A.dx, baseY)
                 A.beads.forEachIndexed { k, bd ->
                     val on = k < lit
                     val bx = 110 + sd * (A.dx + bd.ox * A.lean); val by = A.y + bd.oy
@@ -297,11 +305,19 @@ object PetFigureRenderer {
         fun face() {
             // Wangen
             val cheekOp = if (p.petted || (R != null && R != ReactionKind.DIZZY)) 0.95f else when (md) { Mood.RADIANT -> 0.75f; Mood.CONTENT -> 0.5f; else -> 0.3f }
-            for (sd in listOf(-1f, 1f)) oval(cx + sd * (dx + r + 1), ey + r + 1, r * 0.43f, r * 0.24f, C.cheek, cheekOp)
+            val shy = R == ReactionKind.SHY
+            for (sd in listOf(-1f, 1f)) {
+                val kx = cx + sd * (dx + r + 1); val ky = ey + r + 1
+                if (!shy) { oval(kx, ky, r * 0.43f, r * 0.24f, C.cheek, cheekOp); continue }
+                // verlegen: große rote Bäckchen mit Strichen (Muster C)
+                oval(kx, ky, r * 0.7f, r * 0.4f, C.cheek, 0.9f)
+                for (k in listOf(-1f, 0f, 1f)) c.drawLine(kx + k * r * 0.3f + r * 0.06f, ky - r * 0.17f,
+                    kx + k * r * 0.3f - r * 0.06f, ky + r * 0.17f, stroke(WHITE, 1.8f, 0.85f))
+            }
             // Augen
             val open = when (R) {
                 ReactionKind.SURPRISE, ReactionKind.STARTLE -> 1f
-                ReactionKind.SLEEPY -> 0.75f; ReactionKind.WEAK -> 0.7f; ReactionKind.NIGHT -> 0.45f
+                ReactionKind.SLEEPY -> 0.75f; ReactionKind.WEAK -> 0.7f; ReactionKind.NIGHT -> 0.45f; ReactionKind.SHY -> 0.88f
                 else -> when { yawn -> 0.35f; md == Mood.TIRED -> 0.5f; slug -> 0.6f; md == Mood.SICK -> 0.7f; else -> 1f }
             }
             for (ex in listOf(cx - dx, cx + dx)) {
@@ -315,7 +331,7 @@ object PetFigureRenderer {
                     c.drawPath(svg("M$ex $ey m${-r * 0.08f} 0 a${r * 0.1f} ${r * 0.1f} 0 1 1 ${r * 0.2f} 0 a${r * 0.3f} ${r * 0.3f} 0 1 1 ${-r * 0.5f} 0 a${r * 0.5f} ${r * 0.5f} 0 1 1 ${r * 0.85f} 0"), stroke(line, 2.2f))
                     continue
                 }
-                if (md == Mood.HIBERNATION && R != ReactionKind.STARTLE) {
+                if (md == Mood.HIBERNATION && R != ReactionKind.STARTLE && R != ReactionKind.SHY) {
                     val arc = Path().apply { moveTo(ex - r * 0.67f, ey); quadTo(ex, ey + r * 0.43f, ex + r * 0.67f, ey) }
                     c.drawPath(arc, stroke(line, 3.5f))
                     continue
@@ -324,11 +340,16 @@ object PetFigureRenderer {
                 c.drawCircle(ex, ey, r, fill(WHITE))
                 c.save()
                 c.clipPath(Path().apply { addCircle(ex, ey, r, Path.Direction.CW) })
-                c.drawCircle(ex, ey + 1, r * 0.67f, fill(C.iris))
-                c.drawCircle(ex, ey + 1, r * 0.38f, fill(line))
-                val hl = r * 0.29f
-                c.drawRect(ex + r * 0.05f, ey - r * 0.38f, ex + r * 0.05f + hl, ey - r * 0.38f + hl, fill(WHITE))
-                if (md == Mood.RADIANT) c.drawRect(ex - r * 0.33f, ey + r * 0.19f, ex - r * 0.33f + hl / 2, ey + r * 0.19f + hl / 2, fill(WHITE))
+                // Verlegen: Blick nach unten zur Seite (Muster C)
+                val ix = ex + (if (shy) -r * 0.26f else 0f); val iy = ey + 1 + (if (shy) r * 0.3f else 0f)
+                c.drawCircle(ix, iy, r * 0.7f, fill(C.iris))
+                oval(ix, iy + r * 0.34f, r * 0.42f, r * 0.26f, WHITE, 0.32f)   // Iris unten heller: feucht und glänzend (Muster B)
+                c.drawCircle(ix, iy, r * 0.38f, fill(line))
+                // Zwei Glanzpunkte wie im 3D: großes Quadrat (Lumo-Vorgabe) und kleiner runder unten links
+                val hl = r * 0.3f
+                c.drawRect(ix + r * 0.08f, iy - r * 0.32f, ix + r * 0.08f + hl, iy - r * 0.32f + hl, fill(WHITE))
+                c.drawCircle(ix - r * 0.25f, iy + r * 0.26f, r * 0.11f, fill(WHITE))
+                if (md == Mood.RADIANT) { val q = hl / 2.4f; c.drawRect(ix - r * 0.42f, iy - r * 0.2f, ix - r * 0.42f + q, iy - r * 0.2f + q, fill(WHITE)) }
                 c.drawRect(ex - r, ey - r, ex + r, ey - r + 2 * r * (1 - open), fill(C.lid))
                 if (blink > 0f) c.drawRect(ex - r, ey - r, ex + r, ey - r + 2 * r * blink, fill(body))
                 c.restore()
@@ -347,6 +368,10 @@ object PetFigureRenderer {
             val m = Path()
             when {
                 R == ReactionKind.EVENING -> { m.moveTo(cx - 10, my); m.quadTo(cx, my + 9, cx + 10, my); c.drawPath(m, stroke(line, 3f)) }
+                shy -> {                                             // verlegenes Wellen-Lächeln (Muster C)
+                    m.moveTo(cx - 10, my + 3); m.quadTo(cx - 5, my - 1, cx, my + 3); m.quadTo(cx + 5, my + 7, cx + 10, my + 3)
+                    c.drawPath(m, stroke(line, 3f))
+                }
                 R == ReactionKind.NIGHT -> { m.moveTo(cx - 5, my + 4); m.quadTo(cx, my + 8, cx + 5, my + 4); c.drawPath(m, stroke(line, 3f)) }
                 R == ReactionKind.SURPRISE || R == ReactionKind.STARTLE -> oval(cx, my + 6, 5f, 6.5f, line)
                 R == ReactionKind.WEAK -> { m.moveTo(cx - 7, my + 2); m.quadTo(cx, my + 7, cx + 7, my + 2); c.drawPath(m, stroke(line, 3f)) }

@@ -738,11 +738,11 @@ fun HomeContent(
                 }
             }
 
-            // Lob von den Eltern (FamilyChild.kt): Drehung + Konfetti und eine Sprechblase
+            // Lob von den Eltern (FamilyChild.kt): das Wesen wird verlegen (Muster C), Konfetti und eine Sprechblase
             val praise = PraiseEvents.latest.value
             LaunchedEffect(praise) {
                 praise?.let { (sticker, _) ->
-                    reaction = ActiveReaction(ReactionKind.SPIN, SystemClock.uptimeMillis(),
+                    reaction = ActiveReaction(ReactionKind.SHY, SystemClock.uptimeMillis(),
                         com.example.osmon.family.FamilyPraise.line(sticker, figure.name))
                     celebrateAt = System.currentTimeMillis()
                     PraiseEvents.latest.value = null

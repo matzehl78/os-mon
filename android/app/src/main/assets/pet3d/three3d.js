@@ -71,7 +71,7 @@ window.make3D = () => (() => {
     g.lineWidth = 0.06; g.strokeStyle = C.line; g.stroke(p);
     heartTex.needsUpdate = true;
   }
-  function drawEye(open, lid, radiant, happy) {
+  function drawEye(open, lid, radiant, happy, shy) {
     const g = eyeCtx, cx = 128, cy = 128, R = 116;
     g.clearRect(0, 0, 256, 256);
     if (happy) {                           // glücklich (Streicheln, Freude): Bogen nach oben „^“
@@ -86,6 +86,8 @@ window.make3D = () => (() => {
     }
     g.save();
     g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fillStyle = "#ffffff"; g.fill(); g.clip();
+    g.save();
+    if (shy) g.translate(-30, 34);         // verlegen: Blick nach unten zur Seite (Muster C)
     g.fillStyle = C.irisDark; g.beginPath(); g.arc(cx, cy + 8, 88, 0, Math.PI * 2); g.fill();
     // Iris mit Verlauf: unten heller, wirkt feucht und glänzend (Muster B)
     const ig = g.createRadialGradient(cx, cy + 44, 6, cx, cy + 8, 76);
@@ -97,6 +99,7 @@ window.make3D = () => (() => {
     g.fillStyle = "#ffffff"; g.fillRect(cx + 10, cy - 38, 36, 36);
     g.beginPath(); g.arc(cx - 30, cy + 38, 13, 0, Math.PI * 2); g.fill();
     if (radiant) g.fillRect(cx - 50, cy - 18, 14, 14);
+    g.restore();
     if (open < 0.98) {                     // Lid von oben, leicht gewölbte Kante
       const edge = cy - R + 2 * R * (1 - open);
       g.fillStyle = lid;
@@ -490,6 +493,9 @@ window.make3D = () => (() => {
     p.mouths.yawn = openGroup(-0.08, 1.05);
     const wave = new T.CatmullRomCurve3(Array.from({ length: 9 }, (_, k) => new T.Vector3(-0.16 + k * 0.04, (k % 2 ? 0.022 : -0.022), 0)));
     p.mouths.stress = mk(new T.TubeGeometry(wave, 40, 0.018, 6, false), -0.05);
+    // verlegenes Wellen-Lächeln (Muster C): eine kleine Welle
+    const shyWave = new T.CatmullRomCurve3(Array.from({ length: 5 }, (_, k) => new T.Vector3(-0.1 + k * 0.05, [0, 0.02, 0, -0.02, 0][k], 0)));
+    p.mouths.shy = mk(new T.TubeGeometry(shyWave, 30, 0.02, 6, false), -0.03);
     // Wangen
     const cheekMat = new T.MeshBasicMaterial({ color: hexN(C.cheek), transparent: true, opacity: 0.5 });
     [-1, 1].forEach(sd => {
@@ -610,12 +616,13 @@ window.make3D = () => (() => {
     const yawn = ov.includes("yawning"), stress = ov.includes("stressed"), chubby = ov.includes("chubby"), slug = ov.includes("sluggish");
     const R = p.react || null;
     const HAPPY = ["giggle", "spin", "morning", "noon", "evening"].includes(R);
-    const md = R === "giggle" || R === "spin" || R === "noon" ? "radiant" : R === "weak" || R === "evening" ? "content"
+    const SHY = R === "shy";                // verlegen (Muster C): Blick zur Seite, rote Bäckchen, Wellenmund, Schaukeln
+    const md = R === "giggle" || R === "spin" || R === "noon" ? "radiant" : R === "weak" || R === "evening" || SHY ? "content"
       : R === "startle" || R === "night" ? "tired" : p.mood;
 
     let open = 1;
-    if (p.mood === "hibernation" && R !== "startle") open = 0; else if (yawn) open = 0.35; else if (md === "tired") open = 0.5; else if (slug) open = 0.6; else if (md === "sick") open = 0.7;
-    if (HAPPY) open = 0.22; else if (R === "night") open = 0.45; else if (R === "surprise" || R === "startle") open = 1; else if (R === "sleepy") open = 0.45; else if (R === "dizzy") open = 0.6;
+    if (p.mood === "hibernation" && R !== "startle" && !SHY) open = 0; else if (yawn) open = 0.35; else if (md === "tired") open = 0.5; else if (slug) open = 0.6; else if (md === "sick") open = 0.7;
+    if (HAPPY) open = 0.22; else if (R === "night") open = 0.45; else if (R === "surprise" || R === "startle") open = 1; else if (R === "sleepy") open = 0.45; else if (R === "dizzy") open = 0.6; else if (SHY) open = 0.88;
     if (!reduce && md !== "hibernation") {
       if (t > nextBlink) { blinkUntil = t + 0.13; nextBlink = t + 3 + Math.random() * 2.5; }
       if (t < blinkUntil) open = 0;
@@ -660,18 +667,18 @@ window.make3D = () => (() => {
     const oq = Math.round(cur.open * 20) / 20;
     // Freude (Streicheln, Drehen, Morgen …): glückliche „^“-Augen statt Schlitzen (Muster D)
     const happyEyes = HAPPY && !(t < blinkUntil);
-    const eyeKey = oq + "|" + lid + "|" + (md === "radiant") + "|" + C.iris + "|" + happyEyes;
-    if (eyeKey !== lastEye) { lastEye = eyeKey; drawEye(oq, lid, md === "radiant", happyEyes); }
+    const eyeKey = oq + "|" + lid + "|" + (md === "radiant") + "|" + C.iris + "|" + happyEyes + "|" + SHY;
+    if (eyeKey !== lastEye) { lastEye = eyeKey; drawEye(oq, lid, md === "radiant", happyEyes, SHY); }
     const worried = stress || md === "sick";
     Q.brows.normal.forEach(x => x.visible = !worried && md !== "hibernation");
     Q.brows.worried.forEach(x => x.visible = worried);
     Q.brows.rings.forEach(x => x.visible = stress);
     const mouthKey = R === "surprise" || R === "startle" || R === "sleepy" || R === "morning" ? "yawn" : R === "dizzy" ? "stress"
-      : R === "night" ? "hibernation"
+      : R === "night" ? "hibernation" : SHY ? "shy"
       : R ? md : yawn ? "yawn" : stress ? "stress" : md;
     Object.entries(Q.mouths).forEach(([key, m]) => { m.visible = key === mouthKey; });
     const cheekOp = (R && R !== "dizzy") || p.petted ? 0.95 : md === "radiant" ? 0.75 : md === "content" ? 0.5 : 0.3;
-    Q.cheeks.forEach(c => c.material.opacity = cheekOp);
+    Q.cheeks.forEach(c => { c.material.opacity = cheekOp; const f = SHY ? 1.6 : 1; c.scale.set(1.4 * f, 0.75 * f, 0.3); });
 
     // Antennen = Ruhe
     const lit = p.rest == null ? 0 : p.rest >= 66 ? 3 : p.rest >= 33 ? 2 : 1;
@@ -735,6 +742,11 @@ window.make3D = () => (() => {
       else if (reactType === "morning") root.scale.set(1 - 0.04 * Math.sin(ru * Math.PI), 1 + 0.12 * Math.sin(ru * Math.PI), 1);   // Strecken
       else if (reactType === "noon") root.position.y += Math.abs(Math.sin(ru * Math.PI * 2)) * 0.2;
       else if (reactType === "evening") root.rotation.z = 0.12 * Math.sin(ru * Math.PI * 2) * (1 - ru * 0.3);   // sanftes Wiegen
+      else if (reactType === "shy") {                    // verlegen: schaukelt hin und her und dreht sich etwas weg
+        const hold = Math.min(1, ru * 4, (1 - ru) * 4);
+        root.rotation.z = 0.1 * Math.sin(ru * Math.PI * 3) * hold;
+        root.rotation.y += -0.35 * hold;
+      }
       else root.position.x = 0.05 * Math.sin(ru * Math.PI * 16) * (1 - ru);
       // Drehen/Überraschung mit Ausholen und weicher Landung (Stauchen und Strecken, Muster D)
       if (reactType === "spin" || reactType === "surprise") {

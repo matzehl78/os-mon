@@ -8,7 +8,7 @@ import Foundation
 import CoreGraphics
 
 enum ReactionKind: String, CaseIterable {
-    case giggle, spin, surprise, dizzy, sleepy, weak, startle, morning, noon, evening, night
+    case giggle, spin, surprise, dizzy, sleepy, weak, startle, morning, noon, evening, night, shy
 
     var duration: TimeInterval {
         switch self {
@@ -18,6 +18,7 @@ enum ReactionKind: String, CaseIterable {
         case .sleepy, .night: return 1.4
         case .morning, .evening: return 1.6
         case .noon: return 1.0
+        case .shy: return 1.8
         }
     }
     var fx: [String] {
@@ -33,6 +34,7 @@ enum ReactionKind: String, CaseIterable {
         case .noon: return ["🍎", "☕"]
         case .evening: return ["🌙", "✨"]
         case .night: return ["🌙", "💤"]
+        case .shy: return ["💕", "🌸"]
         }
     }
     var say: [String] {
@@ -48,6 +50,7 @@ enum ReactionKind: String, CaseIterable {
         case .noon: return ["Mittagspause? Ich bin dabei!", "Zeit für eine kleine Pause?"]
         case .evening: return ["Schöner Abend, oder?", "Na, wie war dein Tag?"]
         case .night: return ["Psst … schon spät. Leg mich doch hin?", "Gähn … wollen wir schlafen gehen?"]
+        case .shy: return ["Oh … du machst mich ganz verlegen.", "Hihi … danke!", "Ach, du …"]
         }
     }
     /// Fröhliches Gesicht (Augen ^ ^)
@@ -84,7 +87,7 @@ final class ReactionPicker {
         }
         if mood == .tired || overlays.contains(.yawning) { return .sleepy }
         let r = Double.random(in: 0..<1)
-        return r < 0.5 ? .giggle : r < 0.78 ? .spin : .surprise
+        return r < 0.45 ? .giggle : r < 0.7 ? .spin : r < 0.86 ? .surprise : .shy
     }
 
     func start(_ kind: ReactionKind, now: Date = .now) -> ActiveReaction {
@@ -125,6 +128,7 @@ enum ReactionMotion {
         case .evening: return Limbs(l: 10 * env, r: 140 * hold + 20 * sin(u * .pi * 8) * hold, fl: 0, fr: 0)
         case .weak: return Limbs(l: -8 * env, r: -8 * env, fl: 0, fr: 0)
         case .startle: return Limbs(l: 45 * quick, r: 45 * quick, fl: 0, fr: 0)
+        case .shy: return Limbs(l: -14 * hold, r: -14 * hold, fl: 3 * max(0, alt) * hold, fr: 3 * max(0, -alt) * hold)   // Arme an den Körper, Füße scharren
         }
     }
 
@@ -140,6 +144,18 @@ enum ReactionMotion {
         case .evening: return BodyMotion(rot: 7 * sin(2 * .pi * u))
         case .noon: return BodyMotion(dy: -abs(sin(2 * .pi * u)) * 14 * K)
         case .weak, .startle: return BodyMotion(dx: 3 * K * sin(16 * .pi * u) * (1 - u))
+        case .shy: return BodyMotion(rot: 6 * sin(3 * .pi * u) * min(1, u * 4, (1 - u) * 4))   // schaukelt verlegen hin und her
         }
+    }
+
+    /// Leerlauf (gut gelaunt): ab und zu ein Hüpfer mit Stauchen und Strecken (Muster B), strahlend dazwischen
+    /// leichtes Wippen (Muster C). Gleiche Kurve wie im 3D-Renderer; t = Sekunden. Gegenstück in PetReaction.kt.
+    static func idle(_ t: Double, radiant: Bool) -> BodyMotion {
+        let period = radiant ? 6.5 : 9.5
+        let hp = CGFloat(t.truncatingRemainder(dividingBy: period) / 0.95)
+        guard hp < 1 else { return BodyMotion(dy: radiant ? -2 * abs(CGFloat(sin(t * 2.1))) : 0) }
+        let up = hp > 0.18 && hp < 0.78 ? sin((hp - 0.18) / 0.6 * .pi) : 0
+        let sq = hp <= 0.18 ? sin(hp / 0.18 * .pi) * 0.11 : hp >= 0.78 ? sin((hp - 0.78) / 0.22 * .pi) * 0.09 : 0
+        return BodyMotion(dy: -up * 13, sx: 1 + sq - up * 0.04, sy: 1 - sq + up * 0.06)
     }
 }

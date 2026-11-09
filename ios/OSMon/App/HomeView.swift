@@ -435,7 +435,9 @@ struct HomeContent: View {
         .onReceive(NotificationCenter.default.publisher(for: .osmonExtrasChanged)) { _ in extrasV += 1 }
         .onReceive(NotificationCenter.default.publisher(for: .osmonPraise)) { n in
             guard let sticker = n.object as? String else { return }
-            cheer(true, FamilyPraise.line(sticker, pet: PetFigure.byID(figureID).name))   // Drehung + Konfetti
+            // Lob macht das Wesen verlegen: schaukeln, rote Bäckchen, Blick zur Seite (Muster C) + Konfetti
+            reaction = ActiveReaction(kind: .shy, start: .now, say: FamilyPraise.line(sticker, pet: PetFigure.byID(figureID).name))
+            celebrateAt = .now
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
         // Geräusche und Stimme: Brabbeln zur Sprechblase, sonst ein kurzer Ton je Reaktion

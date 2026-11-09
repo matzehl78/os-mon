@@ -239,6 +239,11 @@ enum PetFigureRenderer {
             g.rotate(by: .degrees(Double(bm.rot)))
             g.scaleBy(x: bm.sx, y: bm.sy)
             g.translateBy(x: -110, y: -210)
+        } else if let t, !slow, md == .radiant || md == .content {   // gut gelaunt: ab und zu ein Hüpfer
+            let im = ReactionMotion.idle(t, radiant: md == .radiant)
+            g.translateBy(x: 110, y: 212 + im.dy)
+            g.scaleBy(x: im.sx, y: im.sy)
+            g.translateBy(x: -110, y: -212)
         }
         // Wachstum: kleiner und gedrungener, Kopf/Gesicht größer, Antennen kürzer (um die Füße skaliert)
         let L = Growth.look(p.stage)
@@ -288,9 +293,14 @@ enum PetFigureRenderer {
 
         func antennas(_ g: GraphicsContext) {
             let A = S.ant
+            // Antennen leben mit der Stimmung (Muster C): müde/krank hängen sie nach außen, sonst schwingen sie sanft
+            let droop: CGFloat = md == .tired || md == .sick ? 14 : md == .hibernation ? 18 : 0
+            let baseY = A.y + (A.beads.map(\.oy).max() ?? 0) + 6
             for sd in [-1.0, 1.0] as [CGFloat] {
                 var a = g
-                if wobble != 0 { a.concatenate(rotate(wobble, about: CGPoint(x: 110 + sd * A.dx, y: A.y + 10))) }
+                let sway = t.map { CGFloat(3 * sin($0 * (droop > 0 ? 1.1 : 2.2) + (sd > 0 ? 0.9 : 0))) } ?? 0
+                let ang = wobble + sd * droop + sd * sway
+                if ang != 0 { a.concatenate(rotate(ang, about: CGPoint(x: 110 + sd * A.dx, y: baseY))) }
                 for (k, bd) in A.beads.enumerated() {
                     let on = k < lit
                     let bx = 110 + sd * (A.dx + bd.ox * A.lean), by = A.y + bd.oy
@@ -368,8 +378,22 @@ enum PetFigureRenderer {
             // Wangen
             var ck = g
             ck.opacity = p.petted || (R != nil && R != .dizzy) ? 0.95 : md == .radiant ? 0.75 : md == .content ? 0.5 : 0.3
+            let shy = R == .shy
             for sd in [-1.0, 1.0] as [CGFloat] {
-                ck.fill(ellipse(cx + sd * (dx + r + 1), ey + r + 1, r * 0.43, r * 0.24), with: .color(col(C.cheek)))
+                let kx = cx + sd * (dx + r + 1), ky = ey + r + 1
+                if shy {                                      // verlegen: große rote Bäckchen mit Strichen (Muster C)
+                    var hot = g; hot.opacity = 0.9
+                    hot.fill(ellipse(kx, ky, r * 0.7, r * 0.4), with: .color(col(C.cheek)))
+                    for k in [-1.0, 0, 1] as [CGFloat] {
+                        var st = Path()
+                        st.move(to: CGPoint(x: kx + k * r * 0.3 + r * 0.06, y: ky - r * 0.17))
+                        st.addLine(to: CGPoint(x: kx + k * r * 0.3 - r * 0.06, y: ky + r * 0.17))
+                        var w = g; w.opacity = 0.85
+                        w.stroke(st, with: .color(white), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+                    }
+                    continue
+                }
+                ck.fill(ellipse(kx, ky, r * 0.43, r * 0.24), with: .color(col(C.cheek)))
             }
             // Augen
             var open: CGFloat = yawn ? 0.35 : md == .tired ? 0.5 : slug ? 0.6 : md == .sick ? 0.7 : 1
@@ -378,6 +402,7 @@ enum PetFigureRenderer {
             case .sleepy?: open = 0.75
             case .weak?: open = 0.7
             case .night?: open = 0.45
+            case .shy?: open = 0.88
             default: break
             }
             for ex in [cx - dx, cx + dx] {
@@ -394,7 +419,7 @@ enum PetFigureRenderer {
                     g.stroke(sp, with: .color(line), style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
                     continue
                 }
-                if md == .hibernation && R != .startle {
+                if md == .hibernation && R != .startle && R != .shy {
                     var arc = Path()
                     arc.move(to: CGPoint(x: ex - r * 0.67, y: ey))
                     arc.addQuadCurve(to: CGPoint(x: ex + r * 0.67, y: ey), control: CGPoint(x: ex, y: ey + r * 0.43))
@@ -408,12 +433,18 @@ enum PetFigureRenderer {
                 let eye = circle(ex, ey, r)
                 g.fill(eye, with: .color(white))
                 var e = g; e.clip(to: eye)
-                e.fill(circle(ex, ey + 1, r * 0.67), with: .color(col(C.iris)))
-                e.fill(circle(ex, ey + 1, r * 0.38), with: .color(line))
-                let hl = r * 0.29
-                e.fill(Path(CGRect(x: ex + r * 0.05, y: ey - r * 0.38, width: hl, height: hl)), with: .color(white))
+                // Verlegen: Blick nach unten zur Seite (Muster C)
+                let ix = ex + (shy ? -r * 0.26 : 0), iy = ey + 1 + (shy ? r * 0.3 : 0)
+                e.fill(circle(ix, iy, r * 0.7), with: .color(col(C.iris)))
+                var glow = e; glow.opacity = 0.32                // Iris unten heller: wirkt feucht und glänzend (Muster B)
+                glow.fill(ellipse(ix, iy + r * 0.34, r * 0.42, r * 0.26), with: .color(white))
+                e.fill(circle(ix, iy, r * 0.38), with: .color(line))
+                // Zwei Glanzpunkte wie im 3D: großes Quadrat (Lumo-Vorgabe) und kleiner runder unten links
+                let hl = r * 0.3
+                e.fill(Path(CGRect(x: ix + r * 0.08, y: iy - r * 0.32, width: hl, height: hl)), with: .color(white))
+                e.fill(circle(ix - r * 0.25, iy + r * 0.26, r * 0.11), with: .color(white))
                 if md == .radiant {
-                    e.fill(Path(CGRect(x: ex - r * 0.33, y: ey + r * 0.19, width: hl / 2, height: hl / 2)), with: .color(white))
+                    e.fill(Path(CGRect(x: ix - r * 0.42, y: iy - r * 0.2, width: hl / 2.4, height: hl / 2.4)), with: .color(white))
                 }
                 e.fill(Path(CGRect(x: ex - r, y: ey - r, width: 2 * r, height: 2 * r * (1 - open))), with: .color(col(C.lid)))
                 if blink > 0 { e.fill(Path(CGRect(x: ex - r, y: ey - r, width: 2 * r, height: 2 * r * blink)), with: .color(body)) }
@@ -439,6 +470,11 @@ enum PetFigureRenderer {
             if R == .evening {
                 m.move(to: CGPoint(x: cx - 10, y: my))
                 m.addQuadCurve(to: CGPoint(x: cx + 10, y: my), control: CGPoint(x: cx, y: my + 9))
+                g.stroke(m, with: .color(line), style: ln)
+            } else if R == .shy {                             // verlegenes Wellen-Lächeln (Muster C)
+                m.move(to: CGPoint(x: cx - 10, y: my + 3))
+                m.addQuadCurve(to: CGPoint(x: cx, y: my + 3), control: CGPoint(x: cx - 5, y: my - 1))
+                m.addQuadCurve(to: CGPoint(x: cx + 10, y: my + 3), control: CGPoint(x: cx + 5, y: my + 7))
                 g.stroke(m, with: .color(line), style: ln)
             } else if R == .night {
                 m.move(to: CGPoint(x: cx - 5, y: my + 4))

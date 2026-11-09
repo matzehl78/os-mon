@@ -5,7 +5,8 @@
 //
 // Auswahl:  Winterschlaf -> Aufschrecken, kränklich -> Schwach, sonst erster Tipp im Zeitfenster ->
 // Gruß zur Tageszeit (Morgen 6–10, Mittag 11–14, Abend 18–22, Nacht 22–6), danach 30 % Gruß;
-// müde/gähnend -> Verschlafen; sonst Kichern 50 % / Freudendreher 28 % / Staunen 22 %.
+// müde/gähnend -> Verschlafen; sonst Kichern 45 % / Freudendreher 25 % / Staunen 16 % / Verlegen 14 %.
+// Lob von den Eltern -> Verlegen (HomeScreen.kt).
 // 5× Tippen in 3 s -> Schwindelig.
 
 package com.example.osmon.figure
@@ -32,7 +33,8 @@ enum class ReactionKind(val durMs: Int, val fx: List<String>, val say: List<Stri
     MORNING(1600, listOf("☀️", "✨"), listOf("Guten Morgen! Aaah, gut geschlafen.", "Morgen! Bereit für heute?")),
     NOON(1000, listOf("🍎", "☕"), listOf("Mittagspause? Ich bin dabei!", "Zeit für eine kleine Pause?")),
     EVENING(1600, listOf("🌙", "✨"), listOf("Schöner Abend, oder?", "Na, wie war dein Tag?")),
-    NIGHT(1400, listOf("🌙", "💤"), listOf("Psst … schon spät. Leg mich doch hin?", "Gähn … wollen wir schlafen gehen?"));
+    NIGHT(1400, listOf("🌙", "💤"), listOf("Psst … schon spät. Leg mich doch hin?", "Gähn … wollen wir schlafen gehen?")),
+    SHY(1800, listOf("💕", "🌸"), listOf("Oh … du machst mich ganz verlegen.", "Hihi … danke!", "Ach, du …"));
 
     /** Fröhliches Gesicht (Augen ^ ^) */
     val happy get() = this == GIGGLE || this == SPIN || this == MORNING || this == NOON || this == EVENING
@@ -65,7 +67,8 @@ class ReactionPicker(private val rnd: Random = Random.Default) {
         }
         if (mood == Mood.TIRED || Overlay.YAWNING in overlays) return ReactionKind.SLEEPY
         val r = rnd.nextFloat()
-        return if (r < 0.5f) ReactionKind.GIGGLE else if (r < 0.78f) ReactionKind.SPIN else ReactionKind.SURPRISE
+        return if (r < 0.45f) ReactionKind.GIGGLE else if (r < 0.7f) ReactionKind.SPIN
+            else if (r < 0.86f) ReactionKind.SURPRISE else ReactionKind.SHY
     }
 
     fun start(kind: ReactionKind, nowMs: Long) = ActiveReaction(kind, nowMs, kind.say[rnd.nextInt(kind.say.size)])
@@ -107,6 +110,7 @@ object ReactionMotion {
             ReactionKind.EVENING -> { val w = 140 * hold + 20 * sin(u * PI * 8).toFloat() * hold; Limbs(10 * env, w, 0f, 0f) }
             ReactionKind.WEAK -> Limbs(-8 * env, -8 * env, 0f, 0f)
             ReactionKind.STARTLE -> Limbs(45 * quick, 45 * quick, 0f, 0f)
+            ReactionKind.SHY -> Limbs(-14 * hold, -14 * hold, 3 * max(0f, alt) * hold, 3 * max(0f, -alt) * hold)   // Arme an den Körper, Füße scharren
         }
     }
 
@@ -123,6 +127,19 @@ object ReactionMotion {
             ReactionKind.EVENING -> BodyMotion(rot = 7 * s(2 * PI * u))
             ReactionKind.NOON -> BodyMotion(dy = -abs(s(2 * PI * u)) * 14 * K)
             ReactionKind.WEAK, ReactionKind.STARTLE -> BodyMotion(dx = 3 * K * s(16 * PI * u) * (1 - u))
+            ReactionKind.SHY -> BodyMotion(rot = 6 * s(3 * PI * u) * min(1f, min(u * 4, (1 - u) * 4)))   // schaukelt verlegen hin und her
         }
+    }
+
+    /** Leerlauf (gut gelaunt): ab und zu ein Hüpfer mit Stauchen und Strecken (Muster B), strahlend dazwischen
+     *  leichtes Wippen (Muster C). Gleiche Kurve wie im 3D-Renderer; t = Sekunden. Gegenstück in PetReaction.swift. */
+    fun idle(t: Double, radiant: Boolean): BodyMotion {
+        val period = if (radiant) 6.5 else 9.5
+        val hp = ((t % period) / 0.95).toFloat()
+        if (hp >= 1f) return BodyMotion(dy = if (radiant) -2 * abs(sin(t * 2.1).toFloat()) else 0f)
+        val up = if (hp > 0.18f && hp < 0.78f) sin((hp - 0.18f) / 0.6f * PI).toFloat() else 0f
+        val sq = if (hp <= 0.18f) sin(hp / 0.18f * PI).toFloat() * 0.11f
+            else if (hp >= 0.78f) sin((hp - 0.78f) / 0.22f * PI).toFloat() * 0.09f else 0f
+        return BodyMotion(dy = -up * 13, sx = 1 + sq - up * 0.04f, sy = 1 - sq + up * 0.06f)
     }
 }

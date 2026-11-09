@@ -15,6 +15,7 @@ window.OSLimbs = function (type, u) {
     case "evening":  return { l: 10 * env, r: 140 * hold + 20 * Math.sin(u * Math.PI * 8) * hold, fl: 0, fr: 0 };   // Winken
     case "weak":     return { l: -8 * env, r: -8 * env, fl: 0, fr: 0 };
     case "startle":  return { l: 45 * quick, r: 45 * quick, fl: 0, fr: 0 };
+    case "shy":      return { l: -14 * hold, r: -14 * hold, fl: 3 * Math.max(0, alt) * hold, fr: 3 * Math.max(0, -alt) * hold };   // verlegen: Arme an den Körper, Füße scharren
     default:         return null;
   }
 };

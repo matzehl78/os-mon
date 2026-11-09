@@ -39,6 +39,22 @@ object PhoneWearBridge {
         }
     }
 
+    /**
+     * „Alle Daten löschen“: Stand auf der Uhr entfernen. Das DataItem /osmon/state wird gelöscht und ein
+     * /osmon/reset mit Zeitpunkt gesetzt; die Uhr leert sich damit auch, wenn sie gerade nicht verbunden war.
+     * Blockiert kurz (höchstens 5 s je Schritt), nur aus einem Hintergrund-Thread aufrufen.
+     */
+    fun clear(ctx: Context) {
+        val app = ctx.applicationContext
+        runCatching {
+            val dc = Wearable.getDataClient(app)
+            val state = android.net.Uri.Builder().scheme("wear").path(WearPayload.PATH_STATE).build()
+            com.google.android.gms.tasks.Tasks.await(dc.deleteDataItems(state), 5, java.util.concurrent.TimeUnit.SECONDS)
+            val req = PutDataMapRequest.create(WearPayload.PATH_RESET).apply { dataMap.putLong(WearPayload.KEY_AT, System.currentTimeMillis()) }
+            com.google.android.gms.tasks.Tasks.await(dc.putDataItem(req.asPutDataRequest().setUrgent()), 5, java.util.concurrent.TimeUnit.SECONDS)
+        }
+    }
+
     fun payload(ctx: Context, snapshot: Snapshot?, accessory: String?, form: String?): WearPayload? {
         val snap = snapshot ?: PetSync.lastSnapshot(ctx)?.first ?: return null
         val day = TaskStore.today()

@@ -32,6 +32,17 @@ enum DemoMode {
         d.set(Wardrobe.all.map(\.id), forKey: "wr.known")
         d.set(nil, forKey: "games.day"); d.set(0, forKey: "games.played")
         d.set(false, forKey: SoundPlayer.key)                        // Screenshots ohne Ton
+        // Lob von den Eltern: -OSMonPraise star|heart|thumbs|trophy|rainbow. Wird alle 1,5 s wiederholt, damit das
+        // verlegene Wesen samt Sprechblase zu jedem Foto-Zeitpunkt zu sehen ist (eine Reaktion dauert 1,8 s).
+        if let sticker = args.string(forKey: "OSMonPraise") {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(2))
+                for _ in 0..<20 {
+                    NotificationCenter.default.post(name: .osmonPraise, object: sticker)
+                    try? await Task.sleep(for: .seconds(1.5))
+                }
+            }
+        }
     }
 
     static var mood: PetMood { PetMood(rawValue: args.string(forKey: "OSMonMood") ?? "") ?? .radiant }
@@ -79,8 +90,6 @@ enum DemoMode {
             var g = GrowthState(hatched: st != .egg, goodDays: good, lastDay: today - 1, hatchedDay: st == .egg ? nil : today - good - 3)
             g.stage = st
             if flag("OSMonGrowUp") { g.pendingStage = st }
-            if flag("OSMonDown") { g.pendingStage = st; g.pendingDown = true }       // Rückfall-Banner
-            if flag("OSMonRisk") { g.goodDays = st.minDays - 2 }                   // Warnung vor dem Rückfall
             let p = Growth.progress(g)
             s.growth = GrowthInfo(state: g, stage: st, eggTaps: args.integer(forKey: "OSMonEggTaps"),
                                   ageDays: g.hatchedDay.map { today - $0 } ?? 0, progress: p?.fraction, daysLeft: p?.daysLeft,

@@ -678,7 +678,10 @@ window.make3D = () => (() => {
       : R ? md : yawn ? "yawn" : stress ? "stress" : md;
     Object.entries(Q.mouths).forEach(([key, m]) => { m.visible = key === mouthKey; });
     const cheekOp = (R && R !== "dizzy") || p.petted ? 0.95 : md === "radiant" ? 0.75 : md === "content" ? 0.5 : 0.3;
-    Q.cheeks.forEach(c => { c.material.opacity = cheekOp; const f = SHY ? 1.6 : 1; c.scale.set(1.4 * f, 0.75 * f, 0.3); });
+    // verlegen: Bäckchen größer, aber nur so weit, dass sie auch bei schmalen Köpfen (Lila) nicht über den Rand stehen
+    Q.cheeks.forEach(c => {
+      c.material.opacity = cheekOp; const f = SHY ? 1.22 : 1; c.scale.set(1.4 * f, 0.75 * f * (SHY ? 1.15 : 1), 0.3);
+    });
 
     // Antennen = Ruhe
     const lit = p.rest == null ? 0 : p.rest >= 66 ? 3 : p.rest >= 33 ? 2 : 1;

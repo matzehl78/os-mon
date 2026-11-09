@@ -137,6 +137,7 @@ object PetData {
             runCatching { com.example.osmon.family.FamilyApi(it).call("DELETE", "/v1/device") }
         }
         com.example.osmon.family.FamilyVault.clear(ctx)
+        com.example.osmon.PhoneWearBridge.clear(ctx)          // Wear-OS-Uhr leeren (wie die Apple Watch)
         PetScheduler.stop(ctx)
         EvolutionScheduler.stop(ctx)
         NotificationManagerCompat.from(ctx).cancelAll()

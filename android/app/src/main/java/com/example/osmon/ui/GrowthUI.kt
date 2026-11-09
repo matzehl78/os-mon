@@ -198,8 +198,8 @@ fun GrowthAlerts(g: GrowthInfo, onScene: Boolean) {
     Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (g.roughToday > 0) Row {
             Text("✋", color = Color(0xFFD9667A)); Spacer(Modifier.width(8.dp))
-            Text(if (g.roughToday >= Growth.ROUGH_LIMIT) "Heute zu grob behandelt – der Tag zählt als schlecht."
-                else "Heute ${g.roughToday}× grob behandelt. Ab ${Growth.ROUGH_LIMIT}× zählt der Tag als schlecht.",
+            Text(if (g.roughToday >= Growth.ROUGH_LIMIT) "Heute zu grob behandelt – dein Wesen macht heute eine Wachstumspause."
+                else "Heute ${g.roughToday}× grob behandelt. Ab ${Growth.ROUGH_LIMIT}× macht dein Wesen heute eine Wachstumspause.",
                 style = MaterialTheme.typography.bodySmall, color = textColor)
         }
         g.risk?.let { r ->

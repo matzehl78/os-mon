@@ -35,6 +35,11 @@
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
                 <data android:scheme="wear" android:host="*" android:pathPrefix="/osmon/state" />
             </intent-filter>
+            <!-- „Alle Daten löschen“ am Handy: Uhr leert sich -->
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/osmon/reset" />
+            </intent-filter>
         </service>
 
         <!-- Complication fürs Zifferblatt -->

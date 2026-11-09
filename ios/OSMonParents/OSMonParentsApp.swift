@@ -144,6 +144,18 @@ struct ParentDeviceEditor: View {
         let result: FamilyList = try await FamilyAPI(connection: connection).call("GET", "/v1/children")
         if let d = result.children.first(where: { $0.id == device.id }) {
             device.location = d.location; device.locationSharing = d.locationSharing; device.locationRequest = d.locationRequest
+            device.praise = d.praise; device.measuring = d.measuring
+        }
+    }
+    private func sendPraise(_ sticker: String) {
+        busy = true
+        Task {
+            do {
+                let r: FamilyPraiseResult = try await FamilyAPI(connection: connection).call("POST", "/v1/children/\(device.id)/praise", ["sticker": sticker])
+                device.praise = r.praise
+                message = "\(FamilyPraise.stickers[sticker]?.emoji ?? "") Lob gesendet. Es erscheint beim nächsten Öffnen der Kinder-App."
+            } catch { message = error.localizedDescription }
+            busy = false
         }
     }
     private func locationRequestText(_ req: FamilyLocationRequest) -> String {
@@ -163,6 +175,18 @@ struct ParentDeviceEditor: View {
                 Label(FamilyMeasuring.text(device.measuring), systemImage: device.measuring?.isOff == true ? "exclamationmark.triangle.fill" : "waveform.path.ecg")
                     .foregroundStyle(device.measuring?.isOff == true ? Color.orange : Color.primary)
                 Text("Übernahme bei geöffneter Kinder-App. Ohne Internet gelten die zuletzt übernommenen Einstellungen.").font(.footnote)
+            }
+            Section("Lob schicken") {
+                Text("Ein Sticker für dein Kind. Das Wesen freut sich sichtbar mit.").font(.footnote)
+                HStack {
+                    ForEach(FamilyPraise.order, id: \.self) { key in
+                        let s = FamilyPraise.stickers[key]!
+                        Button(s.emoji) { sendPraise(key) }
+                            .font(.title2).buttonStyle(.bordered).frame(maxWidth: .infinity)
+                            .accessibilityLabel("\(s.label) schicken")
+                    }
+                }.disabled(!device.paired)
+                Text(FamilyPraise.status(device.praise)).font(.footnote).foregroundStyle(.secondary)
             }
             Section("Zuletzt geteilter Standort") {
                 Text(device.locationSharing == true ? "Standortanfragen am Kindergerät freigegeben" : "Standortanfragen am Kindergerät nicht freigegeben")

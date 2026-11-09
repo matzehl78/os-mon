@@ -26,6 +26,14 @@ object FamilyPraise {
         val (emoji, label) = stickers[sticker] ?: ("⭐" to "ein Lob")
         return "$emoji Deine Eltern schicken dir $label! $pet freut sich riesig."
     }
+    /** Reihenfolge der Sticker-Knöpfe (wie im Webportal und auf dem Server) */
+    val order = listOf("star", "heart", "thumbs", "trophy", "rainbow")
+    /** Status für die Eltern: zuletzt gesendet und ob das Kindergerät es schon gezeigt hat. */
+    fun status(praise: JSONObject?): String {
+        if (praise == null) return "Noch kein Lob gesendet."
+        val s = stickers[praise.optString("sticker")] ?: return "Noch kein Lob gesendet."
+        return "Zuletzt gesendet: ${s.first} · " + (if (praise.optBoolean("seen")) "angekommen ✓" else "wartet auf das Kindergerät")
+    }
 }
 
 /** Text für die Eltern: werden Bildschirmzeit und Schritte am Kindergerät gemessen? Gleiche Texte wie Webportal und iOS. */

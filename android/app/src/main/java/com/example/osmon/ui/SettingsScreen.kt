@@ -21,6 +21,7 @@ import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -56,9 +58,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.updateAll
 import androidx.health.connect.client.HealthConnectClient
@@ -258,12 +263,14 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
         if (showParent) ParentDialog { showParent = false; parentVersion++ }
         val locked = remember(parentVersion) { ParentStore.settingsLocked(ctx) }
 
-        Card("Figur", "Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen; Widget, Hintergrundbild und Uhr bleiben 2D.") {
+        Card("Figur", "Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen. Realistisch: Naturdoku-Bilder, die mit dem Wesen wachsen (auch im Widget). Hintergrundbild und Uhr bleiben 2D.") {
             PetFigurePicker()
-            var use3D by remember { mutableStateOf(PetSync.prefs(ctx).getBoolean(Pet3D.KEY, true)) }
-            ToggleRow("3D-Wesen", use3D) {
-                use3D = it
-                PetSync.prefs(ctx).edit().putBoolean(Pet3D.KEY, it).apply { if (it) putBoolean(Pet3D.FAILED, false) }.apply()
+            var style by remember { mutableStateOf(com.example.osmon.figure.PetStyle.current(ctx)) }
+            val styleScope = rememberCoroutineScope()
+            PetStyleRow(style) {
+                style = it
+                com.example.osmon.figure.PetStyle.set(ctx, it)
+                styleScope.launch { runCatching { PetWidget().updateAll(ctx) } }
             }
             var sound by remember { mutableStateOf(SoundPlayer.enabled(ctx)) }
             ToggleRow("Töne & Stimme", sound) { sound = it; SoundPlayer.setEnabled(ctx, it); if (it) SoundPlayer.play(ctx, com.example.osmon.engine.Sfx.GIGGLE) }
@@ -502,5 +509,28 @@ private fun StepRow(
         Spacer(Modifier.width(8.dp))
         OutlinedButton(onClick = onInc, enabled = canInc,
             modifier = Modifier.semantics { contentDescription = "$title erhöhen" }) { Text("+") }
+    }
+}
+
+/** Darstellung wählen: 2D, 3D oder Realistisch (drei gleich breite Felder, ausgewähltes hervorgehoben). */
+@Composable
+private fun PetStyleRow(selected: com.example.osmon.figure.PetStyle, onSelect: (com.example.osmon.figure.PetStyle) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Text("Darstellung", style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            com.example.osmon.figure.PetStyle.entries.forEach { s ->
+                val on = s == selected
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (on) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.weight(1f).semantics { this.selected = on }
+                        .clickable(role = Role.RadioButton, onClickLabel = s.title) { onSelect(s) }
+                ) {
+                    Text(s.title, Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center,
+                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
+                }
+            }
+        }
     }
 }

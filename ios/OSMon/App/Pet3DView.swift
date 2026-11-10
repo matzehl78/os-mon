@@ -7,9 +7,9 @@ import SwiftUI
 import WebKit
 
 enum Pet3D {
-    static let key = "pet.3d"                   // Einstellung „3D-Wesen“ (Standard an)
+    static let key = PetStyle.legacy3DKey      // frühere Einstellung „3D-Wesen“; maßgeblich ist PetStyle
     static let failedKey = "pet.3d.failed"
-    static var enabled: Bool { (STShared.defaults.object(forKey: key) as? Bool ?? true) && !STShared.defaults.bool(forKey: failedKey) }
+    static var enabled: Bool { PetStyle.current == .threeD && !STShared.defaults.bool(forKey: failedKey) }
 }
 
 /// Was die 3D-Ansicht zeigen soll.

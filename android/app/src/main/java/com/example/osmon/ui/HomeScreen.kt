@@ -637,7 +637,23 @@ fun HomeContent(
             ) {
                 val g = state.growth
                 val ctx3d = LocalContext.current
-                if (Pet3D.enabled(ctx3d)) {
+                if (com.example.osmon.figure.PetStyle.current(ctx3d) == com.example.osmon.figure.PetStyle.REAL) {
+                    // Realistisch: Naturdoku-Bild der aktuellen Stufe, Antippen wie in 2D (Ei: Risse, sonst Reaktion)
+                    val egg = g?.stage == GrowthStage.EGG
+                    var shakeAt by remember { mutableStateOf<Long?>(null) }
+                    RealPet(
+                        figure.id, g, if (hasScene) 300.dp else 250.dp,
+                        reactionStartMs = if (egg) null else reaction?.startMs, eggShakeAtMs = shakeAt,
+                        description = if (egg) "Ei. Noch ${Growth.EGG_TAPS - (g?.eggTaps ?: 0)}× antippen, dann schlüpft dein Wesen."
+                            else "Dein Wesen: ${moodTitle(snap.mood)}. Antippen für eine Reaktion."
+                    ) {
+                        if (egg) {
+                            shakeAt = SystemClock.uptimeMillis()
+                            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                            onTapEgg()
+                        } else onTapPet()
+                    }
+                } else if (Pet3D.enabled(ctx3d)) {
                     // 3D: drehbar mit dem Finger, Antippen wie in 2D (Ei: Risse, sonst Reaktion)
                     val egg = g?.stage == GrowthStage.EGG
                     var shakeAt by remember { mutableStateOf<Long?>(null) }

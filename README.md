@@ -62,6 +62,28 @@ Erzeugte Dateien danach an ihren Platz kopieren:
 - Logik: `PetProgress` (Shared/Logic bzw. `engine`), Reaktionen: `PetReaction` (Shared/Sync bzw. `figure`),
   Oberfläche: `PetScene` (App bzw. `ui`). Details und Freischalt-Regeln: Entwickler-README, Abschnitt 9.
 
+## Realistische Figuren (Naturdoku-Stil)
+
+66 Bilder: 11 Figuren × 6 Stufen (Ei, Schlüpfling, Baby, Kind, Jugend, Erwachsen), 512×512, WebP mit Transparenz,
+gleicher Maßstab und gleiche Bodenlinie (Bild unten mittig ausrichten, dann springt beim Stufenwechsel nichts).
+
+| Plattform | Bilder | Code |
+|---|---|---|
+| Android | `app/src/main/res/drawable-nodpi/real_<figur>_<stufe>.webp` | `figure/RealFigureArt.kt` (`resId`, `bitmap`) |
+| iOS | `OSMon/App/RealFigures/real_<figur>_<stufe>.webp` | `Shared/Logic/RealFigureArt.swift`, `App/RealFigureImage.swift` (`RealFigureView`) |
+
+Stufen: `egg, hatchling, baby, child, teen, adult`. Der Schlüpfling erscheint am Schlüpftag, danach das Baby
+(`RealFigureArt.stageFor(...)` bzw. `RealFigureArt.stage(for:)`). Neu erzeugen aus den 1024er-Quellbildern:
+`python3 tools/real_figures/export_real_figures.py <ordner>`.
+
+Einstellungen › Figur › **Darstellung: 2D · 3D · Realistisch** (`PetStyle`, Schlüssel `pet.style`; ohne Wahl gilt die
+frühere 3D-Einstellung `pet.3d`). Realistisch gilt für Home-Screen und Widget; Live-Hintergrund und Uhr bleiben 2D.
+2,5D: Das Bild neigt sich mit dem Finger und mit dem Handy (Lagesensor), atmet langsam, Kugeln und Herz pulsieren
+(Leuchtebene `real_<figur>_<stufe>_glow.webp`, erzeugt mit `tools/real_figures/make_glow.py`), darunter ein weicher
+Bodenschatten. „Bewegung reduzieren“ bzw. ausgeschaltete Animationen schalten das ab. Antippen federt das Bild, das Ei wackelt;
+Stimmung und Zubehör erscheinen in dieser Darstellung nicht im Bild.
+Screenshots auf iOS: `-OSMonReal YES`.
+
 ## Stand
 
 Kein Teil wurde hier kompiliert (kein Android-SDK und kein Xcode in der Erstellungsumgebung).

@@ -24,6 +24,8 @@ enum DemoMode {
             ParentStore.addTask("Zähne putzen", rule: .daily)
         } else { ParentStore.removePin() }
         d.set(flag("OSMon3D"), forKey: Pet3D.key)                     // 3D nur mit -OSMon3D YES (alte Bilder bleiben 2D)
+        d.set(flag("OSMonReal") ? PetStyle.real.rawValue : flag("OSMon3D") ? PetStyle.threeD.rawValue : PetStyle.flat.rawValue,
+              forKey: PetStyle.key)                                 // -OSMonReal YES: realistische Bilder
         d.set(false, forKey: Pet3D.failedKey)
         // Kleiderschrank: -OSMonOutfit "cap,sun" (Teile anziehen, alles freigeschaltet), -OSMonPremium YES
         d.set(flag("OSMonPremium"), forKey: "premium.demo")

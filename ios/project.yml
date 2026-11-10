@@ -89,6 +89,7 @@ targets:
       - OSMon/Widget
       - OSMon/Shared/Logic
       - OSMon/Shared/Sync
+      - OSMon/App/RealFigures         # realistische Figurenbilder (WebP) fürs Widget
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework

@@ -19,3 +19,13 @@ final class RealFigureArtTests: XCTestCase {
         XCTAssertEqual(RealFigureArt.figureIDs.count, 11)
     }
 }
+
+final class PetStyleTests: XCTestCase {
+    func testResolve() {
+        XCTAssertEqual(PetStyle.resolve("real", legacy3D: true), .real)
+        XCTAssertEqual(PetStyle.resolve("2d", legacy3D: true), .flat)
+        XCTAssertEqual(PetStyle.resolve(nil, legacy3D: nil), .threeD)      // Standard wie bisher: 3D an
+        XCTAssertEqual(PetStyle.resolve("", legacy3D: false), .flat)        // frühere Einstellung „3D aus“
+        XCTAssertEqual(PetStyle.resolve("kaputt", legacy3D: true), .threeD)
+    }
+}

@@ -27,16 +27,15 @@ import com.example.osmon.engine.GrowthStage
 import com.example.osmon.engine.Mood
 import com.example.osmon.engine.Overlay
 import com.example.osmon.figure.ActiveReaction
+import com.example.osmon.figure.PetStyle
 import com.example.osmon.figure.ReactionKind
 import com.example.osmon.moodColor
 
 object Pet3D {
-    const val KEY = "pet.3d"                  // Einstellung „3D-Wesen“ (Standard an)
-    const val FAILED = "pet.3d.failed"
-    fun enabled(ctx: Context): Boolean {
-        val p = PetSync.prefs(ctx)
-        return p.getBoolean(KEY, true) && !p.getBoolean(FAILED, false)
-    }
+    const val KEY = PetStyle.LEGACY_3D_KEY    // frühere Einstellung „3D-Wesen“; maßgeblich ist PetStyle
+    const val FAILED = PetStyle.FAILED_3D_KEY
+    fun enabled(ctx: Context): Boolean =
+        PetStyle.current(ctx) == PetStyle.THREE_D && !PetSync.prefs(ctx).getBoolean(FAILED, false)
 }
 
 /** Was die 3D-Ansicht zeigen soll. */

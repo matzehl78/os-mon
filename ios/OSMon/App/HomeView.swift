@@ -296,7 +296,8 @@ struct HomeContent: View {
     private var outfit: Outfit { _ = extrasV; return WardrobeStore.outfit }
     /// Kopf: Fest-Zubehör hat Vorrang vor der Mütze aus dem Kleiderschrank.
     private var head: Accessory? { Wardrobe.hat(festival: state.festival?.accessory, outfit: outfit) }
-    @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
+    @AppStorage(PetStyle.key, store: STShared.defaults) private var styleRaw = ""   // leer = frühere 3D-Einstellung
+    private var style: PetStyle { PetStyle.resolve(styleRaw, legacy3D: STShared.defaults.object(forKey: PetStyle.legacy3DKey) as? Bool) }
     @AppStorage(Pet3D.failedKey, store: STShared.defaults) private var failed3D = false
     @State private var ready3D = false                  // 3D-Ansicht hat die eigene Figur gezeichnet
     @StateObject private var shake = ShakeMonitor()
@@ -511,7 +512,9 @@ struct HomeContent: View {
     /// Das Wesen (antippbar) mit Partikeln.
     @ViewBuilder
     private var pet: some View {
-        if use3D && !failed3D {
+        if style == .real {
+            realPet
+        } else if style == .threeD && !failed3D {
             pet3D
         } else if let g = state.growth, g.stage == .egg {
             PetEggView(cracks: Growth.cracks(g.eggTaps), shakeAt: eggShakeAt)
@@ -553,7 +556,7 @@ struct HomeContent: View {
             }
             .opacity(ready3D ? 1 : 0)
         }
-        .onChange(of: use3D) { _, _ in ready3D = false }
+        .onChange(of: styleRaw) { _, _ in ready3D = false }
         .frame(width: hasScene ? 300 : 250, height: hasScene ? 300 : 250)
         .overlay { if let r = reaction, !egg { ReactionParticles(reaction: r) } }
         .accessibilityElement()
@@ -562,6 +565,51 @@ struct HomeContent: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { if egg { onTapEgg() } else { tapPet() } }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
+    }
+
+    /// Realistisches Wesen (Naturdoku-Bild je Wachstumsstufe): Antippen federt, das Ei wackelt.
+    /// Stimmung und Zubehör zeigt diese Darstellung nicht im Bild, sondern in Sprechblase und Ringen.
+    private var realPet: some View {
+        let g = state.growth
+        let egg = g?.stage == .egg
+        let stage = RealFigureArt.stage(for: g?.stage ?? .adult, hatchedDay: g?.state.hatchedDay, today: EpochDay.of(.now))
+        let side: CGFloat = hasScene ? 300 : 250
+        return RealFigureView(figureID: figureID, stage: stage)
+            .frame(width: side, height: side, alignment: .bottom)
+            .keyframeAnimator(initialValue: 0.0, trigger: eggShakeAt) { content, angle in
+                content.rotationEffect(.degrees(angle), anchor: .bottom)
+            } keyframes: { _ in
+                KeyframeTrack {
+                    CubicKeyframe(-7, duration: 0.08)
+                    CubicKeyframe(6, duration: 0.1)
+                    CubicKeyframe(-4, duration: 0.1)
+                    CubicKeyframe(0, duration: 0.12)
+                }
+            }
+            .keyframeAnimator(initialValue: 1.0, trigger: reaction?.start) { content, squash in
+                content.scaleEffect(x: 2 - squash, y: squash, anchor: .bottom)
+            } keyframes: { _ in
+                KeyframeTrack {
+                    CubicKeyframe(0.9, duration: 0.1)
+                    SpringKeyframe(1.06, duration: 0.18)
+                    SpringKeyframe(1.0, duration: 0.3)
+                }
+            }
+            .overlay { if let r = reaction, !egg { ReactionParticles(reaction: r) } }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if egg {
+                    eggShakeAt = .now
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onTapEgg()
+                } else { tapPet() }
+            }
+            .accessibilityElement()
+            .accessibilityLabel(egg ? "Ei" : "Dein Wesen: \(snap.mood.title)")
+            .accessibilityHint(egg ? "Noch \(Growth.eggTaps - (g?.eggTaps ?? 0))× antippen, dann schlüpft dein Wesen." : "Antippen für eine Reaktion")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { if egg { onTapEgg() } else { tapPet() } }
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
     }
 
     private var petFigure: some View {

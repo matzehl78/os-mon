@@ -69,6 +69,8 @@ import com.example.osmon.engine.Snapshot
 import com.example.osmon.figure.PetFigureRenderer
 import com.example.osmon.figure.PetFigures
 import com.example.osmon.figure.PetPose
+import com.example.osmon.figure.PetStyle
+import com.example.osmon.figure.RealFigureArt
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
@@ -92,7 +94,12 @@ class PetWidget : GlanceAppWidget() {
         val readyText = readyAt?.let { DateFormat.getTimeFormat(context).format(Date(it)) }
         // Gewählte Figur als Bild (Glance kann nicht selbst zeichnen; gleicher Renderer wie im Home-Screen)
         val stage = com.example.osmon.ui.GrowthStore.stage(context)
-        val pet = if (stage == com.example.osmon.engine.GrowthStage.EGG)
+        val real = if (PetStyle.current(context) == PetStyle.REAL) {
+            val artStage = RealFigureArt.stageFor(stage, com.example.osmon.ui.GrowthStore.load(context).hatchedDay,
+                java.time.LocalDate.now().toEpochDay())
+            RealFigureArt.bitmap(context, PetFigures.current(context).id, artStage, maxPx = 300)
+        } else null
+        val pet = real ?: if (stage == com.example.osmon.engine.GrowthStage.EGG)
             PetFigureRenderer.eggBitmap(PetFigures.current(context), com.example.osmon.ui.GrowthStore.cracks(context), sizePx = 300)
         else PetFigureRenderer.bitmap(PetFigures.current(context), PetPose.of(snap).copy(
             accessory = com.example.osmon.engine.Wardrobe.hat(com.example.osmon.ui.FestivalStore.today(context, withHatchDay = false)?.accessory,

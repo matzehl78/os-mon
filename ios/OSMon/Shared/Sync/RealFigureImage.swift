@@ -1,5 +1,6 @@
 // RealFigureImage.swift: Lädt die realistischen Figurenbilder (WebP, ab iOS 14 nativ) und zeigt sie an.
-// Namen und Stufen: Shared/Logic/RealFigureArt.swift.
+// Namen und Stufen: Shared/Logic/RealFigureArt.swift. Liegt in Shared/Sync, damit App und Widget sie nutzen;
+// die Bilder (App/RealFigures) sind in beiden Targets als Ressourcen eingetragen (project.yml).
 
 import SwiftUI
 import UIKit

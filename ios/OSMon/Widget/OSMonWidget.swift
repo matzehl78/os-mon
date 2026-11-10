@@ -247,7 +247,12 @@ struct PetWidgetView: View {
     /// Die gewählte Figur als Standbild (Widgets animieren nicht). Auf dem Sperrbildschirm färbt iOS sie einfarbig ein.
     @ViewBuilder
     private var figure: some View {
-        if GrowthStorage.stage == .egg {
+        if PetStyle.current == .real {
+            let st = GrowthStorage.load()
+            let stage = RealFigureArt.stage(for: GrowthStorage.stage, hatchedDay: st?.hatchedDay, today: EpochDay.of(entry.date))
+            RealFigureView(figureID: PetFigureStore.current.id, stage: stage)
+                .accessibilityLabel(GrowthStorage.stage == .egg ? "Ein Ei. In der App antippen, damit es schlüpft." : "Dein Wesen: \(snap.mood.title)")
+        } else if GrowthStorage.stage == .egg {
             PetEggView(figure: PetFigureStore.current, cracks: GrowthStorage.cracks, animated: false)
                 .accessibilityLabel("Ein Ei. In der App antippen, damit es schlüpft.")
         } else {

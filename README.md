@@ -74,7 +74,12 @@ gleicher Maßstab und gleiche Bodenlinie (Bild unten mittig ausrichten, dann spr
 
 Stufen: `egg, hatchling, baby, child, teen, adult`. Der Schlüpfling erscheint am Schlüpftag, danach das Baby
 (`RealFigureArt.stageFor(...)` bzw. `RealFigureArt.stage(for:)`). Neu erzeugen aus den 1024er-Quellbildern:
-`python3 tools/real_figures/export_real_figures.py <ordner>`. Noch nicht in Home-Screen und Widget eingebunden.
+`python3 tools/real_figures/export_real_figures.py <ordner>`.
+
+Einstellungen › Figur › **Darstellung: 2D · 3D · Realistisch** (`PetStyle`, Schlüssel `pet.style`; ohne Wahl gilt die
+frühere 3D-Einstellung `pet.3d`). Realistisch gilt für Home-Screen und Widget; Live-Hintergrund und Uhr bleiben 2D.
+Antippen federt das Bild, das Ei wackelt; Stimmung und Zubehör erscheinen in dieser Darstellung nicht im Bild.
+Screenshots auf iOS: `-OSMonReal YES`.
 
 ## Stand
 

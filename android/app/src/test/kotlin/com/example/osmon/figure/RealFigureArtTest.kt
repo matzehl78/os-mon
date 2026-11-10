@@ -32,3 +32,13 @@ class RealFigureArtTest {
         assertTrue(missing.isEmpty(), "Fehlende Bilder: $missing")
     }
 }
+
+class PetStyleTest {
+    @Test fun resolve() {
+        assertEquals(PetStyle.REAL, PetStyle.resolve("real", true))
+        assertEquals(PetStyle.FLAT, PetStyle.resolve("2d", true))
+        assertEquals(PetStyle.THREE_D, PetStyle.resolve(null, null))          // Standard wie bisher: 3D an
+        assertEquals(PetStyle.FLAT, PetStyle.resolve("", false))              // frühere Einstellung „3D aus“
+        assertEquals(PetStyle.THREE_D, PetStyle.resolve("kaputt", true))
+    }
+}

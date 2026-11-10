@@ -91,7 +91,7 @@ struct SettingsView: View {
     @State private var showParent = false
     @State private var parentVersion = 0
     private var locked: Bool { _ = parentVersion; return ParentStore.settingsLocked }
-    @AppStorage(Pet3D.key, store: STShared.defaults) private var use3D = true
+    @AppStorage(PetStyle.key, store: STShared.defaults) private var styleRaw = ""
     @AppStorage(SoundPlayer.key, store: STShared.defaults) private var sound = true
     @State private var showWallpaper = false
     @Environment(\.scenePhase) private var phase
@@ -155,14 +155,23 @@ struct SettingsView: View {
     private var figureSection: some View {
         Section {
             PetFigurePicker().padding(.vertical, 4)
-            Toggle("3D-Wesen", isOn: $use3D)
-                .onChange(of: use3D) { _, on in if on { STShared.defaults.set(false, forKey: Pet3D.failedKey) } }
+            Picker("Darstellung", selection: Binding(
+                get: { PetStyle.resolve(styleRaw, legacy3D: STShared.defaults.object(forKey: PetStyle.legacy3DKey) as? Bool) },
+                set: { new in
+                    PetStyle.current = new
+                    styleRaw = new.rawValue
+                    if new == .threeD { STShared.defaults.set(false, forKey: Pet3D.failedKey) }
+                    WidgetCenter.shared.reloadAllTimelines()
+                })) {
+                ForEach(PetStyle.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
             Toggle("Töne & Stimme", isOn: $sound)
                 .onChange(of: sound) { _, on in if on { SoundPlayer.shared.play(.giggle) } }
         } header: {
             Text("Figur")
         } footer: {
-            Text("Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen; Widget, Sperrbildschirm und Uhr bleiben 2D.")
+            Text("Alle Figuren zeigen dasselbe: Herz = Energie, leuchtende Antennen = Ruhe. Das Widget wechselt mit. 3D: Mit dem Finger drehen. Realistisch: Naturdoku-Bilder, die mit dem Wesen wachsen (auch im Widget). Sperrbildschirm und Uhr bleiben 2D.")
         }
     }
 

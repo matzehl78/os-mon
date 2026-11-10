@@ -62,6 +62,20 @@ Erzeugte Dateien danach an ihren Platz kopieren:
 - Logik: `PetProgress` (Shared/Logic bzw. `engine`), Reaktionen: `PetReaction` (Shared/Sync bzw. `figure`),
   Oberfläche: `PetScene` (App bzw. `ui`). Details und Freischalt-Regeln: Entwickler-README, Abschnitt 9.
 
+## Realistische Figuren (Naturdoku-Stil)
+
+66 Bilder: 11 Figuren × 6 Stufen (Ei, Schlüpfling, Baby, Kind, Jugend, Erwachsen), 512×512, WebP mit Transparenz,
+gleicher Maßstab und gleiche Bodenlinie (Bild unten mittig ausrichten, dann springt beim Stufenwechsel nichts).
+
+| Plattform | Bilder | Code |
+|---|---|---|
+| Android | `app/src/main/res/drawable-nodpi/real_<figur>_<stufe>.webp` | `figure/RealFigureArt.kt` (`resId`, `bitmap`) |
+| iOS | `OSMon/App/RealFigures/real_<figur>_<stufe>.webp` | `Shared/Logic/RealFigureArt.swift`, `App/RealFigureImage.swift` (`RealFigureView`) |
+
+Stufen: `egg, hatchling, baby, child, teen, adult`. Der Schlüpfling erscheint am Schlüpftag, danach das Baby
+(`RealFigureArt.stageFor(...)` bzw. `RealFigureArt.stage(for:)`). Neu erzeugen aus den 1024er-Quellbildern:
+`python3 tools/real_figures/export_real_figures.py <ordner>`. Noch nicht in Home-Screen und Widget eingebunden.
+
 ## Stand
 
 Kein Teil wurde hier kompiliert (kein Android-SDK und kein Xcode in der Erstellungsumgebung).

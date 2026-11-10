@@ -41,4 +41,7 @@ enum RealFigureArt {
     static func resourceName(_ figureID: String, _ stage: RealArtStage) -> String {
         "real_\(has(figureID) ? figureID : "lumo")_\(stage.rawValue)"
     }
+
+    /// Leuchtebene (nur Kugeln und Herz) für das Pulsieren in der 2,5D-Ansicht, z. B. real_lumo_baby_glow.
+    static func glowName(_ figureID: String, _ stage: RealArtStage) -> String { resourceName(figureID, stage) + "_glow" }
 }

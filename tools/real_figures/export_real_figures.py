@@ -10,6 +10,8 @@ from pathlib import Path
 import sys
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 FIGURES = ["lumo", "minto", "lila", "glut", "kasto", "tropfi", "wolki", "rauti", "sunni", "orbo", "schnecki"]
 STAGES = {"1-ei": "egg", "2-schluepfling": "hatchling", "3-baby": "baby",
           "4-jungtier": "child", "5-teenager": "teen", "6-erwachsen": "adult"}
@@ -30,6 +32,8 @@ def main(src: Path) -> None:
             for t in targets:
                 im.save(t / f"real_{f}_{key}.webp", "WEBP", quality=QUALITY, method=6)
     print(f"{len(FIGURES) * len(STAGES)} Bilder je Plattform geschrieben.")
+    import make_glow
+    make_glow.main()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

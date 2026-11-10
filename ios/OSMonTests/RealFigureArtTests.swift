@@ -17,6 +17,7 @@ final class RealFigureArtTests: XCTestCase {
         XCTAssertEqual(RealFigureArt.resourceName("sunni", .hatchling), "real_sunni_hatchling")
         XCTAssertEqual(RealFigureArt.resourceName("unbekannt", .adult), "real_lumo_adult")
         XCTAssertEqual(RealFigureArt.figureIDs.count, 11)
+        XCTAssertEqual(RealFigureArt.glowName("orbo", .egg), "real_orbo_egg_glow")
     }
 }
 

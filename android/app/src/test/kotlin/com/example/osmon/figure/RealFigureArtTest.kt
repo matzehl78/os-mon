@@ -1,4 +1,4 @@
-// RealFigureArtTest.kt: gleiche Fälle wie RealFigureArtTests.swift, dazu Prüfung, dass alle 66 Bilder vorhanden sind.
+// RealFigureArtTest.kt: gleiche Fälle wie RealFigureArtTests.swift, dazu Prüfung, dass alle 66 Bilder und ihre Leuchtebenen vorhanden sind.
 
 package com.example.osmon.figure
 
@@ -23,11 +23,12 @@ class RealFigureArtTest {
         assertEquals("real_sunni_hatchling", RealFigureArt.resourceName("sunni", RealArtStage.HATCHLING))
         assertEquals("real_lumo_adult", RealFigureArt.resourceName("unbekannt", RealArtStage.ADULT))
         assertEquals(11, RealFigureArt.FIGURE_IDS.size)
+        assertEquals("real_orbo_egg_glow", RealFigureArt.glowName("orbo", RealArtStage.EGG))
     }
 
     @Test fun allImagesExist() {
         val dir = listOf("src/main/res/drawable-nodpi", "app/src/main/res/drawable-nodpi").map(::File).first { it.isDirectory }
-        val missing = RealFigureArt.FIGURE_IDS.flatMap { f -> RealArtStage.entries.map { RealFigureArt.resourceName(f, it) } }
+        val missing = RealFigureArt.FIGURE_IDS.flatMap { f -> RealArtStage.entries.flatMap { listOf(RealFigureArt.resourceName(f, it), RealFigureArt.glowName(f, it)) } }
             .filterNot { File(dir, "$it.webp").isFile }
         assertTrue(missing.isEmpty(), "Fehlende Bilder: $missing")
     }

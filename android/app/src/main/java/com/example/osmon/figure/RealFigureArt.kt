@@ -43,6 +43,14 @@ object RealFigureArt {
     fun resourceName(figureId: String, stage: RealArtStage): String =
         "real_${if (has(figureId)) figureId else "lumo"}_${stage.key}"
 
+    /** Leuchtebene (nur Kugeln und Herz) für das Pulsieren in der 2,5D-Ansicht, z. B. real_lumo_baby_glow. */
+    fun glowName(figureId: String, stage: RealArtStage): String = resourceName(figureId, stage) + "_glow"
+
+    /** Drawable-ID der Leuchtebene (0, falls sie fehlt). */
+    @DrawableRes
+    fun glowResId(context: Context, figureId: String, stage: RealArtStage): Int =
+        context.resources.getIdentifier(glowName(figureId, stage), "drawable", context.packageName)
+
     /** Drawable-ID (0, falls die Ressource fehlt). */
     @DrawableRes
     fun resId(context: Context, figureId: String, stage: RealArtStage): Int =

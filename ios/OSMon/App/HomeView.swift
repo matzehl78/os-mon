@@ -567,14 +567,14 @@ struct HomeContent: View {
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }
     }
 
-    /// Realistisches Wesen (Naturdoku-Bild je Wachstumsstufe): Antippen federt, das Ei wackelt.
+    /// Realistisches Wesen (Naturdoku-Bild je Wachstumsstufe, 2,5D: neigen, atmen, Leuchten): Antippen federt, das Ei wackelt.
     /// Stimmung und Zubehör zeigt diese Darstellung nicht im Bild, sondern in Sprechblase und Ringen.
     private var realPet: some View {
         let g = state.growth
         let egg = g?.stage == .egg
         let stage = RealFigureArt.stage(for: g?.stage ?? .adult, hatchedDay: g?.state.hatchedDay, today: EpochDay.of(.now))
         let side: CGFloat = hasScene ? 300 : 250
-        return RealFigureView(figureID: figureID, stage: stage)
+        return RealPet3DView(figureID: figureID, stage: stage, side: side)
             .frame(width: side, height: side, alignment: .bottom)
             .keyframeAnimator(initialValue: 0.0, trigger: eggShakeAt) { content, angle in
                 content.rotationEffect(.degrees(angle), anchor: .bottom)
@@ -606,7 +606,7 @@ struct HomeContent: View {
             }
             .accessibilityElement()
             .accessibilityLabel(egg ? "Ei" : "Dein Wesen: \(snap.mood.title)")
-            .accessibilityHint(egg ? "Noch \(Growth.eggTaps - (g?.eggTaps ?? 0))× antippen, dann schlüpft dein Wesen." : "Antippen für eine Reaktion")
+            .accessibilityHint(egg ? "Noch \(Growth.eggTaps - (g?.eggTaps ?? 0))× antippen, dann schlüpft dein Wesen." : "Antippen für eine Reaktion, ziehen zum Neigen")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { if egg { onTapEgg() } else { tapPet() } }
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("home")) } action: { stageFrame = $0 }

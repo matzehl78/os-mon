@@ -9,7 +9,15 @@ enum RealFigureImageLoader {
     private static let cache = NSCache<NSString, UIImage>()
 
     static func image(_ figureID: String, _ stage: RealArtStage) -> UIImage? {
-        let name = RealFigureArt.resourceName(figureID, stage)
+        image(named: RealFigureArt.resourceName(figureID, stage))
+    }
+
+    /// Leuchtebene (Kugeln und Herz) oder nil.
+    static func glow(_ figureID: String, _ stage: RealArtStage) -> UIImage? {
+        image(named: RealFigureArt.glowName(figureID, stage))
+    }
+
+    static func image(named name: String) -> UIImage? {
         if let hit = cache.object(forKey: name as NSString) { return hit }
         // XcodeGen legt die Dateien flach ins Bundle; der Unterordner ist nur Rückfall für Ordner-Referenzen.
         let url = Bundle.main.url(forResource: name, withExtension: "webp")

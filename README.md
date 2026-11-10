@@ -78,7 +78,10 @@ Stufen: `egg, hatchling, baby, child, teen, adult`. Der Schlüpfling erscheint a
 
 Einstellungen › Figur › **Darstellung: 2D · 3D · Realistisch** (`PetStyle`, Schlüssel `pet.style`; ohne Wahl gilt die
 frühere 3D-Einstellung `pet.3d`). Realistisch gilt für Home-Screen und Widget; Live-Hintergrund und Uhr bleiben 2D.
-Antippen federt das Bild, das Ei wackelt; Stimmung und Zubehör erscheinen in dieser Darstellung nicht im Bild.
+2,5D: Das Bild neigt sich mit dem Finger und mit dem Handy (Lagesensor), atmet langsam, Kugeln und Herz pulsieren
+(Leuchtebene `real_<figur>_<stufe>_glow.webp`, erzeugt mit `tools/real_figures/make_glow.py`), darunter ein weicher
+Bodenschatten. „Bewegung reduzieren“ bzw. ausgeschaltete Animationen schalten das ab. Antippen federt das Bild, das Ei wackelt;
+Stimmung und Zubehör erscheinen in dieser Darstellung nicht im Bild.
 Screenshots auf iOS: `-OSMonReal YES`.
 
 ## Stand

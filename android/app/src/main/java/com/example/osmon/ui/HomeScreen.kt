@@ -53,6 +53,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -503,6 +504,7 @@ fun HomeContent(
         onRough()
     }
 
+    val homeScroll = rememberScrollState()
     Box(Modifier.fillMaxSize()) {
     Box(
         Modifier
@@ -511,7 +513,7 @@ fun HomeContent(
                 if (hasScene) Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background))
                 else Brush.verticalGradient(colorStops = arrayOf(0f to tint.copy(alpha = 0.22f), 0.5f to MaterialTheme.colorScheme.background))
             )
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(homeScroll)
     ) {
         if (hasScene && stageH > 0f && ringsBottom > 0f) {
             val layerH = max(with(density) { 200.dp.toPx() }, ringsBottom + with(density) { 14.dp.toPx() })
@@ -767,6 +769,17 @@ fun HomeContent(
             if (state.evolutionEvent != null || state.newScenes.isNotEmpty() || state.growth?.pending != null ||
                 state.album?.pending?.isNotEmpty() == true) Spacer(Modifier.height(96.dp))
         }
+    }
+
+    // Einstellungen bleiben erreichbar: Sobald die Kopfzeile weggescrollt ist, schwebt der Zahnrad-Knopf oben rechts
+    if (onOpenSettings != null && homeScroll.value > with(density) { 120.dp.toPx() }) {
+        Surface(
+            shape = CircleShape, tonalElevation = 6.dp, shadowElevation = 6.dp,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 8.dp, end = 12.dp).size(48.dp)
+                .clickable(onClickLabel = "Einstellungen öffnen", onClick = onOpenSettings)
+                .semantics { contentDescription = "Einstellungen" }
+        ) { Box(contentAlignment = Alignment.Center) { Text("⚙️", fontSize = 22.sp) } }
     }
 
     // Hinweise (Entwicklung, neuer Hintergrund) unten als Einblendung: verschieben Kopfzeile und Wesen nicht

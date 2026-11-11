@@ -15,7 +15,10 @@ canvas{width:100%;height:100%;display:block;touch-action:none}</style></head>
   };
   const cv = document.getElementById("pet");
   const inst = window.make3D();
-  if (!inst.init(cv)) { post("error"); return; }
+  if (!inst.init(cv)) {
+    try { if (window.OSPetBridge && OSPetBridge.why) OSPetBridge.why(String(inst.lastError())); } catch (e) {}   // Android: Grund merken
+    post("error"); return;
+  }
   const ACC = { partyHat: "party", santaHat: "santa", witchHat: "witch", bunnyEars: "bunny", crown: "crown", flowers: "flowers", lantern: "lantern", jester: "jester",
     beanie: "beanie", cap: "cap", bow: "bow", topHat: "tophat", wizardHat: "wizard", pirateHat: "pirate" };
   let figKey = "", moodColor = "#1c9a9a";

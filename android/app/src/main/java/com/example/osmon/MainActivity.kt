@@ -35,6 +35,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 3D bei jedem Start neu versuchen (ein einmaliger Fehler soll das 3D-Wesen nicht dauerhaft abschalten)
+        PetSync.prefs(this).edit().remove(com.example.osmon.ui.Pet3D.FAILED).apply()
         PushDelivery.handleOpen(this, intent)
         if (PetSync.prefs(this).getBoolean("onboarding.done", false)) {
             PetScheduler.start(this)                 // idempotent; läuft sonst erst nach dem Onboarding

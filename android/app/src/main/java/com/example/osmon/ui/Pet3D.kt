@@ -33,6 +33,7 @@ import com.example.osmon.moodColor
 object Pet3D {
     const val KEY = "pet.3d"                  // Einstellung „3D-Wesen“ (Standard an)
     const val FAILED = "pet.3d.failed"
+    const val WHY = "pet.3d.why"             // Grund des Fehlers (nur zur Anzeige in den Einstellungen)
     fun enabled(ctx: Context): Boolean {
         val p = PetSync.prefs(ctx)
         return p.getBoolean(KEY, true) && !p.getBoolean(FAILED, false)
@@ -66,6 +67,9 @@ private class Pet3DController(val web: WebView) {
     var onError: () -> Unit = {}
     var onReady: () -> Unit = {}
     private val main = Handler(Looper.getMainLooper())
+
+    @JavascriptInterface
+    fun why(m: String) { PetSync.prefs(web.context).edit().putString(Pet3D.WHY, m.take(200)).apply() }
 
     @JavascriptInterface
     fun post(m: String) {

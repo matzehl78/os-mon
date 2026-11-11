@@ -265,6 +265,9 @@ fun SettingsScreen(onBack: () -> Unit, onDataDeleted: () -> Unit, onShowIntro: (
                 use3D = it
                 PetSync.prefs(ctx).edit().putBoolean(Pet3D.KEY, it).apply { if (it) putBoolean(Pet3D.FAILED, false) }.apply()
             }
+            if (use3D && PetSync.prefs(ctx).getBoolean(Pet3D.FAILED, false))
+                Text("3D lief auf diesem Gerät gerade nicht (Grund: ${PetSync.prefs(ctx).getString(Pet3D.WHY, "") ?: ""}). Beim nächsten App-Start wird es neu versucht.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             var sound by remember { mutableStateOf(SoundPlayer.enabled(ctx)) }
             ToggleRow("Töne & Stimme", sound) { sound = it; SoundPlayer.setEnabled(ctx, it); if (it) SoundPlayer.play(ctx, com.example.osmon.engine.Sfx.GIGGLE) }
         }

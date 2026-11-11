@@ -15,7 +15,7 @@ window.make3D = () => (() => {
   let ACC = null, GLS = null;                                   // Kopf-Zubehör, Brille (Kleiderschrank)
   // Wachstum (Growth.kt): Proportionen je Stufe; Ei mit Rissen
   const LOOK = { baby: [0.66, 0.60, 1.25, 0.62, 1.18], child: [0.78, 0.74, 1.14, 0.78, 1.10], teen: [0.90, 0.89, 1.05, 0.92, 1.04] };
-  let STAGE = null, EGG = null, eggGroup = null, eggKey = "", eggShake = 0, eggShakeAt = 0;
+  let LASTERR = "", STAGE = null, EGG = null, eggGroup = null, eggKey = "", eggShake = 0, eggShakeAt = 0;
   let rotY = 0, dragging = false, lastX = 0, blinkUntil = 0, nextBlink = 2, running = false;
   // Muster B–D: etwas größere Augen, Hüpfer im Leerlauf, Herzen beim Streicheln
   const EYE_CUTE = 1.1;
@@ -810,7 +810,7 @@ window.make3D = () => (() => {
     /** true, wenn WebGL verfügbar ist */
     init(cv) {
       try {
-        T = window.THREE; if (!T) return false;
+        T = window.THREE; if (!T) { LASTERR = "THREE fehlt"; return false; }
         canvas = cv;
         renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
         renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
@@ -822,8 +822,10 @@ window.make3D = () => (() => {
         const end = () => { dragging = false; };
         cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
         return true;
-      } catch (e) { return false; }
+      } catch (e) { LASTERR = String((e && e.message) || e); return false; }
     },
+    /** Grund, falls init() false lieferte (für die Fehlersuche) */
+    lastError() { return LASTERR; },
     /** Figur wechseln (wird beim nächsten Bild neu aufgebaut). colors: wie figColors() plus irisDark. */
     setFigure(F, SH, colors, acc, glasses) { ACC = acc || null; GLS = glasses || null; pending = [F, SH, colors]; },
     /** Reaktion auf Antippen: Bewegung im 3D-Raum (Gesicht kommt über update(p.react)) */

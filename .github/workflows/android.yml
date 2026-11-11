@@ -6,6 +6,9 @@ on:
     paths-ignore: ["ios/**", ".github/workflows/ios.yml", ".github/workflows/screenshots.yml"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,3 +55,13 @@ jobs:
             android/app/build/outputs/apk/debug/*.apk
             android/wear/build/outputs/apk/debug/*.apk
             android/parents/build/outputs/apk/debug/*.apk
+      - name: Debug-APK als Download (Release „debug-latest“)
+        if: github.ref == 'refs/heads/main'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/*.apk OS-Mon-debug.apk
+          gh release delete debug-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create debug-latest OS-Mon-debug.apk --prerelease --target "$GITHUB_SHA" \
+            --title "OS-Mon Debug-APK" --notes "Testversion zum Installieren auf dem Handy (Commit $GITHUB_SHA)."

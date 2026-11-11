@@ -40,8 +40,9 @@ class MainActivity : ComponentActivity() {
             PetScheduler.start(this)                 // idempotent; läuft sonst erst nach dem Onboarding
             EvolutionScheduler.start(this)
         }
-        runCatching { com.example.osmon.ui.PremiumStore.restore(this) }     // Kaufstatus mit Google Play abgleichen
         setContent { OSMonTheme { Root() } }
+        // Kaufstatus mit Google Play abgleichen – erst nach dem Start der Oberfläche, nie ein Grund für einen Absturz
+        window.decorView.post { runCatching { com.example.osmon.ui.PremiumStore.restore(applicationContext) } }
     }
 
     override fun onNewIntent(intent: Intent) {

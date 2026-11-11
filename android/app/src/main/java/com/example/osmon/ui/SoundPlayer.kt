@@ -26,24 +26,30 @@ object SoundPlayer {
 
     /** Geräusch abspielen (Figur bestimmt die Tonhöhe bei Antippen, Kichern, Gähnen). */
     fun play(ctx: Context, s: Sfx) {
-        if (!enabled(ctx)) return
-        val fig = PetFigures.current(ctx).id
-        val stage = runCatching { GrowthStore.stage(ctx) }.getOrNull()
-        worker.execute {
-            val key = "${s.name}|$fig|$stage"
-            val pcm = synchronized(cache) { cache.getOrPut(key) { SoundSynth.pcm16(SoundSynth.sfx(s, fig, stage)) } }
-            out(pcm)
+        runCatching {
+            if (!enabled(ctx)) return
+            val fig = PetFigures.current(ctx).id
+            val stage = runCatching { GrowthStore.stage(ctx) }.getOrNull()
+            worker.execute {
+                runCatching {                          // nie die App abstürzen lassen (Ton ist nur Beiwerk)
+                    val key = "${s.name}|$fig|$stage"
+                    val pcm = synchronized(cache) { cache.getOrPut(key) { SoundSynth.pcm16(SoundSynth.sfx(s, fig, stage)) } }
+                    out(pcm)
+                }
+            }
         }
     }
 
     /** Brabbel-Stimme zur Sprechblase (höchstens alle 1,5 s, damit es nicht nervt). */
     fun say(ctx: Context, text: String, stage: GrowthStage? = null) {
-        if (!enabled(ctx) || text.isBlank()) return
-        val now = System.currentTimeMillis()
-        if (now - lastVoiceAt < 1500) return
-        lastVoiceAt = now
-        val fig = PetFigures.current(ctx).id
-        worker.execute { out(SoundSynth.pcm16(SoundSynth.babble(text, fig, stage))) }
+        runCatching {
+            if (!enabled(ctx) || text.isBlank()) return
+            val now = System.currentTimeMillis()
+            if (now - lastVoiceAt < 1500) return
+            lastVoiceAt = now
+            val fig = PetFigures.current(ctx).id
+            worker.execute { runCatching { out(SoundSynth.pcm16(SoundSynth.babble(text, fig, stage))) } }
+        }
     }
 
     private fun out(pcm: ShortArray) {

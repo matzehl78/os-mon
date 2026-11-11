@@ -77,12 +77,12 @@ object PremiumStore {
     private fun connected(ctx: Context, then: (BillingClient) -> Unit) {
         val c = client(ctx)
         if (c.isReady) { then(c); return }
-        c.startConnection(object : BillingClientStateListener {
+        runCatching { c.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(r: BillingResult) {
-                if (r.responseCode == BillingClient.BillingResponseCode.OK) then(c) else onStatus("Google Play ist gerade nicht erreichbar.")
+                runCatching { if (r.responseCode == BillingClient.BillingResponseCode.OK) then(c) else onStatus("Google Play ist gerade nicht erreichbar.") }
             }
             override fun onBillingServiceDisconnected() {}
-        })
+        }) }
     }
 
     private fun handle(ctx: Context, p: Purchase) {

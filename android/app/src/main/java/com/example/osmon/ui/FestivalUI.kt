@@ -166,7 +166,8 @@ fun FestivalDecor(decor: Decor, burstAtMs: Long?, modifier: Modifier = Modifier)
             val y = v * size.height
             val s = 0.6f + 0.8f * rnd(i, 5)
             when {
-                emojis != null -> if (emojis[i % 3].isNotEmpty()) drawText(measurer, emojis[i % 3], Offset(x, y), TextStyle(fontSize = (14 + 10 * s).sp))
+                emojis != null -> if (emojis[i % 3].isNotEmpty() && x in 0f..(size.width - 4f) && y in 0f..(size.height - 4f)) drawText(   // außerhalb: Breite/Höhe negativ → Absturz
+                    measurer, emojis[i % 3], Offset(x, y), TextStyle(fontSize = (14 + 10 * s).sp))
                 decor == Decor.PETALS -> rotate(t * (45 + 60 * rnd(i, 6)) + i * 40, Offset(x, y)) {
                     drawOval(Color(0xFFFFB8D9), Offset(x - 5 * s * density, y - 3 * s * density), Size(10 * s * density, 6 * s * density))
                 }

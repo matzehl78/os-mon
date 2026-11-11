@@ -21,6 +21,8 @@ run_case () {   # $1 Name, $2 growth.state (oder leer)
   sleep 14
   adb exec-out screencap -p > $OUT/$1.png
   adb logcat -d > $OUT/$1.log
+  grep -E "chromium|WebView|OSPet|console" $OUT/$1.log | tail -25
+  echo "SHOT-$1-BEGIN"; base64 -w0 $OUT/$1.png; echo; echo "SHOT-$1-END"
   echo "=== $1: Prozess läuft?"; adb shell pidof $PKG || echo "NEIN (abgestürzt oder beendet)"
   echo "=== $1: Abstürze"; grep -E "FATAL EXCEPTION|AndroidRuntime|Process: $PKG" -A25 $OUT/$1.log | head -80
 }
